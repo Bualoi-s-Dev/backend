@@ -16,6 +16,13 @@ func NewPackageController(service *services.PackageService) *PackageController {
 	return &PackageController{Service: service}
 }
 
+// GetAllPackages godoc
+// @Tags Package
+// @Summary Get a list of packages
+// @Description Retrieve all packages from the database
+// @Success 200 {array} string "OK"
+// @Failure 400 {object} string "Bad Request"
+// @Router /package [get]
 func (ctrl *PackageController) GetAllPackages(c *gin.Context) {
 	items, err := ctrl.Service.GetAll(c.Request.Context())
 	if err != nil {
