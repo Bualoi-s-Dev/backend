@@ -2,6 +2,9 @@ package main
 
 import (
 	"github.com/gin-gonic/gin"
+
+	"github.com/Bualoi-s-Dev/backend/configs"
+	"github.com/Bualoi-s-Dev/backend/routes"
 )
 
 func main() {
@@ -11,6 +14,10 @@ func main() {
 			"message": "pong",
 		})
 	})
+
+	configs.LoadEnv()
+
+	configs.ConnectMongoDB()
 
 	r.Run()
 }
