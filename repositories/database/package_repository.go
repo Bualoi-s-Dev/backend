@@ -27,6 +27,10 @@ func (repo *PackageRepository) GetAll(ctx context.Context) ([]models.Package, er
 	if err := cursor.All(ctx, &items); err != nil {
 		return nil, err
 	}
+
+	if items == nil {
+		items = []models.Package{}
+	}
 	return items, nil
 }
 
