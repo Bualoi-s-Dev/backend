@@ -9,6 +9,7 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 )
@@ -19,12 +20,18 @@ type S3Service struct {
 }
 
 func NewS3Service() *S3Service {
-	cfg, err := config.LoadDefaultConfig((context.TODO()))
+	cfg, err := config.LoadDefaultConfig(context.TODO(),
+		config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(os.Getenv("AWS_ACCESS_KEY_ID"), os.Getenv("AWS_SECRET_ACCESS_KEY"), "")),
+		config.WithRegion("auto"),
+	)
 	if err != nil {
 		log.Fatalln("error:", err)
 	}
 	bucketName := os.Getenv("S3_BUCKET_NAME")
-	client := s3.NewFromConfig(cfg)
+	// client := s3.NewFromConfig(cfg)
+	client := s3.NewFromConfig(cfg, func(o *s3.Options) {
+		o.BaseEndpoint = aws.String(os.Getenv("BUCKET_URL"))
+	})
 
 	return &S3Service{
 		BucketName: bucketName,
@@ -50,12 +57,12 @@ func (s *S3Service) UploadFile(file *multipart.FileHeader) (string, error) {
 		Key:    aws.String(file.Filename),
 		Body:   uploadFile,
 	})
-	if uploader != nil {
+	if uploadErr != nil {
 		log.Println("Error while uploading")
-		return "", err
+		return "", uploadErr
 	}
 
-	return result.Location, uploadErr
+	return result.Location, err
 
 }
 
