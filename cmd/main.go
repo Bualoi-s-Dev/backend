@@ -7,6 +7,7 @@ import (
 	"github.com/Bualoi-s-Dev/backend/controllers"
 	"github.com/Bualoi-s-Dev/backend/docs"
 	repositories "github.com/Bualoi-s-Dev/backend/repositories/database"
+	s3 "github.com/Bualoi-s-Dev/backend/repositories/s3"
 	"github.com/Bualoi-s-Dev/backend/routes"
 	"github.com/Bualoi-s-Dev/backend/services"
 
@@ -28,10 +29,13 @@ func main() {
 
 	// Init
 	packageRepo := repositories.NewPackageRepository(client.Collection("Package"))
+	s3Repo := s3.NewS3Repository()
 
 	packageService := services.NewPackageService(packageRepo)
+	s3Service := services.NewS3Service(s3Repo)
 
 	packageController := controllers.NewPackageController(packageService)
+	s3Controller := controllers.NewS3Controller(s3Service)
 
 	// Swagger UI route
 	docs.SwaggerInfo.BasePath = ""
@@ -39,6 +43,7 @@ func main() {
 
 	// Add routes
 	routes.PackageRoutes(r, packageController)
+	routes.S3Routes(r, s3Controller)
 
 	r.Run()
 }
