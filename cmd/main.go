@@ -6,6 +6,7 @@ import (
 	"github.com/Bualoi-s-Dev/backend/configs"
 	"github.com/Bualoi-s-Dev/backend/controllers"
 	"github.com/Bualoi-s-Dev/backend/docs"
+	repositories "github.com/Bualoi-s-Dev/backend/repositories/database"
 	"github.com/Bualoi-s-Dev/backend/routes"
 	"github.com/Bualoi-s-Dev/backend/services"
 
@@ -23,14 +24,14 @@ func main() {
 	r := gin.Default()
 
 	configs.LoadEnv()
-	// client := configs.ConnectMongoDB().Database("PhotoMatch")
+	client := configs.ConnectMongoDB().Database("PhotoMatch")
 
 	// Init
-	// packageRepo := repositories.NewPackageRepository(client.Collection("Package"))
+	packageRepo := repositories.NewPackageRepository(client.Collection("Package"))
 
-	// packageService := services.NewPackageService(packageRepo)
+	packageService := services.NewPackageService(packageRepo)
 
-	// packageController := controllers.NewPackageController(packageService)
+	packageController := controllers.NewPackageController(packageService)
 
 	s3Service := services.NewS3Service()
 	s3Controller := controllers.NewS3Controller(s3Service)
@@ -40,7 +41,7 @@ func main() {
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
 
 	// Add routes
-	// routes.PackageRoutes(r, packageController)
+	routes.PackageRoutes(r, packageController)
 	routes.S3Routes(r, s3Controller)
 
 	r.Run()
