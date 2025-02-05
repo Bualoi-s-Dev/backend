@@ -7,6 +7,7 @@ import (
 	"github.com/Bualoi-s-Dev/backend/controllers"
 	"github.com/Bualoi-s-Dev/backend/docs"
 	repositories "github.com/Bualoi-s-Dev/backend/repositories/database"
+	s3 "github.com/Bualoi-s-Dev/backend/repositories/s3"
 	"github.com/Bualoi-s-Dev/backend/routes"
 	"github.com/Bualoi-s-Dev/backend/services"
 
@@ -33,7 +34,8 @@ func main() {
 
 	packageController := controllers.NewPackageController(packageService)
 
-	s3Service := services.NewS3Service()
+	s3Repo := s3.NewS3Repository()
+	s3Service := services.NewS3Service(s3Repo)
 	s3Controller := controllers.NewS3Controller(s3Service)
 
 	// Swagger UI route
