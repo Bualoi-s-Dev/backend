@@ -29,13 +29,12 @@ func main() {
 
 	// Init
 	packageRepo := repositories.NewPackageRepository(client.Collection("Package"))
+	s3Repo := s3.NewS3Repository()
 
 	packageService := services.NewPackageService(packageRepo)
+	s3Service := services.NewS3Service(s3Repo)
 
 	packageController := controllers.NewPackageController(packageService)
-
-	s3Repo := s3.NewS3Repository()
-	s3Service := services.NewS3Service(s3Repo)
 	s3Controller := controllers.NewS3Controller(s3Service)
 
 	// Swagger UI route
