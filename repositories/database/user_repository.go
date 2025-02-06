@@ -33,3 +33,12 @@ func (repo *UserRepository) CreateUser(ctx context.Context, user *models.User) e
 	}
 	return nil
 }
+
+func (repo *UserRepository) UpdateUser(ctx context.Context, email string, updates map[string]interface{}) error {
+	updateQuery := bson.M{"$set": updates}
+	_, err := repo.Collection.UpdateOne(ctx, bson.M{"email": email}, updateQuery)
+	if err != nil {
+		return err
+	}
+	return nil
+}

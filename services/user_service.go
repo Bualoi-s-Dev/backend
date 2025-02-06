@@ -22,3 +22,7 @@ func (s *UserService) GetUserProfile(ctx context.Context, email string) (*models
 func (s *UserService) CreateUser(ctx context.Context, user *models.User) error {
 	return s.Repo.CreateUser(ctx, user)
 }
+
+func (s *UserService) UpdateUser(ctx context.Context, email string, updates map[string]interface{}) error {
+	return s.Repo.UpdateUser(ctx, email, updates)
+}
