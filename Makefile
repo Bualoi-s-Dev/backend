@@ -1,6 +1,6 @@
 .PHONY: run tidy swag
 
-run: tidy swag
+run: swag tidy
 	@echo "Starting the server..."
 	go run ./cmd/main/main.go
 
