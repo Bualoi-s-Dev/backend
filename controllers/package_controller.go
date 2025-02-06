@@ -59,7 +59,7 @@ func (ctrl *PackageController) GetOnePackage(c *gin.Context) {
 func (ctrl *PackageController) CreateOnePackage(c *gin.Context) {
 	var item models.Package
 	if err := c.ShouldBindJSON(&item); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Bad request, " + err.Error()})
 		return
 	}
 	if err := ctrl.Service.CreateOne(c.Request.Context(), &item); err != nil {
@@ -80,7 +80,7 @@ func (ctrl *PackageController) UpdateOnePackage(c *gin.Context) {
 	id := c.Param("id")
 	var updates map[string]interface{}
 	if err := c.ShouldBindJSON(&updates); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Bad request, " + err.Error()})
 		return
 	}
 

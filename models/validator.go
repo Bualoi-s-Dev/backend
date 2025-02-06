@@ -18,6 +18,8 @@ func ValidatePackageType(fl validator.FieldLevel) bool {
 	return false
 }
 
+// RegisterCustomValidators registers custom validators to the validator
+// Add more validators here
 func RegisterCustomValidators(v *validator.Validate) {
 	v.RegisterValidation("package_type", ValidatePackageType)
 }
