@@ -2,7 +2,7 @@
 
 run: tidy swag
 	@echo "Starting the server..."
-	go run ./cmd/main.go
+	go run ./cmd/main/main.go
 
 tidy:
 	@echo "Tidying up Go modules..."
@@ -10,4 +10,4 @@ tidy:
 
 swag:
 	@echo "Generating Swagger documentation..."
-	swag init -g ./cmd/main.go -o ./docs
+	swag init -g ./cmd/main/main.go -o ./docs
