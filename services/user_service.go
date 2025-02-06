@@ -26,27 +26,3 @@ func (s *UserService) CreateUser(ctx context.Context, user *models.User) error {
 func (s *UserService) UpdateUser(ctx context.Context, email string, updates map[string]interface{}) error {
 	return s.Repo.UpdateUser(ctx, email, updates)
 }
-
-func (s *UserService) GetUserFromJWT(ctx context.Context, c *gin.Context, authClient *auth.Client) (*models.User, error) {
-	authHeader := c.GetHeader("Authorization")
-	if authHeader == "" {
-		return nil, &gin.Error{Err: http.ErrNoCookie, Type: gin.ErrorTypePublic}
-	}
-
-	tokenString := strings.TrimPrefix(authHeader, "Bearer ")
-	if tokenString == "" {
-		return nil, &gin.Error{Err: http.ErrNoCookie, Type: gin.ErrorTypePublic}
-	}
-
-	token, err := authClient.VerifyIDToken(ctx, tokenString)
-	if err != nil {
-		return nil, err
-	}
-
-	email, ok := token.Claims["email"].(string)
-	if !ok || email == "" {
-		return nil, &gin.Error{Err: http.ErrNoCookie, Type: gin.ErrorTypePublic}
-	}
-
-	return s.GetUserProfile(ctx, email)
-}
