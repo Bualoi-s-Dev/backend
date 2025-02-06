@@ -6,6 +6,6 @@ services:
     container_name: go_api
     restart: always
     env_file:
-      - ./env
+      - ./.env
     ports:
       - "8080:8080"
