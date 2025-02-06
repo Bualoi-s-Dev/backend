@@ -27,16 +27,19 @@ const (
 	Other               PackageType = "OTHER"
 )
 
-var validPackageTypes = []PackageType{
-	WeddingBliss,
-	BirthdayShoots,
-	MaternityGlow,
-	FamilyPortraits,
-	GraduationMemories,
-	NewbornMoments,
-	EngagementLoveStory,
-	CorporateHeadshots,
-	FashionEditorial,
-	TravelDiaries,
-	Other,
+var ValidPackageTypes = []struct {
+	Value  PackageType
+	TSName string
+}{
+	{WeddingBliss, string(WeddingBliss)},
+	{BirthdayShoots, string(BirthdayShoots)},
+	{MaternityGlow, string(MaternityGlow)},
+	{FamilyPortraits, string(FamilyPortraits)},
+	{GraduationMemories, string(GraduationMemories)},
+	{NewbornMoments, string(NewbornMoments)},
+	{EngagementLoveStory, string(EngagementLoveStory)},
+	{CorporateHeadshots, string(CorporateHeadshots)},
+	{FashionEditorial, string(FashionEditorial)},
+	{TravelDiaries, string(TravelDiaries)},
+	{Other, string(Other)},
 }

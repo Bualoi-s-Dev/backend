@@ -9,8 +9,8 @@ func ValidatePackageType(fl validator.FieldLevel) bool {
 	value := fl.Field().Interface().(PackageType)
 
 	// Check if the value exists in the validPackageTypes slice
-	for _, validType := range validPackageTypes {
-		if value == validType {
+	for _, validType := range ValidPackageTypes {
+		if value == validType.Value {
 			return true
 		}
 	}
