@@ -28,3 +28,15 @@ update swagger by
 ```
 swag init -g ./cmd/main.go -o ./docs
 ```
+
+## Typescript type generation
+
+This project used typescriptify to generate types for typescript
+
+generate by
+
+```
+go run ./cmd/tsgen/tsgen.go
+```
+
+the generated file will be stored in `/gen/api_types.ts`
