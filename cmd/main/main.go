@@ -26,7 +26,9 @@ import (
 // @contact.email support@example.com
 // @host      localhost:8080
 
-// @securityDefinitions.basic  BasicAuth
+// @securityDefinitions.apikey Bearer
+// @in header
+// @name Authorization
 
 // @externalDocs.description  OpenAPI
 // @externalDocs.url          https://swagger.io/resources/open-api/

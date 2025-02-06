@@ -34,3 +34,8 @@ func (s *PackageService) UpdateOne(ctx context.Context, packageId string, update
 	_, err := s.Repo.UpdateOne(ctx, packageId, updates)
 	return err
 }
+
+func (s *PackageService) DeleteOne(ctx context.Context, packageId string) error {
+	_, err := s.Repo.DeleteOne(ctx, packageId)
+	return err
+}

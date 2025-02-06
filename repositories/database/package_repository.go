@@ -69,3 +69,12 @@ func (repo *PackageRepository) UpdateOne(ctx context.Context, id string, updates
 
 	return repo.Collection.UpdateOne(ctx, bson.M{"_id": objectId}, update)
 }
+
+func (repo *PackageRepository) DeleteOne(ctx context.Context, id string) (*mongo.DeleteResult, error) {
+	objectId, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return nil, err
+	}
+
+	return repo.Collection.DeleteOne(ctx, bson.M{"_id": objectId})
+}
