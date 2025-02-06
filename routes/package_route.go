@@ -7,5 +7,7 @@ import (
 
 func PackageRoutes(router *gin.Engine, ctrl *controllers.PackageController) {
 	router.GET("/package", ctrl.GetAllPackages)
+	router.GET("/package/:id", ctrl.GetOnePackage)
 	router.POST("/package", ctrl.CreateOnePackage)
+	router.PATCH("/package/:id", ctrl.UpdateOnePackage)
 }
