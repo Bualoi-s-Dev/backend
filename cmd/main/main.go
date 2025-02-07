@@ -39,25 +39,17 @@ func main() {
 
 	// Init
 	packageRepo := repositories.NewPackageRepository(client.Collection("Package"))
-<<<<<<< HEAD:cmd/main.go
 	userRepo := repositories.NewUserRepository(client.Collection("User"))
-
-	packageService := services.NewPackageService(packageRepo)
-	userService := services.NewUserService(userRepo)
-
-	packageController := controllers.NewPackageController(packageService)
-	userController := controllers.NewUserController(userService)
-	
-=======
 	s3Repo := s3.NewS3Repository()
 
 	packageService := services.NewPackageService(packageRepo)
+	userService := services.NewUserService(userRepo)
 	s3Service := services.NewS3Service(s3Repo)
 
 	packageController := controllers.NewPackageController(packageService)
+	userController := controllers.NewUserController(userService)
 	s3Controller := controllers.NewS3Controller(s3Service)
 
->>>>>>> main:cmd/main/main.go
 	// Swagger UI route
 	docs.SwaggerInfo.BasePath = ""
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
@@ -66,11 +58,8 @@ func main() {
 
 	// Add routes
 	routes.PackageRoutes(r, packageController)
-<<<<<<< HEAD:cmd/main.go
 	routes.UserRoutes(r, userController)
-=======
 	routes.S3Routes(r, s3Controller)
->>>>>>> main:cmd/main/main.go
 
 	r.Run()
 }
