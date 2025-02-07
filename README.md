@@ -12,27 +12,31 @@ make run
 
 OR
 
-### Manual run
-
-Firstly, create go.tidy
+### Docker-compose (docker required)
 
 ```
-go mod tidy
-```
-
-Then, create docs for swaggerUI
-
-```
-swag init -g ./cmd/main.go -o ./docs
-```
-
-Finally, run at localhost:8080
-
-```
-go run ./cmd/main.go
+docker-compose up --build -d
 ```
 
 ## Swagger UI
 
 This project has used swagger UI to generate API documentation  
 The swagger UI run at `localhost:8080/swagger/index.html`
+
+update swagger by
+
+```
+swag init -g ./cmd/main.go -o ./docs
+```
+
+## Typescript type generation
+
+This project used typescriptify to generate types for typescript
+
+generate by
+
+```
+go run ./cmd/tsgen/tsgen.go
+```
+
+the generated file will be stored in `/gen/api_types.ts`

@@ -36,3 +36,6 @@ go.sum
 
 # Firebase private key for authentication
 private_key.json
+
+# Generated files
+gen/

@@ -1,0 +1,11 @@
+services:
+  go-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: go_api
+    restart: always
+    env_file:
+      - ./.env
+    ports:
+      - "8080:8080"
