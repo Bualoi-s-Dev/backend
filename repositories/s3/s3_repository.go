@@ -102,7 +102,7 @@ func (s *S3Repository) UploadBase64(fileBytes []byte, key string, contentType st
 		return "", uploadErr
 	}
 
-	return key, nil
+	return "/" + key, nil
 }
 
 func (s *S3Repository) DeleteObject(key string) error {
