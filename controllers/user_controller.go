@@ -3,8 +3,8 @@ package controllers
 import (
 	"net/http"
 
-	"github.com/Bualoi-s-Dev/backend/services"
 	"github.com/Bualoi-s-Dev/backend/models"
+	"github.com/Bualoi-s-Dev/backend/services"
 	"github.com/gin-gonic/gin"
 )
 
@@ -16,14 +16,14 @@ func NewUserController(service *services.UserService) *UserController {
 	return &UserController{Service: service}
 }
 
-// GetUserProfile godoc
+// GetUserJWT godoc
 // @Tags User
 // @Summary Get a user from jwt
 // @Description Retrieve a user which matched email from the database
 // @Success 200 {array} string "OK"
 // @Failure 400 {object} string "Bad Request"
 // @Router /user/me [get]
-func (uc *UserController) GetUserProfile(c *gin.Context) {
+func (uc *UserController) GetUserJWT(c *gin.Context) {
 	// Retrieve user from context (set by FirebaseAuthMiddleware)
 	user, exists := c.Get("user")
 	if !exists {
@@ -35,38 +35,7 @@ func (uc *UserController) GetUserProfile(c *gin.Context) {
 	c.JSON(http.StatusOK, user)
 }
 
-func (uc *UserController) UpdateUserProfile(c *gin.Context) {
-	user, exists := c.Get("user")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
-		return
-	}
-
-	// convert user to be struct
-	userData, ok := user.(*models.User)
-	if !ok || userData.Email == "" {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user data"})
-		return
-	}
-
-	// updated requested data from request body using "ShouldBindJSON"
-	var updates models.User
-	if err := c.ShouldBindJSON(&updates); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
-		return
-	}
-
-	// update data
-	err := uc.Service.UpdateUser(c.Request.Context(), userData.Email, &updates)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update user"})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"message": "User updated successfully"})
-}
-
-func (uc *UserController) GetUserProfilePic(c *gin.Context) {
+func (uc *UserController) GetUserProfile(c *gin.Context) {
 	// Retrieve user from context (set by FirebaseAuthMiddleware)
 	user, exists := c.Get("user")
 	if !exists {
@@ -82,17 +51,17 @@ func (uc *UserController) GetUserProfilePic(c *gin.Context) {
 	}
 
 	// Call the service to get the user's profile picture URL
-	profilePicURL, err := uc.Service.GetUserProfilePic(c.Request.Context(), userData.Email)
+	userDb, err := uc.Service.GetUser(c.Request.Context(), userData.Email)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve profile picture"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get user data"})
 		return
 	}
 
 	// Return the profile picture URL
-	c.JSON(http.StatusOK, gin.H{"profilePicture": profilePicURL})
+	c.JSON(http.StatusOK, userDb)
 }
 
-func (uc *UserController) UpdateUserProfilePic(c *gin.Context) {
+func (uc *UserController) UpdateUserProfile(c *gin.Context) {
 	// Retrieve user from context (set by FirebaseAuthMiddleware)
 	user, exists := c.Get("user")
 	if !exists {
@@ -107,19 +76,18 @@ func (uc *UserController) UpdateUserProfilePic(c *gin.Context) {
 		return
 	}
 
-	// Retrieve the file from the request ex. <input type="file" name="profile_pic" />
-	_, fileHeader, err := c.Request.FormFile("profile_pic")
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to get file"})
+	var userBody models.User
+	if err := c.ShouldBindJSON(&userBody); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	// Call the service to update the user's profile picture
-	err = uc.Service.UpdateUserProfilePic(c.Request.Context(), userData.Email, fileHeader)
+	newUser, err := uc.Service.UpdateUser(c.Request.Context(), userData.ID.Hex(), userData.Email, &userBody)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update profile picture"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update profile, " + err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Profile picture updated successfully"})
+	c.JSON(http.StatusOK, newUser)
 }

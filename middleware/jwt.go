@@ -64,18 +64,18 @@ func FirebaseAuthMiddleware(authClient *auth.Client, userCollection *mongo.Colle
 
 		// Check if user exists by email
 		ctx := context.Background()
-		user, err := userService.GetUserProfile(ctx, email)
+		user, err := userService.GetUser(ctx, email)
 		if err != nil {
 			log.Printf("[INFO] User not found: %s. Creating new user...", email)
 
 			// Create new user
 			newUser := models.User{
-				Email:    email,
-				Name:     "",
-				Gender:   "",
-				Profile:  "",
-				Phone:    "",
-				Location: "",
+				Email:          email,
+				Name:           "",
+				Gender:         "",
+				Profile:        "",
+				Phone:          "",
+				Location:       "",
 				IsPhotographer: false,
 			}
 

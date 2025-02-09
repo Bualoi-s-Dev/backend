@@ -34,26 +34,17 @@ func (repo *UserRepository) CreateUser(ctx context.Context, user *models.User) e
 	return nil
 }
 
-func (repo *UserRepository) UpdateUser(ctx context.Context, email string, updates *models.User) error {
+func (repo *UserRepository) UpdateUser(ctx context.Context, email string, updates *models.User) (*models.User, error) {
 	updateQuery := bson.M{"$set": updates}
 	_, err := repo.Collection.UpdateOne(ctx, bson.M{"email": email}, updateQuery)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return nil
-}
-
-func (repo *UserRepository) UpdateUserField(ctx context.Context, email string, updates map[string]interface{}) error {
-	updateQuery := bson.M{"$set": updates}
-	_, err := repo.Collection.UpdateOne(ctx, bson.M{"email": email}, updateQuery)
-	if err != nil {
-		return err
-	}
-	return nil
+	return updates, nil
 }
 
 func (repo *UserRepository) GetUserProfilePic(ctx context.Context, email string) (string, error) {
-	user, err := repo.GetUserByEmail(ctx, email) 
+	user, err := repo.GetUserByEmail(ctx, email)
 	if err != nil {
 		return "", err
 	}

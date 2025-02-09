@@ -54,8 +54,8 @@ func main() {
 	userRepo := repositories.NewUserRepository(client.Collection("User"))
 	s3Repo := s3.NewS3Repository()
 
-	userService := services.NewUserService(userRepo)
 	s3Service := services.NewS3Service(s3Repo)
+	userService := services.NewUserService(userRepo, s3Service)
 	packageService := services.NewPackageService(packageRepo, s3Service)
 
 	packageController := controllers.NewPackageController(packageService, s3Service)
