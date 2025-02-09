@@ -19,7 +19,7 @@ func NewUserController(service *services.UserService) *UserController {
 // GetUserJWT godoc
 // @Tags User
 // @Summary Get a user from jwt
-// @Description Retrieve a user which matched email from the database
+// @Description Retrieve a user from firebase jwt
 // @Success 200 {array} string "OK"
 // @Failure 400 {object} string "Bad Request"
 // @Router /user/me [get]
@@ -35,6 +35,13 @@ func (uc *UserController) GetUserJWT(c *gin.Context) {
 	c.JSON(http.StatusOK, user)
 }
 
+// GetUserProfile godoc
+// @Tags User
+// @Summary Get a user from database
+// @Description Retrieve a user from database
+// @Success 200 {array} string "OK"
+// @Failure 400 {object} string "Bad Request"
+// @Router /user/profile [get]
 func (uc *UserController) GetUserProfile(c *gin.Context) {
 	// Retrieve user from context (set by FirebaseAuthMiddleware)
 	user, exists := c.Get("user")
@@ -61,6 +68,13 @@ func (uc *UserController) GetUserProfile(c *gin.Context) {
 	c.JSON(http.StatusOK, userDb)
 }
 
+// UpdateUserProfile godoc
+// @Tags User
+// @Summary Update user data
+// @Description Receive a user data and update it
+// @Success 200 {array} string "OK"
+// @Failure 400 {object} string "Bad Request"
+// @Router /user/profile [put]
 func (uc *UserController) UpdateUserProfile(c *gin.Context) {
 	// Retrieve user from context (set by FirebaseAuthMiddleware)
 	user, exists := c.Get("user")
