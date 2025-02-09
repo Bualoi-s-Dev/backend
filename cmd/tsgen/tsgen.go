@@ -14,17 +14,22 @@ func main() {
 	converter := typescriptify.New()
 
 	// Add models
-	converter.Add(models.Package{})
+	converter.
+		Add(models.Package{}).
+		AddEnum(models.ValidPackageTypes)
 
 	// Change to interface
 	converter.CreateInterface = true
 
 	// Create dir
-	dirErr := os.MkdirAll("gen", os.ModePerm)
+	dirErr := os.MkdirAll("gen/backup", os.ModePerm)
 	if dirErr != nil {
 		log.Fatalf("Error creating directory: %v", dirErr)
 		return
 	}
+
+	// Backup
+	converter.BackupDir = "gen/backup"
 
 	// Convert
 	err := converter.ConvertToFile(outputFile)

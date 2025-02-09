@@ -4,9 +4,9 @@ COPY . /app
 WORKDIR /app
 
 RUN go install github.com/swaggo/swag/cmd/swag@latest
-RUN go mod tidy
 RUN swag init -g ./cmd/main/main.go -o ./docs
-RUN CGO_ENABLED=0 go build -ldflags '-s -w -extldflags "-static"' -o /app/appbin /app/cmd/main.go
+RUN go mod tidy
+RUN CGO_ENABLED=0 go build -ldflags '-s -w -extldflags "-static"' -o /app/appbin /app/cmd/main/main.go
 
 # Download Swagger UI
 RUN mkdir -p /app/swagger-ui && \

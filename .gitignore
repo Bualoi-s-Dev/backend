@@ -39,3 +39,6 @@ private_key.json
 
 # Generated files
 gen/
+
+# Generated docs
+docs/
