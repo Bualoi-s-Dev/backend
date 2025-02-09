@@ -2,7 +2,7 @@ package repositories
 
 import (
 	"context"
-
+	"fmt"
 
 	"github.com/Bualoi-s-Dev/backend/models"
 	"go.mongodb.org/mongo-driver/bson"
@@ -34,11 +34,24 @@ func (repo *UserRepository) CreateUser(ctx context.Context, user *models.User) e
 	return nil
 }
 
-func (repo *UserRepository) UpdateUser(ctx context.Context, email string, updates map[string]interface{}) error {
+func (repo *UserRepository) UpdateUser(ctx context.Context, email string, updates *models.User) (*models.User, error) {
 	updateQuery := bson.M{"$set": updates}
 	_, err := repo.Collection.UpdateOne(ctx, bson.M{"email": email}, updateQuery)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return nil
+	return updates, nil
+}
+
+func (repo *UserRepository) GetUserProfilePic(ctx context.Context, email string) (string, error) {
+	user, err := repo.GetUserByEmail(ctx, email)
+	if err != nil {
+		return "", err
+	}
+
+	if user.Profile == "" {
+		return "", fmt.Errorf("no profile picture found for user")
+	}
+
+	return user.Profile, nil
 }

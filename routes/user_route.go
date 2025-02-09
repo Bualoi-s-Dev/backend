@@ -8,6 +8,9 @@ import (
 func UserRoutes(router *gin.Engine, userController *controllers.UserController) {
 	userRoutes := router.Group("/user")
 	{
-		userRoutes.GET("/me", userController.GetUserProfile)
+		userRoutes.GET("/me", userController.GetUserJWT)
+
+		userRoutes.GET("/profile", userController.GetUserProfile)
+		userRoutes.PUT("/profile", userController.UpdateUserProfile)
 	}
 }

@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"errors"
+	"fmt"
 	"log"
 	"mime/multipart"
 	"os"
@@ -112,24 +113,20 @@ func (s *S3Repository) DeleteObject(key string) error {
 	}
 
 	_, err := s.Client.DeleteObject(context.TODO(), input)
+	fmt.Println("err :", err)
 	if err != nil {
-		var noKey *types.NoSuchKey
 		var apiErr *smithy.GenericAPIError
-		if errors.As(err, &noKey) {
-			log.Printf("Object %s does not exist in %s.\n", key, bucket)
-			err = noKey
-		} else if errors.As(err, &apiErr) {
+		if errors.As(err, &apiErr) {
 			switch apiErr.ErrorCode() {
 			case "AccessDenied":
-				log.Printf("Access denied: cannot delete object %s from %s.\n", key, bucket)
-				err = nil
-				// case "InvalidArgument":
-				// 	if bypassGovernance {
-				// 		log.Printf("You cannot specify bypass governance on a bucket without lock enabled.")
-				// 		err = nil
-				// 	}
+				return fmt.Errorf("access denied: cannot delete object %s from %s", key, bucket)
+			default:
+				return fmt.Errorf("failed to delete object %s from %s: %v", key, bucket, err)
 			}
 		}
+		return fmt.Errorf("unexpected error deleting object %s from %s: %v", key, bucket, err)
 	}
+
+	fmt.Printf("Object %s deleted (or did not exist) from %s.\n", key, bucket)
 	return err
 }
