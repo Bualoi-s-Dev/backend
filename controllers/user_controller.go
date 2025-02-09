@@ -27,3 +27,34 @@ func (uc *UserController) GetUserProfile(c *gin.Context) {
 	// Return user profile
 	c.JSON(http.StatusOK, user)
 }
+
+func (uc *UserController) UpdateUserProfile(c *gin.Context) {
+	user, exists := c.Get("user")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	// convert user to be struct
+	userData, ok := user.(*models.User)
+	if !ok || userData.Email == "" {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user data"})
+		return
+	}
+
+	// updated requested data from request body using "ShouldBindJSON"
+	var updates models.User
+	if err := c.ShouldBindJSON(&updates); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
+		return
+	}
+
+	// update data
+	err := uc.Service.UpdateUser(c.Request.Context(), userData.Email, &updates)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update user"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "User updated successfully"})
+}

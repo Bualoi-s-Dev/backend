@@ -9,5 +9,6 @@ func UserRoutes(router *gin.Engine, userController *controllers.UserController) 
 	userRoutes := router.Group("/user")
 	{
 		userRoutes.GET("/me", userController.GetUserProfile)
+		userRoutes.PUT("/me", userController.UpdateUserProfile)
 	}
 }
