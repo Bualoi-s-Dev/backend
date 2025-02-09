@@ -2,17 +2,17 @@ package middleware
 
 import (
 	"context"
+	"log"
+	"net/http"
 	"os"
 	"strings"
-	"net/http"
-	"log"
 
 	"github.com/Bualoi-s-Dev/backend/models"
 	"github.com/Bualoi-s-Dev/backend/services"
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/mongo"
 
-	"firebase.google.com/go"
+	firebase "firebase.google.com/go"
 	"firebase.google.com/go/auth"
 	"google.golang.org/api/option"
 )
@@ -32,6 +32,7 @@ func InitializeFirebaseAuth() *auth.Client {
 
 func FirebaseAuthMiddleware(authClient *auth.Client, userCollection *mongo.Collection, userService *services.UserService) gin.HandlerFunc {
 	return func(c *gin.Context) {
+
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
 			log.Println("[ERROR] Missing Authorization header")
@@ -69,11 +70,11 @@ func FirebaseAuthMiddleware(authClient *auth.Client, userCollection *mongo.Colle
 
 			// Create new user
 			newUser := models.User{
-				Email: email,
-				Name: "", 
-				Gender: "",
-				Profile: "",
-				Phone: "",
+				Email:    email,
+				Name:     "",
+				Gender:   "",
+				Profile:  "",
+				Phone:    "",
 				Location: "",
 			}
 

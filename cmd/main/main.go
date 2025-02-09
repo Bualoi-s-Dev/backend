@@ -8,16 +8,12 @@ import (
 
 	"github.com/Bualoi-s-Dev/backend/configs"
 	"github.com/Bualoi-s-Dev/backend/controllers"
-	"github.com/Bualoi-s-Dev/backend/docs"
 	"github.com/Bualoi-s-Dev/backend/middleware"
 	"github.com/Bualoi-s-Dev/backend/models"
 	repositories "github.com/Bualoi-s-Dev/backend/repositories/database"
 	s3 "github.com/Bualoi-s-Dev/backend/repositories/s3"
 	"github.com/Bualoi-s-Dev/backend/routes"
 	"github.com/Bualoi-s-Dev/backend/services"
-
-	swaggerfiles "github.com/swaggo/files"
-	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 // @title PhotoMatch API
@@ -66,13 +62,12 @@ func main() {
 	userController := controllers.NewUserController(userService)
 	s3Controller := controllers.NewS3Controller(s3Service)
 
-	// Swagger UI route
-	docs.SwaggerInfo.BasePath = ""
-	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
-
-	r.Use(middleware.FirebaseAuthMiddleware(authClient, client.Collection("User"), userService))
+	// Swagger
+	routes.SwaggerRoutes(r)
 
 	// Add routes
+	r.Use(middleware.FirebaseAuthMiddleware(authClient, client.Collection("User"), userService))
+
 	routes.PackageRoutes(r, packageController)
 	routes.UserRoutes(r, userController)
 	routes.S3Routes(r, s3Controller)
