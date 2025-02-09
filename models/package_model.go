@@ -5,10 +5,10 @@ import (
 )
 
 type Package struct {
-	ID     primitive.ObjectID `bson:"_id,omitempty" json:"id,omitempty"`
-	Title  string             `bson:"title" json:"title" binding:"required"`
-	Type   PackageType        `bson:"type" json:"type" binding:"required,package_type"`
-	Photos []string           `bson:"photos" json:"photos"`
+	ID        primitive.ObjectID `bson:"_id,omitempty" json:"id,omitempty"`
+	Title     string             `form:"title" bson:"title" json:"title" binding:"required"`
+	Type      PackageType        `form:"type" bson:"type" json:"type" binding:"required,package_type"`
+	PhotoUrls []string           `bson:"photos" json:"photos"`
 }
 
 type PackageType string

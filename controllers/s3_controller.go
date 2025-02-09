@@ -28,9 +28,9 @@ func (s *S3Controller) UploadProfileImage(c *gin.Context) {
 	url, uploadErr := s.Service.UploadFile(file, username)
 	if uploadErr != nil {
 		log.Println(uploadErr)
-		c.AbortWithError(500, uploadErr)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to upload image."})
 	} else {
-		log.Println("Upload image suceessfully:", url)
+		c.JSON(http.StatusOK, gin.H{"message": "Upload image successfully: " + url})
 	}
 }
 func (s *S3Controller) RemoveProfileImage(c *gin.Context) {
@@ -39,8 +39,8 @@ func (s *S3Controller) RemoveProfileImage(c *gin.Context) {
 	deleteErr := s.Service.DeleteObject(username)
 	if deleteErr != nil {
 		log.Println(deleteErr)
-		c.AbortWithError(500, deleteErr)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to remove image."})
 	} else {
-		log.Println("Removed image suceessfully:")
+		c.JSON(http.StatusOK, gin.H{"message": "Remove image successfully"})
 	}
 }
