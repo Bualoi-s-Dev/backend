@@ -27,30 +27,79 @@ func (s *PackageService) GetById(ctx context.Context, packageId string) (*models
 }
 
 func (s *PackageService) CreateOne(ctx context.Context, itemInput *models.PackageRequest) (*models.Package, error) {
-	item := models.Package{
-		Title: itemInput.Title,
-		Type:  itemInput.Type,
-	}
-	item.ID = primitive.NewObjectID()
+	item := MapRequestToPackage(itemInput, nil)
 
-	for idx, photo := range itemInput.Photos {
-		photoUrl, err := s.S3Service.UploadBase64([]byte(photo), "package/"+item.ID.Hex()+"_"+strconv.Itoa(idx+1))
-		if err != nil {
-			return nil, err
-		}
-		item.PhotoUrls = append(item.PhotoUrls, photoUrl)
+	photoUrls, upErr := s.UploadPackagePhotos(itemInput.Photos, item.ID.Hex())
+	if upErr != nil {
+		return nil, upErr
 	}
+	item.PhotoUrls = photoUrls
 
-	_, err := s.Repo.CreateOne(ctx, &item)
-	return &item, err
+	_, err := s.Repo.CreateOne(ctx, item)
+	return item, err
 }
 
-func (s *PackageService) UpdateOne(ctx context.Context, packageId string, updates map[string]interface{}) error {
-	_, err := s.Repo.UpdateOne(ctx, packageId, updates)
-	return err
+func (s *PackageService) ReplaceOne(ctx context.Context, packageId string, updates *models.PackageRequest) (*models.Package, error) {
+	item := MapRequestToPackage(updates, &packageId)
+
+	// Delete old photos
+	curPackage, findErr := s.GetById(ctx, packageId)
+	if findErr != nil {
+		return nil, findErr
+	}
+	delErr := s.DeletePackagePhotos(curPackage.PhotoUrls)
+	if delErr != nil {
+		return nil, delErr
+	}
+
+	// Upload new photos
+	photoUrls, upErr := s.UploadPackagePhotos(updates.Photos, packageId)
+	if upErr != nil {
+		return nil, upErr
+	}
+	item.PhotoUrls = photoUrls
+
+	_, err := s.Repo.ReplaceOne(ctx, packageId, item)
+	return item, err
 }
 
 func (s *PackageService) DeleteOne(ctx context.Context, packageId string) error {
 	_, err := s.Repo.DeleteOne(ctx, packageId)
 	return err
+}
+
+func MapRequestToPackage(req *models.PackageRequest, id *string) *models.Package {
+	item := models.Package{
+		Title: req.Title,
+		Type:  req.Type,
+	}
+	if id != nil {
+		objectId, _ := primitive.ObjectIDFromHex(*id)
+		item.ID = objectId
+	} else {
+		item.ID = primitive.NewObjectID()
+	}
+	return &item
+}
+
+func (s *PackageService) UploadPackagePhotos(photoBase64 []string, id string) ([]string, error) {
+	var photoUrls []string
+	for idx, photo := range photoBase64 {
+		photoUrl, err := s.S3Service.UploadBase64([]byte(photo), "package/"+id+"_"+strconv.Itoa(idx+1))
+		if err != nil {
+			return nil, err
+		}
+		photoUrls = append(photoUrls, photoUrl)
+	}
+	return photoUrls, nil
+}
+
+func (s *PackageService) DeletePackagePhotos(photoUrls []string) error {
+	for _, photo := range photoUrls {
+		err := s.S3Service.DeleteObject(photo)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
