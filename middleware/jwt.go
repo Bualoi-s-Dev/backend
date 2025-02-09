@@ -76,6 +76,7 @@ func FirebaseAuthMiddleware(authClient *auth.Client, userCollection *mongo.Colle
 				Profile:  "",
 				Phone:    "",
 				Location: "",
+				IsPhotographer: false,
 			}
 
 			if err := userService.CreateUser(ctx, &newUser); err != nil {
