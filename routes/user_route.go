@@ -10,5 +10,7 @@ func UserRoutes(router *gin.Engine, userController *controllers.UserController) 
 	{
 		userRoutes.GET("/me", userController.GetUserProfile)
 		userRoutes.PUT("/me", userController.UpdateUserProfile)
+
+		userRoutes.GET("/profile", userController.GetUserProfilePic)
 	}
 }
