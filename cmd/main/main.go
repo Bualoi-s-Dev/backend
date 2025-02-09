@@ -54,11 +54,11 @@ func main() {
 	userRepo := repositories.NewUserRepository(client.Collection("User"))
 	s3Repo := s3.NewS3Repository()
 
-	packageService := services.NewPackageService(packageRepo)
 	userService := services.NewUserService(userRepo)
 	s3Service := services.NewS3Service(s3Repo)
+	packageService := services.NewPackageService(packageRepo, s3Service)
 
-	packageController := controllers.NewPackageController(packageService)
+	packageController := controllers.NewPackageController(packageService, s3Service)
 	userController := controllers.NewUserController(userService)
 	s3Controller := controllers.NewS3Controller(s3Service)
 

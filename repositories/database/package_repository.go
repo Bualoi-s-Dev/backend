@@ -2,7 +2,6 @@ package repositories
 
 import (
 	"context"
-	"errors"
 
 	"github.com/Bualoi-s-Dev/backend/models"
 	"go.mongodb.org/mongo-driver/bson"
@@ -52,22 +51,13 @@ func (repo *PackageRepository) GetById(ctx context.Context, id string) (*models.
 func (repo *PackageRepository) CreateOne(ctx context.Context, item *models.Package) (*mongo.InsertOneResult, error) {
 	return repo.Collection.InsertOne(ctx, item)
 }
-func (repo *PackageRepository) UpdateOne(ctx context.Context, id string, updates bson.M) (*mongo.UpdateResult, error) {
+func (repo *PackageRepository) ReplaceOne(ctx context.Context, id string, updates *models.Package) (*mongo.UpdateResult, error) {
 	objectId, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return nil, err
 	}
 
-	// Check no empty update
-	if len(updates) == 0 {
-		return nil, errors.New("no fields to update")
-	}
-
-	update := bson.M{
-		"$set": updates,
-	}
-
-	return repo.Collection.UpdateOne(ctx, bson.M{"_id": objectId}, update)
+	return repo.Collection.ReplaceOne(ctx, bson.M{"_id": objectId}, updates)
 }
 
 func (repo *PackageRepository) DeleteOne(ctx context.Context, id string) (*mongo.DeleteResult, error) {
