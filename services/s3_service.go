@@ -33,7 +33,7 @@ func (s *S3Service) UploadBase64(fileBytes []byte, key string) (string, error) {
 		return "", err
 	}
 
-	return s.Repo.UploadBase64(imageData, key, ext)
+	return s.Repo.UploadBase64(imageData, "/"+key, ext)
 }
 
 func (s *S3Service) DeleteObject(key string) error {
