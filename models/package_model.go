@@ -5,7 +5,7 @@ import (
 )
 
 type Package struct {
-	ID        primitive.ObjectID `bson:"_id,omitempty" json:"id,omitempty"`
+	ID        primitive.ObjectID `bson:"_id,omitempty" json:"id,omitempty" ts_type:"string"`
 	Title     string             `form:"title" bson:"title" json:"title" binding:"required"`
 	Type      PackageType        `form:"type" bson:"type" json:"type" binding:"required,package_type"`
 	PhotoUrls []string           `bson:"photo_urls" json:"photo_urls"`
