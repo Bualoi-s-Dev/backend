@@ -64,6 +64,16 @@ func (s *PackageService) ReplaceOne(ctx context.Context, packageId string, updat
 }
 
 func (s *PackageService) DeleteOne(ctx context.Context, packageId string) error {
+	// Delete photos
+	curPackage, findErr := s.GetById(ctx, packageId)
+	if findErr != nil {
+		return findErr
+	}
+	delErr := s.DeletePackagePhotos(curPackage.PhotoUrls)
+	if delErr != nil {
+		return delErr
+	}
+
 	_, err := s.Repo.DeleteOne(ctx, packageId)
 	return err
 }
