@@ -6,6 +6,10 @@ import (
 )
 
 func S3Routes(router *gin.Engine, ctrl *controllers.S3Controller) {
-	router.POST("/profile/upload/image", ctrl.UploadProfileImage)
-	router.DELETE("/profile/delete/image", ctrl.RemoveProfileImage)
+	group := router.Group("/s3/profile")
+	{
+		group.POST("/upload/image", ctrl.UploadProfileImage)
+		group.POST("/upload/image/base64", ctrl.UploadBase64ProfileImage)
+		group.DELETE("/delete/image", ctrl.RemoveProfileImage)
+	}
 }

@@ -5,6 +5,7 @@ import (
 	"log"
 	"mime/multipart"
 	"os"
+	"strings"
 
 	"context"
 
@@ -24,17 +25,17 @@ type S3Repository struct {
 }
 type S3Uploaders struct {
 	DefaultUploader    *manager.Uploader
-	ProfileImgUploader *manager.Uploader
+	LimitedImgUploader *manager.Uploader
 }
 
 func NewUploaders(client *s3.Client) *S3Uploaders {
 	DefaultUploader := manager.NewUploader(client)
-	ProfileImgUploader := manager.NewUploader(client, func(u *manager.Uploader) {
+	LimitedImgUploader := manager.NewUploader(client, func(u *manager.Uploader) {
 		u.PartSize = 8 << 20 // 8 MiB
 	})
 	return &S3Uploaders{
 		DefaultUploader:    DefaultUploader,
-		ProfileImgUploader: ProfileImgUploader,
+		LimitedImgUploader: LimitedImgUploader,
 	}
 }
 
@@ -69,17 +70,38 @@ func (s *S3Repository) UploadFile(file *multipart.FileHeader, key string) (strin
 		return "", err
 	}
 
-	result, uploadErr := s.Uploaders.ProfileImgUploader.Upload(context.TODO(), &s3.PutObjectInput{
-		Bucket: aws.String(s.BucketName),
-		Key:    aws.String(key),
-		Body:   uploadFile,
+	_, uploadErr := s.Uploaders.LimitedImgUploader.Upload(context.TODO(), &s3.PutObjectInput{
+		Bucket:             aws.String(s.BucketName),
+		Key:                aws.String(key),
+		Body:               uploadFile,
+		ACL:                types.ObjectCannedACLPublicRead,             // Ensure public access
+		ContentDisposition: aws.String("inline"),                        // Make file viewable in browser
+		ContentType:        aws.String(file.Header.Get("Content-Type")), // Preserve file type
+	})
+
+	if uploadErr != nil {
+		log.Println("Error while uploading")
+		return "", uploadErr
+	}
+
+	return key, nil
+}
+
+func (s *S3Repository) UploadBase64(fileBytes []byte, key string, contentType string) (string, error) {
+	_, uploadErr := s.Uploaders.LimitedImgUploader.Upload(context.TODO(), &s3.PutObjectInput{
+		Bucket:             aws.String(s.BucketName),
+		Key:                aws.String(key),
+		Body:               strings.NewReader(string(fileBytes)),
+		ACL:                types.ObjectCannedACLPublicRead, // Ensure public access
+		ContentDisposition: aws.String("inline"),            // Make file viewable in browser
+		ContentType:        aws.String(contentType),         // Preserve file type
 	})
 	if uploadErr != nil {
 		log.Println("Error while uploading")
 		return "", uploadErr
 	}
 
-	return result.Location, err
+	return key, nil
 }
 
 func (s *S3Repository) DeleteObject(key string) error {

@@ -9,11 +9,12 @@ import (
 )
 
 type PackageController struct {
-	Service *services.PackageService
+	Service   *services.PackageService
+	S3Service *services.S3Service
 }
 
-func NewPackageController(service *services.PackageService) *PackageController {
-	return &PackageController{Service: service}
+func NewPackageController(service *services.PackageService, s3Service *services.S3Service) *PackageController {
+	return &PackageController{Service: service, S3Service: s3Service}
 }
 
 // GetAllPackages godoc
@@ -60,12 +61,14 @@ func (ctrl *PackageController) GetOnePackage(c *gin.Context) {
 // @Router /package [post]
 // @x-order 3
 func (ctrl *PackageController) CreateOnePackage(c *gin.Context) {
-	var item models.Package
-	if err := c.ShouldBindJSON(&item); err != nil {
+	var itemInput models.PackageRequest
+	if err := c.ShouldBindJSON(&itemInput); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Bad request, " + err.Error()})
 		return
 	}
-	if err := ctrl.Service.CreateOne(c.Request.Context(), &item); err != nil {
+
+	item, err := ctrl.Service.CreateOne(c.Request.Context(), &itemInput)
+	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create item, " + err.Error()})
 		return
 	}
