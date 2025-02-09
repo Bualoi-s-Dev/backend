@@ -17,6 +17,9 @@ func main() {
 	converter.
 		Add(models.Package{}).
 		AddEnum(models.ValidPackageTypes)
+	converter.
+		Add(models.User{}).
+		AddEnum(models.ValidBankNames)
 
 	// Change to interface
 	converter.CreateInterface = true

@@ -18,8 +18,23 @@ func ValidatePackageType(fl validator.FieldLevel) bool {
 	return false
 }
 
+// ValidateBankname checks if the BankName is valid
+func ValidateBankName(fl validator.FieldLevel) bool {
+	value := fl.Field().Interface().(BankName)
+
+	// Check if the value exists in the validBankNames slice
+	for _, validBank := range ValidBankNames {
+		if value == validBank.Value {
+			return true
+		}
+	}
+
+	return false
+}
+
 // RegisterCustomValidators registers custom validators to the validator
 // Add more validators here
 func RegisterCustomValidators(v *validator.Validate) {
 	v.RegisterValidation("package_type", ValidatePackageType)
+	v.RegisterValidation("bank_name", ValidateBankName)
 }
