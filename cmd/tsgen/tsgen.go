@@ -16,6 +16,7 @@ func main() {
 	// Add models
 	converter.
 		Add(models.Package{}).
+		Add(models.PackageRequest{}).
 		AddEnum(models.ValidPackageTypes)
 	converter.
 		Add(models.User{}).

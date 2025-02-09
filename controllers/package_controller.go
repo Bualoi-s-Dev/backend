@@ -9,11 +9,12 @@ import (
 )
 
 type PackageController struct {
-	Service *services.PackageService
+	Service   *services.PackageService
+	S3Service *services.S3Service
 }
 
-func NewPackageController(service *services.PackageService) *PackageController {
-	return &PackageController{Service: service}
+func NewPackageController(service *services.PackageService, s3Service *services.S3Service) *PackageController {
+	return &PackageController{Service: service, S3Service: s3Service}
 }
 
 // GetAllPackages godoc
@@ -60,12 +61,14 @@ func (ctrl *PackageController) GetOnePackage(c *gin.Context) {
 // @Router /package [post]
 // @x-order 3
 func (ctrl *PackageController) CreateOnePackage(c *gin.Context) {
-	var item models.Package
-	if err := c.ShouldBindJSON(&item); err != nil {
+	var itemInput models.PackageRequest
+	if err := c.ShouldBindJSON(&itemInput); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Bad request, " + err.Error()})
 		return
 	}
-	if err := ctrl.Service.CreateOne(c.Request.Context(), &item); err != nil {
+
+	item, err := ctrl.Service.CreateOne(c.Request.Context(), &itemInput)
+	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create item, " + err.Error()})
 		return
 	}
@@ -78,21 +81,22 @@ func (ctrl *PackageController) CreateOnePackage(c *gin.Context) {
 // @Description Update a package in some field to the database
 // @Success 200 {array} string "OK"
 // @Failure 400 {object} string "Bad Request"
-// @Router /package/{id} [patch]
+// @Router /package/{id} [put]
 // @x-order 4
-func (ctrl *PackageController) UpdateOnePackage(c *gin.Context) {
+func (ctrl *PackageController) ReplaceOnePackage(c *gin.Context) {
 	id := c.Param("id")
-	var updates map[string]interface{}
+	var updates models.PackageRequest
 	if err := c.ShouldBindJSON(&updates); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Bad request, " + err.Error()})
 		return
 	}
 
-	if err := ctrl.Service.UpdateOne(c.Request.Context(), id, updates); err != nil {
+	item, err := ctrl.Service.ReplaceOne(c.Request.Context(), id, &updates)
+	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update item, " + err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"message": "Item updated successfully"})
+	c.JSON(http.StatusOK, item)
 }
 
 // DeleteOnePackage godoc
