@@ -5,16 +5,16 @@ import (
 )
 
 type Package struct {
-	ID        primitive.ObjectID `bson:"_id,omitempty" json:"id,omitempty" ts_type:"string"`
-	Title     string             `form:"title" bson:"title" json:"title" binding:"required"`
-	Type      PackageType        `form:"type" bson:"type" json:"type" binding:"required,package_type"`
-	PhotoUrls []string           `bson:"photo_urls" json:"photo_urls"`
+	ID        primitive.ObjectID `bson:"_id,omitempty" json:"id,omitempty" ts_type:"string" example:"12345678abcd"`
+	Title     string             `form:"title" bson:"title" json:"title" binding:"required" example:"Wedding Bliss Package"`
+	Type      PackageType        `form:"type" bson:"type" json:"type" binding:"required,package_type" example:"WEDDING_BLISS"`
+	PhotoUrls []string           `bson:"photo_urls" json:"photo_urls" example:"/package/12345678abcd_1,/package/12345678abcd_2"`
 }
 
 type PackageRequest struct {
-	Title  string      `bson:"title" json:"title" binding:"required"`
-	Type   PackageType `bson:"type" json:"type" binding:"required,package_type"`
-	Photos []string    `json:"photos" binding:"required"`
+	Title  string      `bson:"title" json:"title" binding:"required" example:"Wedding Bliss Package"`
+	Type   PackageType `bson:"type" json:"type" binding:"required,package_type" example:"WEDDING_BLISS"`
+	Photos []string    `json:"photos" binding:"required" example:"thisisbase64image1,thisisbase64image2"`
 }
 
 type PackageType string
