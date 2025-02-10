@@ -6,6 +6,7 @@ import (
 
 	"github.com/Bualoi-s-Dev/backend/models"
 	repositories "github.com/Bualoi-s-Dev/backend/repositories/database"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type UserService struct {
@@ -45,4 +46,17 @@ func (s *UserService) UpdateUserWithNewImage(ctx context.Context, userId string,
 
 func (s *UserService) UpdateUser(ctx context.Context, email string, updates *models.User) (*models.User, error) {
 	return s.Repo.UpdateUser(ctx, email, updates)
+}
+
+func (s *UserService) VerifyShowcase(ctx context.Context, ownedPackages []primitive.ObjectID, checkPackages []primitive.ObjectID) bool {
+	ownedMap := make(map[string]struct{}, len(ownedPackages))
+	for _, pkg := range ownedPackages {
+		ownedMap[pkg.Hex()] = struct{}{} // Using an empty struct{} to save memory
+	}
+	for _, pkgID := range checkPackages {
+		if _, ok := ownedMap[pkgID.Hex()]; !ok {
+			return false
+		}
+	}
+	return true
 }

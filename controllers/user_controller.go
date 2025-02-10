@@ -78,6 +78,12 @@ func (uc *UserController) UpdateUserProfile(c *gin.Context) {
 	}
 	userBody.ID = user.ID
 
+	isShowcaseValid := uc.Service.VerifyShowcase(c.Request.Context(), user.ShowcasePackages, userBody.ShowcasePackages)
+	if !isShowcaseValid {
+		c.JSON(http.StatusForbidden, gin.H{"error": "You do not own the package"})
+		return
+	}
+
 	// Call the service to update the user's profile, include picture
 	newUser, err := uc.Service.UpdateUserWithNewImage(c.Request.Context(), user.ID.Hex(), user.Email, &userBody)
 	if err != nil {
@@ -108,16 +114,10 @@ func (uc *UserController) UpdateUserShowcasePackage(c *gin.Context) {
 
 	// Check the owner
 	user := middleware.GetUserFromContext(c)
-
-	ownedMap := make(map[string]struct{}, len(user.Packages))
-	for _, pkg := range user.Packages {
-		ownedMap[pkg.Hex()] = struct{}{} // Using an empty struct{} to save memory
-	}
-	for _, pkgID := range req.PackageID {
-		if _, ok := ownedMap[pkgID.Hex()]; !ok {
-			c.JSON(http.StatusForbidden, gin.H{"error": "You do not own the package"})
-			return
-		}
+	isShowcaseValid := uc.Service.VerifyShowcase(c.Request.Context(), user.ShowcasePackages, req.PackageID)
+	if !isShowcaseValid {
+		c.JSON(http.StatusForbidden, gin.H{"error": "You do not own the package"})
+		return
 	}
 
 	user.ShowcasePackages = req.PackageID
