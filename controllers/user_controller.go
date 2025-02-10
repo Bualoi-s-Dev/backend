@@ -7,6 +7,7 @@ import (
 	"github.com/Bualoi-s-Dev/backend/models"
 	"github.com/Bualoi-s-Dev/backend/services"
 	"github.com/gin-gonic/gin"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type UserController struct {
@@ -62,6 +63,7 @@ func (uc *UserController) GetUserProfile(c *gin.Context) {
 // @Tags User
 // @Summary Update user data
 // @Description Receive a user data and update it, the profile is base64 and return in url
+// @Param request body models.User true "Update User Request"
 // @Success 200 {object} models.User
 // @Failure 400 {object} string "Bad Request"
 // @Router /user/profile [put]
@@ -84,4 +86,47 @@ func (uc *UserController) UpdateUserProfile(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, newUser)
+}
+
+type UserShowcasePackageRequest struct {
+	PackageID []primitive.ObjectID `json:"packageIds" binding:"required" example:"12345678abcd,12345678abcd"`
+}
+
+// UpdateUserShowcasePackage godoc
+// @Tags User
+// @Summary Update user showcase packages
+// @Description Receive showcase packageIds and put it in user data
+// @Param request body UserShowcasePackageRequest true "Update showcase packages Request"
+// @Success 200 {object} models.User
+// @Failure 400 {object} string "Bad Request"
+// @Router /user/profile/showcase [put]
+func (uc *UserController) UpdateUserShowcasePackage(c *gin.Context) {
+	var req UserShowcasePackageRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	}
+
+	// Check the owner
+	user := middleware.GetUserFromContext(c)
+
+	ownedMap := make(map[string]struct{}, len(user.Packages))
+	for _, pkg := range user.Packages {
+		ownedMap[pkg.Hex()] = struct{}{} // Using an empty struct{} to save memory
+	}
+	for _, pkgID := range req.PackageID {
+		if _, ok := ownedMap[pkgID.Hex()]; !ok {
+			c.JSON(http.StatusForbidden, gin.H{"error": "You do not own the package"})
+			return
+		}
+	}
+
+	user.ShowcasePackages = req.PackageID
+	_, err := uc.Service.UpdateUser(c.Request.Context(), user.Email, user)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update showcase packages, " + err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, user)
+	return
 }
