@@ -93,3 +93,12 @@ func FirebaseAuthMiddleware(authClient *auth.Client, userCollection *mongo.Colle
 		c.Next()
 	}
 }
+
+func GetUserFromContext(c *gin.Context) *models.User {
+	user, exists := c.Get("user")
+	if !exists {
+		log.Println("[ERROR] User not found in context")
+		return nil
+	}
+	return user.(*models.User)
+}

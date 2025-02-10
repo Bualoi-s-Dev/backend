@@ -3,18 +3,20 @@ package controllers
 import (
 	"net/http"
 
+	"github.com/Bualoi-s-Dev/backend/middleware"
 	"github.com/Bualoi-s-Dev/backend/models"
 	"github.com/Bualoi-s-Dev/backend/services"
 	"github.com/gin-gonic/gin"
 )
 
 type PackageController struct {
-	Service   *services.PackageService
-	S3Service *services.S3Service
+	Service     *services.PackageService
+	S3Service   *services.S3Service
+	UserService *services.UserService
 }
 
-func NewPackageController(service *services.PackageService, s3Service *services.S3Service) *PackageController {
-	return &PackageController{Service: service, S3Service: s3Service}
+func NewPackageController(service *services.PackageService, s3Service *services.S3Service, userService *services.UserService) *PackageController {
+	return &PackageController{Service: service, S3Service: s3Service, UserService: userService}
 }
 
 // GetAllPackages godoc
@@ -73,6 +75,14 @@ func (ctrl *PackageController) CreateOnePackage(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create item, " + err.Error()})
 		return
 	}
+
+	user := middleware.GetUserFromContext(c)
+	user.Packages = append(user.Packages, item.ID)
+	_, err = ctrl.UserService.UpdateUser(c.Request.Context(), user.Email, user)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update user, " + err.Error()})
+		return
+	}
 	c.JSON(http.StatusCreated, item)
 }
 
@@ -86,6 +96,14 @@ func (ctrl *PackageController) CreateOnePackage(c *gin.Context) {
 // @x-order 4
 func (ctrl *PackageController) ReplaceOnePackage(c *gin.Context) {
 	id := c.Param("id")
+	// Check the owner, only the owner can update the package
+	user := middleware.GetUserFromContext(c)
+	isOwner := CheckOwner(user, id)
+	if !isOwner {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized, not the owner of the package"})
+		return
+	}
+
 	var updates models.PackageRequest
 	if err := c.ShouldBindJSON(&updates); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Bad request, " + err.Error()})
@@ -110,9 +128,39 @@ func (ctrl *PackageController) ReplaceOnePackage(c *gin.Context) {
 // @x-order 5
 func (ctrl *PackageController) DeleteOnePackage(c *gin.Context) {
 	id := c.Param("id")
+	// Check the owner, only the owner can delete the package
+	user := middleware.GetUserFromContext(c)
+	isOwner := CheckOwner(user, id)
+	if !isOwner {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized, not the owner of the package"})
+		return
+	}
+
 	if err := ctrl.Service.DeleteOne(c.Request.Context(), id); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete item, " + err.Error()})
 		return
 	}
+
+	// Remove the package from the user's packages
+	for i, packageId := range user.Packages {
+		if packageId.Hex() == id {
+			user.Packages = append(user.Packages[:i], user.Packages[i+1:]...)
+			break
+		}
+	}
+	_, err := ctrl.UserService.UpdateUser(c.Request.Context(), user.Email, user)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update user, " + err.Error()})
+		return
+	}
 	c.JSON(http.StatusOK, gin.H{"message": "Item deleted successfully"})
+}
+
+func CheckOwner(user *models.User, packageId string) bool {
+	for _, id := range user.Packages {
+		if id.Hex() == packageId {
+			return true
+		}
+	}
+	return false
 }

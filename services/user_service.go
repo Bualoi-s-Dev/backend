@@ -25,7 +25,7 @@ func (s *UserService) CreateUser(ctx context.Context, user *models.User) error {
 	return s.Repo.CreateUser(ctx, user)
 }
 
-func (s *UserService) UpdateUser(ctx context.Context, userId string, email string, updates *models.User) (*models.User, error) {
+func (s *UserService) UpdateUserWithNewImage(ctx context.Context, userId string, email string, updates *models.User) (*models.User, error) {
 	if updates.Profile != "" {
 		key := "profile/" + userId
 		// Try to delete the existing profile picture
@@ -40,5 +40,9 @@ func (s *UserService) UpdateUser(ctx context.Context, userId string, email strin
 		updates.Profile = profileUrl
 	}
 
+	return s.Repo.UpdateUser(ctx, email, updates)
+}
+
+func (s *UserService) UpdateUser(ctx context.Context, email string, updates *models.User) (*models.User, error) {
 	return s.Repo.UpdateUser(ctx, email, updates)
 }

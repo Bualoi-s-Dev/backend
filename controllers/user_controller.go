@@ -3,6 +3,7 @@ package controllers
 import (
 	"net/http"
 
+	"github.com/Bualoi-s-Dev/backend/middleware"
 	"github.com/Bualoi-s-Dev/backend/models"
 	"github.com/Bualoi-s-Dev/backend/services"
 	"github.com/gin-gonic/gin"
@@ -44,21 +45,10 @@ func (uc *UserController) GetUserJWT(c *gin.Context) {
 // @Router /user/profile [get]
 func (uc *UserController) GetUserProfile(c *gin.Context) {
 	// Retrieve user from context (set by FirebaseAuthMiddleware)
-	user, exists := c.Get("user")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
-		return
-	}
-
-	// Convert user to be struct
-	userData, ok := user.(*models.User)
-	if !ok || userData.Email == "" {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user data"})
-		return
-	}
+	user := middleware.GetUserFromContext(c)
 
 	// Call the service to get the user's profile picture URL
-	userDb, err := uc.Service.GetUser(c.Request.Context(), userData.Email)
+	userDb, err := uc.Service.GetUser(c.Request.Context(), user.Email)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get user data"})
 		return
@@ -77,28 +67,17 @@ func (uc *UserController) GetUserProfile(c *gin.Context) {
 // @Router /user/profile [put]
 func (uc *UserController) UpdateUserProfile(c *gin.Context) {
 	// Retrieve user from context (set by FirebaseAuthMiddleware)
-	user, exists := c.Get("user")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
-		return
-	}
-
-	// Convert user to be struct
-	userData, ok := user.(*models.User)
-	if !ok || userData.Email == "" {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user data"})
-		return
-	}
+	user := middleware.GetUserFromContext(c)
 
 	var userBody models.User
 	if err := c.ShouldBindJSON(&userBody); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	userBody.ID = userData.ID
+	userBody.ID = user.ID
 
-	// Call the service to update the user's profile picture
-	newUser, err := uc.Service.UpdateUser(c.Request.Context(), userData.ID.Hex(), userData.Email, &userBody)
+	// Call the service to update the user's profile, include picture
+	newUser, err := uc.Service.UpdateUserWithNewImage(c.Request.Context(), user.ID.Hex(), user.Email, &userBody)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update profile, " + err.Error()})
 		return

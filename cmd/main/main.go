@@ -58,7 +58,7 @@ func main() {
 	userService := services.NewUserService(userRepo, s3Service)
 	packageService := services.NewPackageService(packageRepo, s3Service)
 
-	packageController := controllers.NewPackageController(packageService, s3Service)
+	packageController := controllers.NewPackageController(packageService, s3Service, userService)
 	userController := controllers.NewUserController(userService)
 	s3Controller := controllers.NewS3Controller(s3Service)
 
