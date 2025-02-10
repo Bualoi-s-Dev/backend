@@ -79,6 +79,8 @@ func (s *PackageService) DeleteOne(ctx context.Context, packageId string) error 
 	return err
 }
 
+// Helper function
+
 func MapRequestToPackage(req *models.PackageRequest, id *string) *models.Package {
 	item := models.Package{
 		Title: req.Title,

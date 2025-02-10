@@ -100,7 +100,7 @@ func (ctrl *PackageController) ReplaceOnePackage(c *gin.Context) {
 	user := middleware.GetUserFromContext(c)
 	isOwner := CheckOwner(user, id)
 	if !isOwner {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized, not the owner of the package"})
+		c.JSON(http.StatusForbidden, gin.H{"error": "You do not own the package"})
 		return
 	}
 
@@ -132,7 +132,7 @@ func (ctrl *PackageController) DeleteOnePackage(c *gin.Context) {
 	user := middleware.GetUserFromContext(c)
 	isOwner := CheckOwner(user, id)
 	if !isOwner {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized, not the owner of the package"})
+		c.JSON(http.StatusForbidden, gin.H{"error": "You do not own the package"})
 		return
 	}
 
@@ -155,6 +155,8 @@ func (ctrl *PackageController) DeleteOnePackage(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "Item deleted successfully"})
 }
+
+// Helper function
 
 func CheckOwner(user *models.User, packageId string) bool {
 	for _, id := range user.Packages {
