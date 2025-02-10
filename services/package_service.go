@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"strconv"
+	"strings"
 
 	"github.com/Bualoi-s-Dev/backend/models"
 	repositories "github.com/Bualoi-s-Dev/backend/repositories/database"
@@ -95,6 +96,7 @@ func MapRequestToPackage(req *models.PackageRequest, id *string) *models.Package
 func (s *PackageService) UploadPackagePhotos(photoBase64 []string, id string) ([]string, error) {
 	var photoUrls []string
 	for idx, photo := range photoBase64 {
+		// Add / to the photo path
 		photoUrl, err := s.S3Service.UploadBase64([]byte(photo), "package/"+id+"_"+strconv.Itoa(idx+1))
 		if err != nil {
 			return nil, err
@@ -106,7 +108,9 @@ func (s *PackageService) UploadPackagePhotos(photoBase64 []string, id string) ([
 
 func (s *PackageService) DeletePackagePhotos(photoUrls []string) error {
 	for _, photo := range photoUrls {
-		err := s.S3Service.DeleteObject(photo)
+		// Remove / from the photo path
+		cleanedPath := strings.TrimPrefix(photo, "/")
+		err := s.S3Service.DeleteObject(cleanedPath)
 		if err != nil {
 			return err
 		}
