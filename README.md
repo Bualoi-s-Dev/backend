@@ -38,7 +38,7 @@ make swag
 ```
 Or manually:
 ```sh
-swag init -g ./cmd/main.go -o ./docs
+swag init -g ./cmd/main/main.go -o ./docs
 ```
 
 ## TypeScript Type Generation
