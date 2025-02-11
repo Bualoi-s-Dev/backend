@@ -5,8 +5,11 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/Bualoi-s-Dev/backend/dto"
 	"github.com/Bualoi-s-Dev/backend/models"
 	repositories "github.com/Bualoi-s-Dev/backend/repositories/database"
+	"github.com/Bualoi-s-Dev/backend/utils"
+	"github.com/jinzhu/copier"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -27,8 +30,12 @@ func (s *PackageService) GetById(ctx context.Context, packageId string) (*models
 	return s.Repo.GetById(ctx, packageId)
 }
 
-func (s *PackageService) CreateOne(ctx context.Context, itemInput *models.PackageRequest) (*models.Package, error) {
-	item := MapRequestToPackage(itemInput, nil)
+func (s *PackageService) GetByList(ctx context.Context, packageIds []primitive.ObjectID) ([]models.Package, error) {
+	return s.Repo.GetManyId(ctx, packageIds)
+}
+
+func (s *PackageService) CreateOne(ctx context.Context, itemInput *dto.PackageStrictRequest, ownerId primitive.ObjectID) (*models.Package, error) {
+	item := s.NewPackageFromRequest(itemInput, ownerId)
 
 	photoUrls, upErr := s.UploadPackagePhotos(itemInput.Photos, item.ID.Hex())
 	if upErr != nil {
@@ -40,28 +47,43 @@ func (s *PackageService) CreateOne(ctx context.Context, itemInput *models.Packag
 	return item, err
 }
 
-func (s *PackageService) ReplaceOne(ctx context.Context, packageId string, updates *models.PackageRequest) (*models.Package, error) {
-	item := MapRequestToPackage(updates, &packageId)
+func (s *PackageService) UpdateOne(ctx context.Context, packageId string, updates *dto.PackageRequest) (*models.Package, error) {
+	pkg := &models.Package{}
+	if err := copier.Copy(pkg, updates); err != nil {
+		return nil, err
+	}
 
-	// Delete old photos
-	curPackage, findErr := s.GetById(ctx, packageId)
+	if updates.Photos != nil {
+		// Delete old photos
+		curPackage, findErr := s.GetById(ctx, packageId)
+		if findErr != nil {
+			return nil, findErr
+		}
+		delErr := s.DeletePackagePhotos(curPackage.PhotoUrls)
+		if delErr != nil {
+			return nil, delErr
+		}
+
+		// Upload new photos
+		photoUrls, upErr := s.UploadPackagePhotos(*updates.Photos, packageId)
+		if upErr != nil {
+			return nil, upErr
+		}
+		pkg.PhotoUrls = photoUrls
+	}
+
+	item, err := utils.StructToBsonMap(pkg)
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = s.Repo.UpdateOne(ctx, packageId, item)
+
+	updatedItem, findErr := s.GetById(ctx, packageId)
 	if findErr != nil {
 		return nil, findErr
 	}
-	delErr := s.DeletePackagePhotos(curPackage.PhotoUrls)
-	if delErr != nil {
-		return nil, delErr
-	}
-
-	// Upload new photos
-	photoUrls, upErr := s.UploadPackagePhotos(updates.Photos, packageId)
-	if upErr != nil {
-		return nil, upErr
-	}
-	item.PhotoUrls = photoUrls
-
-	_, err := s.Repo.ReplaceOne(ctx, packageId, item)
-	return item, err
+	return updatedItem, err
 }
 
 func (s *PackageService) DeleteOne(ctx context.Context, packageId string) error {
@@ -81,16 +103,12 @@ func (s *PackageService) DeleteOne(ctx context.Context, packageId string) error 
 
 // Helper function
 
-func MapRequestToPackage(req *models.PackageRequest, id *string) *models.Package {
+func (s *PackageService) NewPackageFromRequest(req *dto.PackageStrictRequest, ownerId primitive.ObjectID) *models.Package {
 	item := models.Package{
-		Title: req.Title,
-		Type:  req.Type,
-	}
-	if id != nil {
-		objectId, _ := primitive.ObjectIDFromHex(*id)
-		item.ID = objectId
-	} else {
-		item.ID = primitive.NewObjectID()
+		ID:      primitive.NewObjectID(),
+		OwnerID: ownerId,
+		Title:   req.Title,
+		Type:    req.Type,
 	}
 	return &item
 }

@@ -71,13 +71,13 @@ func (ctrl *PackageController) CreateOnePackage(c *gin.Context) {
 		return
 	}
 
-	item, err := ctrl.Service.CreateOne(c.Request.Context(), &itemInput)
+	user := middleware.GetUserFromContext(c)
+	item, err := ctrl.Service.CreateOne(c.Request.Context(), &itemInput, user.ID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create item, " + err.Error()})
 		return
 	}
 
-	user := middleware.GetUserFromContext(c)
 	user.Packages = append(user.Packages, item.ID)
 	_, err = ctrl.UserService.UpdateUser(c.Request.Context(), user.Email, user)
 	if err != nil {
@@ -93,9 +93,9 @@ func (ctrl *PackageController) CreateOnePackage(c *gin.Context) {
 // @Param request body dto.PackageRequest true "Replace Package Request"
 // @Success 200 {object} models.Package
 // @Failure 400 {object} string "Bad Request"
-// @Router /package/{id} [put]
+// @Router /package/{id} [patch]
 // @x-order 4
-func (ctrl *PackageController) ReplaceOnePackage(c *gin.Context) {
+func (ctrl *PackageController) UpdateOnePackage(c *gin.Context) {
 	id := c.Param("id")
 	// Check the owner, only the owner can update the package
 	user := middleware.GetUserFromContext(c)
@@ -105,13 +105,13 @@ func (ctrl *PackageController) ReplaceOnePackage(c *gin.Context) {
 		return
 	}
 
-	var updates models.PackageRequest
+	var updates dto.PackageRequest
 	if err := c.ShouldBindJSON(&updates); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Bad request, " + err.Error()})
 		return
 	}
 
-	item, err := ctrl.Service.ReplaceOne(c.Request.Context(), id, &updates)
+	item, err := ctrl.Service.UpdateOne(c.Request.Context(), id, &updates)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update item, " + err.Error()})
 		return

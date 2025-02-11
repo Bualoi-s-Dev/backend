@@ -48,6 +48,24 @@ func (repo *PackageRepository) GetById(ctx context.Context, id string) (*models.
 	return &item, nil
 }
 
+func (repo *PackageRepository) GetManyId(ctx context.Context, packageIds []primitive.ObjectID) ([]models.Package, error) {
+	cursor, err := repo.Collection.Find(ctx, bson.M{"_id": bson.M{"$in": packageIds}})
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+
+	var items []models.Package
+	if err := cursor.All(ctx, &items); err != nil {
+		return nil, err
+	}
+
+	if items == nil {
+		items = []models.Package{}
+	}
+	return items, nil
+}
+
 func (repo *PackageRepository) CreateOne(ctx context.Context, item *models.Package) (*mongo.InsertOneResult, error) {
 	return repo.Collection.InsertOne(ctx, item)
 }
@@ -58,6 +76,16 @@ func (repo *PackageRepository) ReplaceOne(ctx context.Context, id string, update
 	}
 
 	return repo.Collection.ReplaceOne(ctx, bson.M{"_id": objectId}, updates)
+}
+func (repo *PackageRepository) UpdateOne(ctx context.Context, id string, updates bson.M) (*mongo.UpdateResult, error) {
+	objectId, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return nil, err
+	}
+
+	return repo.Collection.UpdateOne(ctx, bson.M{"_id": objectId}, bson.M{
+		"$set": updates,
+	})
 }
 
 func (repo *PackageRepository) DeleteOne(ctx context.Context, id string) (*mongo.DeleteResult, error) {
