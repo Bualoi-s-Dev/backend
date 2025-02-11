@@ -3,6 +3,7 @@ package controllers
 import (
 	"net/http"
 
+	"github.com/Bualoi-s-Dev/backend/dto"
 	"github.com/Bualoi-s-Dev/backend/middleware"
 	"github.com/Bualoi-s-Dev/backend/models"
 	"github.com/Bualoi-s-Dev/backend/services"
@@ -58,13 +59,13 @@ func (ctrl *PackageController) GetOnePackage(c *gin.Context) {
 // @Tags Package
 // @Summary Create a package
 // @Description Create a package in the database
-// @Param request body models.PackageRequest true "Create Package Request"
+// @Param request body dto.PackageStrictRequest true "Create Package Request"
 // @Success 200 {object} models.Package
 // @Failure 400 {object} string "Bad Request"
 // @Router /package [post]
 // @x-order 3
 func (ctrl *PackageController) CreateOnePackage(c *gin.Context) {
-	var itemInput models.PackageRequest
+	var itemInput dto.PackageStrictRequest
 	if err := c.ShouldBindJSON(&itemInput); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Bad request, " + err.Error()})
 		return
@@ -89,7 +90,7 @@ func (ctrl *PackageController) CreateOnePackage(c *gin.Context) {
 // UpdateOnePackage godoc
 // @Tags Package
 // @Summary Patch a package
-// @Param request body models.PackageRequest true "Replace Package Request"
+// @Param request body dto.PackageRequest true "Replace Package Request"
 // @Success 200 {object} models.Package
 // @Failure 400 {object} string "Bad Request"
 // @Router /package/{id} [put]
