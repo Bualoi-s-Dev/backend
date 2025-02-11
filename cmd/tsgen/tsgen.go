@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/Bualoi-s-Dev/backend/dto"
 	"github.com/Bualoi-s-Dev/backend/models"
 	"github.com/tkrajina/typescriptify-golang-structs/typescriptify"
 )
@@ -16,7 +17,8 @@ func main() {
 	// Add models
 	converter.
 		Add(models.Package{}).
-		Add(models.PackageRequest{}).
+		Add(dto.PackageRequest{}).
+		Add(dto.PackageStrictRequest{}).
 		AddEnum(models.ValidPackageTypes)
 	converter.
 		Add(models.User{}).
