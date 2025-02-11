@@ -1,42 +1,64 @@
 # PhotoMatch Backend
 
 ## Prerequisites
-- Go / Gin
 
-## Building
+Ensure you have the following installed:
+- [Go](https://go.dev/) (with [Gin](https://gin-gonic.com/))
+- [Make](https://www.gnu.org/software/make/) (optional, for easier commands)
+- [Docker](https://www.docker.com/) (optional, for containerized deployment)
 
-### Using MakeFile (make required)
-```
+## Getting Started
+
+### Run the Project
+
+#### Using Makefile (Requires `make`)
+```sh
 make run
 ```
 
-OR
-
-### Docker-compose (docker required)
-
-```
+#### Using Docker-Compose (Requires `docker`)
+```sh
 docker-compose up --build -d
 ```
 
-## Swagger UI
+## API Documentation
 
-This project has used [swaggo](https://github.com/swaggo/swag) to generate API documentation  
-The swagger UI run at `localhost:8080/swagger/index.html`
+This project uses [Swaggo](https://github.com/swaggo/swag) for generating API documentation.
 
-update swagger by
-
+### Access Swagger UI
+Swagger UI is available at:
 ```
+http://localhost:8080/swagger/index.html
+```
+
+### Update Swagger Documentation
+Use one of the following commands to regenerate Swagger documentation:
+```sh
+make swag
+```
+Or manually:
+```sh
 swag init -g ./cmd/main.go -o ./docs
 ```
 
-## Typescript type generation
+## TypeScript Type Generation
 
-This project has used [typescriptify](https://github.com/tkrajina/typescriptify-golang-structs) to generate types for TypeScript
+The project leverages [typescriptify](https://github.com/tkrajina/typescriptify-golang-structs) to generate TypeScript types from Go structs.
 
-generate by
-
+### Generate TypeScript Types
+```sh
+make tsgen
 ```
-go run ./cmd/tsgen/tsgen.go
+Or manually:
+```sh
+go run ./cmd/tsgen/main.go
 ```
 
-the generated file will be stored in `/gen/api_types.ts`
+The generated TypeScript file will be located at:
+```
+/gen/api_types.ts
+```
+
+## License
+
+This project is licensed under the MIT License. See `LICENSE` for more details.
