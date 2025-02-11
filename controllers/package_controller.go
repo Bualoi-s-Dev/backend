@@ -5,7 +5,6 @@ import (
 
 	"github.com/Bualoi-s-Dev/backend/dto"
 	"github.com/Bualoi-s-Dev/backend/middleware"
-	"github.com/Bualoi-s-Dev/backend/models"
 	"github.com/Bualoi-s-Dev/backend/services"
 	"github.com/gin-gonic/gin"
 )
@@ -99,7 +98,7 @@ func (ctrl *PackageController) UpdateOnePackage(c *gin.Context) {
 	id := c.Param("id")
 	// Check the owner, only the owner can update the package
 	user := middleware.GetUserFromContext(c)
-	isOwner := CheckOwner(user, id)
+	isOwner := ctrl.Service.CheckOwner(user, id)
 	if !isOwner {
 		c.JSON(http.StatusForbidden, gin.H{"error": "You do not own the package"})
 		return
@@ -131,7 +130,7 @@ func (ctrl *PackageController) DeleteOnePackage(c *gin.Context) {
 	id := c.Param("id")
 	// Check the owner, only the owner can delete the package
 	user := middleware.GetUserFromContext(c)
-	isOwner := CheckOwner(user, id)
+	isOwner := ctrl.Service.CheckOwner(user, id)
 	if !isOwner {
 		c.JSON(http.StatusForbidden, gin.H{"error": "You do not own the package"})
 		return
@@ -155,15 +154,4 @@ func (ctrl *PackageController) DeleteOnePackage(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "Item deleted successfully"})
-}
-
-// Helper function
-
-func CheckOwner(user *models.User, packageId string) bool {
-	for _, id := range user.Packages {
-		if id.Hex() == packageId {
-			return true
-		}
-	}
-	return false
 }

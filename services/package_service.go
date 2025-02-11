@@ -137,3 +137,12 @@ func (s *PackageService) DeletePackagePhotos(photoUrls []string) error {
 	}
 	return nil
 }
+
+func (s *PackageService) CheckOwner(user *models.User, packageId string) bool {
+	for _, id := range user.Packages {
+		if id.Hex() == packageId {
+			return true
+		}
+	}
+	return false
+}
