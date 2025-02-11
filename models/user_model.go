@@ -13,7 +13,7 @@ type User struct {
 
 	//Photographer Info
 	IsPhotographer   bool                 `bson:"is_photographer" json:"isPhotographer" example:"true"`
-	BankName         BankName             `bson:"bank_name,omitempty" json:"bankName " example:"KRUNG_THAI_BANK"`
+	BankName         BankName             `bson:"bank_name,omitempty" json:"bankName" example:"KRUNG_THAI_BANK"`
 	BankAccount      string               `bson:"bank_account,omitempty" json:"bankAccount" example:"1234567890"`
 	LineID           string               `bson:"line_id,omitempty" json:"lineID" example:"@meen"`
 	Facebook         string               `bson:"facebook,omitempty" json:"facebook" example:"Meen"`
