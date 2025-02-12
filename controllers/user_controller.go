@@ -59,6 +59,32 @@ func (uc *UserController) GetUserProfile(c *gin.Context) {
 	c.JSON(http.StatusOK, userDb)
 }
 
+// GetUserProfileByID godoc
+// @Tags User
+// @Summary Get a user profile by ID
+// @Description Retrieve a user profile from database by user ID
+// @Param id path string true "User ID"
+// @Success 200 {object} models.User
+// @Failure 400 {object} string "Bad Request"
+// @Router /user/profile/{id} [get]
+func (uc *UserController) GetUserProfileByID(c *gin.Context) {
+	userID := c.Param("id")
+	objID, err := primitive.ObjectIDFromHex(userID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
+		return
+	}
+
+	userDb, err := uc.Service.GetUserByID(c.Request.Context(), objID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get user data"})
+		return
+	}
+
+	c.JSON(http.StatusOK, userDb)
+}
+
+
 // UpdateUserProfile godoc
 // @Tags User
 // @Summary Update user data

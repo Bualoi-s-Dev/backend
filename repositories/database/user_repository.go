@@ -2,10 +2,11 @@ package repositories
 
 import (
 	"context"
-	"fmt"
 
+	"github.com/Bualoi-s-Dev/backend/dto"
 	"github.com/Bualoi-s-Dev/backend/models"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -17,9 +18,54 @@ func NewUserRepository(collection *mongo.Collection) *UserRepository {
 	return &UserRepository{Collection: collection}
 }
 
-func (repo *UserRepository) GetUserByEmail(ctx context.Context, email string) (*models.User, error) {
+func (repo *UserRepository) FindUserByEmail(ctx context.Context, email string) (*models.User, error) {
 	var user models.User
 	err := repo.Collection.FindOne(ctx, bson.M{"email": email}).Decode(&user)
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
+}
+
+func (repo *UserRepository) GetUserByEmail(ctx context.Context, email string) (*dto.UserResponse, error) {
+	// var user models.User
+	pipeline := []bson.M{
+		{
+			"$match": bson.M{"email": email}, // Filter user
+		},
+		{
+			"$lookup": bson.M{
+				"from":         "Package",               // Collection to join
+				"localField":   "photographer_packages", // Field in "users"
+				"foreignField": "_id",                   // Field in "packages"
+				"as":           "package_details",       // Output array field
+			},
+		},
+	}
+
+	// Run aggregation
+	cursor, err := repo.Collection.Aggregate(ctx, pipeline)
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx) // Ensure cursor is closed after function exits
+
+	// Decode result
+	if cursor.Next(ctx) {
+		var res *dto.UserResponse
+		err := cursor.Decode(&res)
+		if err != nil {
+			return nil, err
+		}
+		return res, nil
+	}
+
+	return nil, mongo.ErrNoDocuments
+}
+
+func (repo *UserRepository) GetUserByID(ctx context.Context, id primitive.ObjectID) (*models.User, error) {
+	var user models.User
+	err := repo.Collection.FindOne(ctx, bson.M{"_id": id}).Decode(&user)
 	if err != nil {
 		return nil, err
 	}
@@ -41,17 +87,4 @@ func (repo *UserRepository) UpdateUser(ctx context.Context, email string, update
 		return nil, err
 	}
 	return updates, nil
-}
-
-func (repo *UserRepository) GetUserProfilePic(ctx context.Context, email string) (string, error) {
-	user, err := repo.GetUserByEmail(ctx, email)
-	if err != nil {
-		return "", err
-	}
-
-	if user.Profile == "" {
-		return "", fmt.Errorf("no profile picture found for user")
-	}
-
-	return user.Profile, nil
 }

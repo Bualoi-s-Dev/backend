@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/Bualoi-s-Dev/backend/models"
+	"github.com/Bualoi-s-Dev/backend/dto"
 	repositories "github.com/Bualoi-s-Dev/backend/repositories/database"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -18,8 +19,16 @@ func NewUserService(repo *repositories.UserRepository, s3Service *S3Service) *Us
 	return &UserService{Repo: repo, S3Service: s3Service}
 }
 
-func (s *UserService) GetUser(ctx context.Context, email string) (*models.User, error) {
+func (s *UserService) FindUser(ctx context.Context, email string) (*models.User, error) {
+	return s.Repo.FindUserByEmail(ctx, email)
+}
+
+func (s *UserService) GetUser(ctx context.Context, email string) (*dto.UserResponse, error) {
 	return s.Repo.GetUserByEmail(ctx, email)
+}
+
+func (s *UserService) GetUserByID(ctx context.Context, id primitive.ObjectID) (*models.User, error) {
+	return s.Repo.GetUserByID(ctx, id)
 }
 
 func (s *UserService) CreateUser(ctx context.Context, user *models.User) error {
