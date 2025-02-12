@@ -10,6 +10,7 @@ import (
 	"github.com/Bualoi-s-Dev/backend/models"
 	"github.com/Bualoi-s-Dev/backend/services"
 	"github.com/gin-gonic/gin"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 
 	firebase "firebase.google.com/go"
@@ -70,13 +71,14 @@ func FirebaseAuthMiddleware(authClient *auth.Client, userCollection *mongo.Colle
 
 			// Create new user
 			newUser := models.User{
-				Email:          email,
-				Name:           "",
-				Gender:         "",
-				Profile:        "",
-				Phone:          "",
-				Location:       "",
-				IsPhotographer: false,
+				ID:       primitive.NewObjectID(),
+				Email:    email,
+				Name:     "",
+				Gender:   "",
+				Profile:  "",
+				Phone:    "",
+				Location: "",
+				Role:     models.Guest,
 			}
 
 			if err := userService.CreateUser(ctx, &newUser); err != nil {
