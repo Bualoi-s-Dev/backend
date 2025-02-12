@@ -12,15 +12,32 @@ type User struct {
 	Location string             `bson:"location,omitempty" json:"location" example:"Bangkok, Thailand"`
 
 	//Photographer Info
-	IsPhotographer   bool                 `bson:"is_photographer" json:"isPhotographer" example:"true"`
-	Description	     string               `bson:"description,omitempty" json:"description" example:"I'm a photographer"`
-	BankName         BankName             `bson:"bank_name,omitempty" json:"bankName" example:"KRUNG_THAI_BANK"`
+	Role             UserRole             `bson:"role,omitempty" json:"role" binding:"omitempty,user_role" example:"Photographer"`
+	Description      string               `bson:"description,omitempty" json:"description" example:"I'm a photographer"`
+	BankName         BankName             `bson:"bank_name,omitempty" json:"bankName" binding:"omitempty,bank_name" example:"KRUNG_THAI_BANK"`
 	BankAccount      string               `bson:"bank_account,omitempty" json:"bankAccount" example:"1234567890"`
 	LineID           string               `bson:"line_id,omitempty" json:"lineID" example:"@meen"`
 	Facebook         string               `bson:"facebook,omitempty" json:"facebook" example:"Meen"`
 	Instagram        string               `bson:"instagram,omitempty" json:"instagram" example:"Meen"`
 	ShowcasePackages []primitive.ObjectID `bson:"showcase_packages,omitempty" json:"showcasePackages" ts_type:"string[]" example:"12345678abcd,12345678abcd"`
 	Packages         []primitive.ObjectID `bson:"photographer_packages,omitempty" json:"packages" ts_type:"string[]" example:"12345678abcd,12345678abcd"`
+}
+
+type UserRole string
+
+const (
+	Photographer UserRole = "Photographer"
+	Customer     UserRole = "Customer"
+	Guest        UserRole = "Guest"
+)
+
+var ValidUserRoles = []struct {
+	Value  UserRole
+	TSName string
+}{
+	{Photographer, string(Photographer)},
+	{Customer, string(Customer)},
+	{Guest, string(Guest)},
 }
 
 type BankName string
