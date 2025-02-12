@@ -32,6 +32,7 @@ import (
 // @externalDocs.url          https://swagger.io/resources/open-api/
 func main() {
 	r := gin.Default()
+	r.RemoveExtraSlash = true
 
 	r.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{"http://localhost:3000"},
