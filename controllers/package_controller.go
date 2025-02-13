@@ -69,6 +69,9 @@ func (ctrl *PackageController) CreateOnePackage(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Bad request, " + err.Error()})
 		return
 	}
+	if err := ctrl.S3Service.VerifyMultipleBase64(itemInput.Photos); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Bad request, " + err.Error()})
+	}
 
 	user := middleware.GetUserFromContext(c)
 	item, err := ctrl.Service.CreateOne(c.Request.Context(), &itemInput, user.ID)
@@ -108,6 +111,9 @@ func (ctrl *PackageController) UpdateOnePackage(c *gin.Context) {
 	if err := c.ShouldBindJSON(&updates); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Bad request, " + err.Error()})
 		return
+	}
+	if err := ctrl.S3Service.VerifyMultipleBase64(*updates.Photos); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Bad request, " + err.Error()})
 	}
 
 	item, err := ctrl.Service.UpdateOne(c.Request.Context(), id, &updates)

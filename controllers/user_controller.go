@@ -3,6 +3,7 @@ package controllers
 import (
 	"net/http"
 
+	"github.com/Bualoi-s-Dev/backend/dto"
 	"github.com/Bualoi-s-Dev/backend/middleware"
 	"github.com/Bualoi-s-Dev/backend/models"
 	"github.com/Bualoi-s-Dev/backend/services"
@@ -11,11 +12,12 @@ import (
 )
 
 type UserController struct {
-	Service *services.UserService
+	Service   *services.UserService
+	S3Service *services.S3Service
 }
 
-func NewUserController(service *services.UserService) *UserController {
-	return &UserController{Service: service}
+func NewUserController(service *services.UserService, s3Service *services.S3Service) *UserController {
+	return &UserController{Service: service, S3Service: s3Service}
 }
 
 // GetUserJWT godoc
@@ -84,7 +86,6 @@ func (uc *UserController) GetUserProfileByID(c *gin.Context) {
 	c.JSON(http.StatusOK, userDb)
 }
 
-
 // UpdateUserProfile godoc
 // @Tags User
 // @Summary Update user data
@@ -103,6 +104,10 @@ func (uc *UserController) UpdateUserProfile(c *gin.Context) {
 		return
 	}
 	userBody.ID = user.ID
+	if err := uc.S3Service.VerifyBase64(userBody.Profile); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid profile picture, " + err.Error()})
+		return
+	}
 
 	isShowcaseValid := uc.Service.VerifyShowcase(c.Request.Context(), user.ShowcasePackages, userBody.ShowcasePackages)
 	if !isShowcaseValid {
@@ -120,10 +125,6 @@ func (uc *UserController) UpdateUserProfile(c *gin.Context) {
 	c.JSON(http.StatusOK, newUser)
 }
 
-type UserShowcasePackageRequest struct {
-	PackageID []primitive.ObjectID `json:"packageIds" binding:"required" example:"12345678abcd,12345678abcd"`
-}
-
 // UpdateUserShowcasePackage godoc
 // @Tags User
 // @Summary Update user showcase packages
@@ -133,7 +134,7 @@ type UserShowcasePackageRequest struct {
 // @Failure 400 {object} string "Bad Request"
 // @Router /user/profile/showcase [put]
 func (uc *UserController) UpdateUserShowcasePackage(c *gin.Context) {
-	var req UserShowcasePackageRequest
+	var req dto.UserShowcasePackageRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 	}
