@@ -80,8 +80,8 @@ func (ctrl *PackageController) CreateOnePackage(c *gin.Context) {
 		return
 	}
 
-	user.Packages = append(user.Packages, item.ID)
-	_, err = ctrl.UserService.UpdateUser(c.Request.Context(), user.Email, user)
+	userReq := dto.UpdateUserPackageRequest{PackageID: append(user.Packages, item.ID)}
+	err = ctrl.UserService.UpdateOwnerPackage(c.Request.Context(), user.Email, userReq)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update user, " + err.Error()})
 		return
@@ -147,14 +147,16 @@ func (ctrl *PackageController) DeleteOnePackage(c *gin.Context) {
 		return
 	}
 
+	userReq := dto.UpdateUserPackageRequest{}
+
 	// Remove the package from the user's packages
 	for i, packageId := range user.Packages {
 		if packageId.Hex() == id {
-			user.Packages = append(user.Packages[:i], user.Packages[i+1:]...)
+			userReq.PackageID = append(user.Packages[:i], user.Packages[i+1:]...)
 			break
 		}
 	}
-	_, err := ctrl.UserService.UpdateUser(c.Request.Context(), user.Email, user)
+	err := ctrl.UserService.UpdateOwnerPackage(c.Request.Context(), user.ID.Hex(), userReq)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update user, " + err.Error()})
 		return

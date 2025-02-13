@@ -52,12 +52,12 @@ func (repo *UserRepository) GetUserByEmail(ctx context.Context, email string) (*
 
 	// Decode result
 	if cursor.Next(ctx) {
-		var res *dto.UserResponse
+		var res dto.UserResponse
 		err := cursor.Decode(&res)
 		if err != nil {
 			return nil, err
 		}
-		return res, nil
+		return &res, nil
 	}
 
 	return nil, mongo.ErrNoDocuments
@@ -80,11 +80,11 @@ func (repo *UserRepository) CreateUser(ctx context.Context, user *models.User) e
 	return nil
 }
 
-func (repo *UserRepository) UpdateUser(ctx context.Context, email string, updates *models.User) (*models.User, error) {
+func (repo *UserRepository) UpdateUser(ctx context.Context, email string, updates bson.M) (*mongo.UpdateResult, error) {
 	updateQuery := bson.M{"$set": updates}
-	_, err := repo.Collection.UpdateOne(ctx, bson.M{"email": email}, updateQuery)
+	res, err := repo.Collection.UpdateOne(ctx, bson.M{"email": email}, updateQuery)
 	if err != nil {
 		return nil, err
 	}
-	return updates, nil
+	return res, nil
 }

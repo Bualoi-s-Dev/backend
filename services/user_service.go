@@ -4,9 +4,11 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/Bualoi-s-Dev/backend/models"
 	"github.com/Bualoi-s-Dev/backend/dto"
+	"github.com/Bualoi-s-Dev/backend/models"
 	repositories "github.com/Bualoi-s-Dev/backend/repositories/database"
+	"github.com/Bualoi-s-Dev/backend/utils"
+	"github.com/jinzhu/copier"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -35,26 +37,39 @@ func (s *UserService) CreateUser(ctx context.Context, user *models.User) error {
 	return s.Repo.CreateUser(ctx, user)
 }
 
-func (s *UserService) UpdateUserWithNewImage(ctx context.Context, userId string, email string, updates *models.User) (*models.User, error) {
-	if updates.Profile != "" {
+func (s *UserService) UpdateUser(ctx context.Context, userId string, email string, req *dto.UserRequest) (*dto.UserResponse, error) {
+	item := &models.User{}
+	if err := copier.Copy(item, req); err != nil {
+		return nil, err
+	}
+
+	if req.Profile != nil && *req.Profile != "" {
 		key := "profile/" + userId
 		// Try to delete the existing profile picture
 		fmt.Println("key :", key)
 		_ = s.S3Service.DeleteObject(key)
 
-		profileUrl, err := s.S3Service.UploadBase64([]byte(updates.Profile), key)
+		profileUrl, err := s.S3Service.UploadBase64([]byte(*req.Profile), key)
 		if err != nil {
 			return nil, err
 		}
 
-		updates.Profile = profileUrl
+		item.Profile = profileUrl
 	}
 
-	return s.Repo.UpdateUser(ctx, email, updates)
-}
-
-func (s *UserService) UpdateUser(ctx context.Context, email string, updates *models.User) (*models.User, error) {
-	return s.Repo.UpdateUser(ctx, email, updates)
+	updates, err := utils.StructToBsonMap(item)
+	if err != nil {
+		return nil, err
+	}
+	_, err = s.Repo.UpdateUser(ctx, email, updates)
+	if err != nil {
+		return nil, err
+	}
+	res, err := s.Repo.GetUserByEmail(ctx, email)
+	if err != nil {
+		return nil, err
+	}
+	return res, nil
 }
 
 func (s *UserService) VerifyShowcase(ctx context.Context, ownedPackages []primitive.ObjectID, checkPackages []primitive.ObjectID) bool {
@@ -68,4 +83,13 @@ func (s *UserService) VerifyShowcase(ctx context.Context, ownedPackages []primit
 		}
 	}
 	return true
+}
+
+func (s *UserService) UpdateOwnerPackage(ctx context.Context, userId string, req dto.UpdateUserPackageRequest) error {
+	updates, err := utils.StructToBsonMap(req)
+	if err != nil {
+		return err
+	}
+	_, err = s.Repo.UpdateUser(ctx, userId, updates)
+	return err
 }

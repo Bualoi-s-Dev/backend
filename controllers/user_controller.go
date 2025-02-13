@@ -5,7 +5,6 @@ import (
 
 	"github.com/Bualoi-s-Dev/backend/dto"
 	"github.com/Bualoi-s-Dev/backend/middleware"
-	"github.com/Bualoi-s-Dev/backend/models"
 	"github.com/Bualoi-s-Dev/backend/services"
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -53,7 +52,7 @@ func (uc *UserController) GetUserProfile(c *gin.Context) {
 	// Call the service to get the user's profile picture URL
 	userDb, err := uc.Service.GetUser(c.Request.Context(), user.Email)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get user data"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get user data, " + err.Error()})
 		return
 	}
 
@@ -98,25 +97,29 @@ func (uc *UserController) UpdateUserProfile(c *gin.Context) {
 	// Retrieve user from context (set by FirebaseAuthMiddleware)
 	user := middleware.GetUserFromContext(c)
 
-	var userBody models.User
+	var userBody dto.UserRequest
 	if err := c.ShouldBindJSON(&userBody); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	userBody.ID = user.ID
-	if err := uc.S3Service.VerifyBase64(userBody.Profile); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid profile picture, " + err.Error()})
-		return
+
+	if userBody.Profile != nil {
+		if err := uc.S3Service.VerifyBase64(*userBody.Profile); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid profile picture, " + err.Error()})
+			return
+		}
 	}
 
-	isShowcaseValid := uc.Service.VerifyShowcase(c.Request.Context(), user.ShowcasePackages, userBody.ShowcasePackages)
-	if !isShowcaseValid {
-		c.JSON(http.StatusForbidden, gin.H{"error": "You do not own the package"})
-		return
+	if userBody.ShowcasePackages != nil {
+		isShowcaseValid := uc.Service.VerifyShowcase(c.Request.Context(), user.Packages, *userBody.ShowcasePackages)
+		if !isShowcaseValid {
+			c.JSON(http.StatusForbidden, gin.H{"error": "You do not own the package"})
+			return
+		}
 	}
 
 	// Call the service to update the user's profile, include picture
-	newUser, err := uc.Service.UpdateUserWithNewImage(c.Request.Context(), user.ID.Hex(), user.Email, &userBody)
+	newUser, err := uc.Service.UpdateUser(c.Request.Context(), user.ID.Hex(), user.Email, &userBody)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update profile, " + err.Error()})
 		return
@@ -133,27 +136,27 @@ func (uc *UserController) UpdateUserProfile(c *gin.Context) {
 // @Success 200 {object} models.User
 // @Failure 400 {object} string "Bad Request"
 // @Router /user/profile/showcase [put]
-func (uc *UserController) UpdateUserShowcasePackage(c *gin.Context) {
-	var req dto.UserShowcasePackageRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-	}
+// func (uc *UserController) UpdateUserShowcasePackage(c *gin.Context) {
+// 	var req dto.UserShowcasePackageRequest
+// 	if err := c.ShouldBindJSON(&req); err != nil {
+// 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+// 	}
 
-	// Check the owner
-	user := middleware.GetUserFromContext(c)
-	isShowcaseValid := uc.Service.VerifyShowcase(c.Request.Context(), user.ShowcasePackages, req.PackageID)
-	if !isShowcaseValid {
-		c.JSON(http.StatusForbidden, gin.H{"error": "You do not own the package"})
-		return
-	}
+// 	// Check the owner
+// 	user := middleware.GetUserFromContext(c)
+// 	isShowcaseValid := uc.Service.VerifyShowcase(c.Request.Context(), user.ShowcasePackages, req.PackageID)
+// 	if !isShowcaseValid {
+// 		c.JSON(http.StatusForbidden, gin.H{"error": "You do not own the package"})
+// 		return
+// 	}
 
-	user.ShowcasePackages = req.PackageID
-	_, err := uc.Service.UpdateUser(c.Request.Context(), user.Email, user)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update showcase packages, " + err.Error()})
-		return
-	}
+// 	user.ShowcasePackages = req.PackageID
+// 	_, err := uc.Service.UpdateUser(c.Request.Context(), user.Email, user)
+// 	if err != nil {
+// 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update showcase packages, " + err.Error()})
+// 		return
+// 	}
 
-	c.JSON(http.StatusOK, user)
-	return
-}
+// 	c.JSON(http.StatusOK, user)
+// 	return
+// }
