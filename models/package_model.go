@@ -9,7 +9,7 @@ type Package struct {
 	OwnerID   primitive.ObjectID `bson:"owner_id,omitempty" json:"ownerId,omitempty" ts_type:"string" example:"12345678abcd"`
 	Title     string             `form:"title" bson:"title" json:"title" binding:"required" example:"Wedding Bliss Package"`
 	Type      PackageType        `form:"type" bson:"type" json:"type" binding:"required,package_type" example:"WEDDING_BLISS"`
-	PhotoUrls []string           `bson:"photo_urls" json:"photo_urls" example:"/package/12345678abcd_1,/package/12345678abcd_2"`
+	PhotoUrls []string           `bson:"photo_urls" json:"photoUrls" example:"/package/12345678abcd_1,/package/12345678abcd_2"`
 }
 
 type PackageType string

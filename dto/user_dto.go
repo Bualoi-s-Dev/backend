@@ -6,7 +6,6 @@ import (
 )
 
 type UserRequest struct {
-	Email    *string `bson:"email" json:"email" example:"ceo.meen@gmail.com"`
 	Name     *string `bson:"name,omitempty" json:"name" example:"Meen"`
 	Gender   *string `bson:"gender,omitempty" json:"gender" example:"LGTV"`
 	Profile  *string `bson:"profile,omitempty" json:"profile" example:"base64123123123"`
@@ -21,10 +20,6 @@ type UserRequest struct {
 	Facebook         *string               `bson:"facebook,omitempty" json:"facebook" example:"Meen"`
 	Instagram        *string               `bson:"instagram,omitempty" json:"instagram" example:"Meen"`
 	ShowcasePackages *[]primitive.ObjectID `bson:"showcase_packages,omitempty" json:"showcasePackages" ts_type:"string[]" example:"12345678abcd,12345678abcd"`
-}
-
-type UpdateUserPackageRequest struct {
-	PackageID []primitive.ObjectID `json:"packageIds" binding:"required" example:"12345678abcd,12345678abcd"`
 }
 
 type UserResponse struct {
@@ -44,5 +39,15 @@ type UserResponse struct {
 	Facebook         string           `bson:"facebook,omitempty" json:"facebook" example:"Meen"`
 	Instagram        string           `bson:"instagram,omitempty" json:"instagram" example:"Meen"`
 	ShowcasePackages []models.Package `bson:"showcase_packages,omitempty" json:"showcasePackages" ts_type:"Package[]" example:"12345678abcd,12345678abcd"`
-	Packages         []models.Package `bson:"photographer_packages,omitempty" json:"packages" ts_type:"Package[]" example:"12345678abcd,12345678abcd"`
+	Packages         []models.Package `bson:"photographer_packages,omitempty" json:"photographerPackages" ts_type:"Package[]" example:"12345678abcd,12345678abcd"`
+}
+
+type UpdateUserPackageRequest struct {
+	ShowcasePackages []primitive.ObjectID `bson:"showcase_packages,omitempty" json:"showcasePackages" example:"12345678abcd,12345678abcd"`
+	PackageID        []primitive.ObjectID `bson:"photographer_packages,omitempty" json:"photographerPackages" example:"12345678abcd,12345678abcd"`
+}
+
+type AuthUserCredentials struct {
+	Email    string `json:"email" binding:"required" example:"meen@gmail.com"`
+	Password string `json:"password" binding:"required" example:"12345678"`
 }

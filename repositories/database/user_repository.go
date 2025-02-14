@@ -2,6 +2,8 @@ package repositories
 
 import (
 	"context"
+	"fmt"
+	"log"
 
 	"github.com/Bualoi-s-Dev/backend/dto"
 	"github.com/Bualoi-s-Dev/backend/models"
@@ -38,7 +40,15 @@ func (repo *UserRepository) GetUserByEmail(ctx context.Context, email string) (*
 				"from":         "Package",               // Collection to join
 				"localField":   "photographer_packages", // Field in "users"
 				"foreignField": "_id",                   // Field in "packages"
-				"as":           "package_details",       // Output array field
+				"as":           "photographer_packages", // Output array field
+			},
+		},
+		{
+			"$lookup": bson.M{
+				"from":         "Package",           // Collection to join
+				"localField":   "showcase_packages", // Field in "users"
+				"foreignField": "_id",               // Field in "packages"
+				"as":           "showcase_packages", // Output array field
 			},
 		},
 	}
@@ -80,11 +90,29 @@ func (repo *UserRepository) CreateUser(ctx context.Context, user *models.User) e
 	return nil
 }
 
-func (repo *UserRepository) UpdateUser(ctx context.Context, email string, updates bson.M) (*mongo.UpdateResult, error) {
+func (repo *UserRepository) UpdateUser(ctx context.Context, userId primitive.ObjectID, updates bson.M) (*mongo.UpdateResult, error) {
 	updateQuery := bson.M{"$set": updates}
-	res, err := repo.Collection.UpdateOne(ctx, bson.M{"email": email}, updateQuery)
+	fmt.Println("updateQuery :", updateQuery)
+	fmt.Println("userId :", userId)
+	// count, err := repo.Collection.CountDocuments(ctx, bson.M{"_id": userId})
+	// if err != nil {
+	// 	log.Println("Error checking document existence:", err)
+	// } else if count == 0 {
+	// 	log.Println("No document found with _id:", userId)
+	// }
+
+	res, err := repo.Collection.UpdateOne(ctx, bson.M{"_id": userId}, updateQuery)
 	if err != nil {
 		return nil, err
 	}
+	fmt.Println("res :", res)
+	var updatedUser bson.M
+	err = repo.Collection.FindOne(ctx, bson.M{"_id": userId}).Decode(&updatedUser)
+	if err != nil {
+		log.Println("Error fetching updated document:", err)
+	} else {
+		log.Println("Updated document:", updatedUser)
+	}
+
 	return res, nil
 }

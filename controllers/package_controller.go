@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/Bualoi-s-Dev/backend/dto"
@@ -70,7 +71,7 @@ func (ctrl *PackageController) CreateOnePackage(c *gin.Context) {
 		return
 	}
 	if err := ctrl.S3Service.VerifyMultipleBase64(itemInput.Photos); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Bad request, " + err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Bad request Image, " + err.Error()})
 	}
 
 	user := middleware.GetUserFromContext(c)
@@ -81,7 +82,7 @@ func (ctrl *PackageController) CreateOnePackage(c *gin.Context) {
 	}
 
 	userReq := dto.UpdateUserPackageRequest{PackageID: append(user.Packages, item.ID)}
-	err = ctrl.UserService.UpdateOwnerPackage(c.Request.Context(), user.Email, userReq)
+	err = ctrl.UserService.UpdateOwnerPackage(c.Request.Context(), user.ID, userReq)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update user, " + err.Error()})
 		return
@@ -112,8 +113,10 @@ func (ctrl *PackageController) UpdateOnePackage(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Bad request, " + err.Error()})
 		return
 	}
-	if err := ctrl.S3Service.VerifyMultipleBase64(*updates.Photos); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Bad request, " + err.Error()})
+	if updates.Photos != nil && len(*updates.Photos) > 0 {
+		if err := ctrl.S3Service.VerifyMultipleBase64(*updates.Photos); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Bad request Image, " + err.Error()})
+		}
 	}
 
 	item, err := ctrl.Service.UpdateOne(c.Request.Context(), id, &updates)
@@ -148,15 +151,26 @@ func (ctrl *PackageController) DeleteOnePackage(c *gin.Context) {
 	}
 
 	userReq := dto.UpdateUserPackageRequest{}
-
 	// Remove the package from the user's packages
+	fmt.Println("id :", id)
+	fmt.Println("user.Packages :", user.Packages)
 	for i, packageId := range user.Packages {
+		fmt.Println("packageId.Hex() :", packageId.Hex())
 		if packageId.Hex() == id {
 			userReq.PackageID = append(user.Packages[:i], user.Packages[i+1:]...)
 			break
 		}
 	}
-	err := ctrl.UserService.UpdateOwnerPackage(c.Request.Context(), user.ID.Hex(), userReq)
+	// Remove the package from the user's showcase packages
+	fmt.Println("user.ShowcasePackages :", user.ShowcasePackages)
+	for i, packageId := range user.ShowcasePackages {
+		fmt.Println("packageId.Hex() :", packageId.Hex())
+		if packageId.Hex() == id {
+			userReq.ShowcasePackages = append(user.ShowcasePackages[:i], user.ShowcasePackages[i+1:]...)
+			break
+		}
+	}
+	err := ctrl.UserService.UpdateOwnerPackage(c.Request.Context(), user.ID, userReq)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update user, " + err.Error()})
 		return

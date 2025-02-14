@@ -119,7 +119,7 @@ func (uc *UserController) UpdateUserProfile(c *gin.Context) {
 	}
 
 	// Call the service to update the user's profile, include picture
-	newUser, err := uc.Service.UpdateUser(c.Request.Context(), user.ID.Hex(), user.Email, &userBody)
+	newUser, err := uc.Service.UpdateUser(c.Request.Context(), user.ID, user.Email, &userBody)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update profile, " + err.Error()})
 		return
@@ -127,36 +127,3 @@ func (uc *UserController) UpdateUserProfile(c *gin.Context) {
 
 	c.JSON(http.StatusOK, newUser)
 }
-
-// UpdateUserShowcasePackage godoc
-// @Tags User
-// @Summary Update user showcase packages
-// @Description Receive showcase packageIds and put it in user data
-// @Param request body UserShowcasePackageRequest true "Update showcase packages Request"
-// @Success 200 {object} models.User
-// @Failure 400 {object} string "Bad Request"
-// @Router /user/profile/showcase [put]
-// func (uc *UserController) UpdateUserShowcasePackage(c *gin.Context) {
-// 	var req dto.UserShowcasePackageRequest
-// 	if err := c.ShouldBindJSON(&req); err != nil {
-// 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-// 	}
-
-// 	// Check the owner
-// 	user := middleware.GetUserFromContext(c)
-// 	isShowcaseValid := uc.Service.VerifyShowcase(c.Request.Context(), user.ShowcasePackages, req.PackageID)
-// 	if !isShowcaseValid {
-// 		c.JSON(http.StatusForbidden, gin.H{"error": "You do not own the package"})
-// 		return
-// 	}
-
-// 	user.ShowcasePackages = req.PackageID
-// 	_, err := uc.Service.UpdateUser(c.Request.Context(), user.Email, user)
-// 	if err != nil {
-// 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update showcase packages, " + err.Error()})
-// 		return
-// 	}
-
-// 	c.JSON(http.StatusOK, user)
-// 	return
-// }

@@ -37,14 +37,14 @@ func (s *UserService) CreateUser(ctx context.Context, user *models.User) error {
 	return s.Repo.CreateUser(ctx, user)
 }
 
-func (s *UserService) UpdateUser(ctx context.Context, userId string, email string, req *dto.UserRequest) (*dto.UserResponse, error) {
+func (s *UserService) UpdateUser(ctx context.Context, userId primitive.ObjectID, email string, req *dto.UserRequest) (*dto.UserResponse, error) {
 	item := &models.User{}
-	if err := copier.Copy(item, req); err != nil {
+	if err := copier.CopyWithOption(item, req, copier.Option{IgnoreEmpty: true}); err != nil {
 		return nil, err
 	}
 
 	if req.Profile != nil && *req.Profile != "" {
-		key := "profile/" + userId
+		key := "profile/" + userId.Hex()
 		// Try to delete the existing profile picture
 		fmt.Println("key :", key)
 		_ = s.S3Service.DeleteObject(key)
@@ -61,7 +61,7 @@ func (s *UserService) UpdateUser(ctx context.Context, userId string, email strin
 	if err != nil {
 		return nil, err
 	}
-	_, err = s.Repo.UpdateUser(ctx, email, updates)
+	_, err = s.Repo.UpdateUser(ctx, userId, updates)
 	if err != nil {
 		return nil, err
 	}
@@ -85,7 +85,7 @@ func (s *UserService) VerifyShowcase(ctx context.Context, ownedPackages []primit
 	return true
 }
 
-func (s *UserService) UpdateOwnerPackage(ctx context.Context, userId string, req dto.UpdateUserPackageRequest) error {
+func (s *UserService) UpdateOwnerPackage(ctx context.Context, userId primitive.ObjectID, req dto.UpdateUserPackageRequest) error {
 	updates, err := utils.StructToBsonMap(req)
 	if err != nil {
 		return err

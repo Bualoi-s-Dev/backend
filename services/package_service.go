@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -9,7 +10,6 @@ import (
 	"github.com/Bualoi-s-Dev/backend/models"
 	repositories "github.com/Bualoi-s-Dev/backend/repositories/database"
 	"github.com/Bualoi-s-Dev/backend/utils"
-	"github.com/jinzhu/copier"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -48,10 +48,18 @@ func (s *PackageService) CreateOne(ctx context.Context, itemInput *dto.PackageSt
 }
 
 func (s *PackageService) UpdateOne(ctx context.Context, packageId string, updates *dto.PackageRequest) (*models.Package, error) {
+	// pkg := &models.Package{
+	// 	Title: *updates.Title,
+	// 	Type:  *updates.Type,
+	// }
 	pkg := &models.Package{}
-	if err := copier.Copy(pkg, updates); err != nil {
-		return nil, err
-	}
+	utils.CopyNonNilFields(pkg, updates)
+	// copier.CopyWithOption(pkg, updates, copier.Option{IgnoreEmpty: true})
+	// if err := ; err != nil {
+	// 	return nil, err
+	// }
+	fmt.Println("pkg :", pkg)
+	fmt.Println("updates :", updates)
 
 	if updates.Photos != nil {
 		// Delete old photos
