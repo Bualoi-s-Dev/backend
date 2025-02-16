@@ -41,6 +41,7 @@ func (ctrl *PackageController) GetAllPackages(c *gin.Context) {
 // @Tags Package
 // @Summary Get a packages by id
 // @Description Retrieve a packages which matched id from the database
+// @Param id path string true "Package ID"
 // @Success 200 {object} models.Package
 // @Failure 400 {object} string "Bad Request"
 // @Router /package/{id} [get]
@@ -93,6 +94,7 @@ func (ctrl *PackageController) CreateOnePackage(c *gin.Context) {
 // UpdateOnePackage godoc
 // @Tags Package
 // @Summary Patch a package
+// @Param id path string true "Package ID"
 // @Param request body dto.PackageRequest true "Replace Package Request"
 // @Success 200 {object} models.Package
 // @Failure 400 {object} string "Bad Request"
@@ -136,6 +138,7 @@ func (ctrl *PackageController) UpdateOnePackage(c *gin.Context) {
 // @Tags Package
 // @Summary Delete a package
 // @Description Delete a package in the database
+// @Param id path string true "Package ID"
 // @Success 200 {object} string "OK"
 // @Failure 400 {object} string "Bad Request"
 // @Router /package/{id} [delete]

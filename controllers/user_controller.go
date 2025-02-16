@@ -42,7 +42,7 @@ func (uc *UserController) GetUserJWT(c *gin.Context) {
 // @Tags User
 // @Summary Get a user from database
 // @Description Retrieve a user from database
-// @Success 200 {object} models.User
+// @Success 200 {object} dto.UserResponse
 // @Failure 400 {object} string "Bad Request"
 // @Router /user/profile [get]
 func (uc *UserController) GetUserProfile(c *gin.Context) {
@@ -65,7 +65,7 @@ func (uc *UserController) GetUserProfile(c *gin.Context) {
 // @Summary Get a user profile by ID
 // @Description Retrieve a user profile from database by user ID
 // @Param id path string true "User ID"
-// @Success 200 {object} models.User
+// @Success 200 {object} dto.UserResponse
 // @Failure 400 {object} string "Bad Request"
 // @Router /user/profile/{id} [get]
 func (uc *UserController) GetUserProfileByID(c *gin.Context) {
@@ -93,10 +93,10 @@ func (uc *UserController) GetUserProfileByID(c *gin.Context) {
 // @Tags User
 // @Summary Update user data
 // @Description Receive a user data and update it, the profile is base64 and return in url
-// @Param request body models.User true "Update User Request"
-// @Success 200 {object} models.User
+// @Param request body dto.UserRequest true "Update User Request"
+// @Success 200 {object} dto.UserResponse
 // @Failure 400 {object} string "Bad Request"
-// @Router /user/profile [put]
+// @Router /user/profile [patch]
 func (uc *UserController) UpdateUserProfile(c *gin.Context) {
 	// Retrieve user from context (set by FirebaseAuthMiddleware)
 	user := middleware.GetUserFromContext(c)

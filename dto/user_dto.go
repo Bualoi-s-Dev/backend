@@ -38,8 +38,8 @@ type UserResponse struct {
 	LineID           string           `bson:"line_id,omitempty" json:"lineID" example:"@meen"`
 	Facebook         string           `bson:"facebook,omitempty" json:"facebook" example:"Meen"`
 	Instagram        string           `bson:"instagram,omitempty" json:"instagram" example:"Meen"`
-	ShowcasePackages []models.Package `bson:"showcase_packages,omitempty" json:"showcasePackages" ts_type:"Package[]" example:"12345678abcd,12345678abcd"`
-	Packages         []models.Package `bson:"photographer_packages,omitempty" json:"photographerPackages" ts_type:"Package[]" example:"12345678abcd,12345678abcd"`
+	ShowcasePackages []models.Package `bson:"showcase_packages,omitempty" json:"showcasePackages" ts_type:"Package[]"`
+	Packages         []models.Package `bson:"photographer_packages,omitempty" json:"photographerPackages" ts_type:"Package[]"`
 }
 
 type UpdateUserPackageRequest struct {
