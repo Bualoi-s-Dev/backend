@@ -7,7 +7,6 @@ import (
 	"github.com/Bualoi-s-Dev/backend/dto"
 	"github.com/Bualoi-s-Dev/backend/models"
 	repositories "github.com/Bualoi-s-Dev/backend/repositories/database"
-	"github.com/Bualoi-s-Dev/backend/utils"
 	"github.com/jinzhu/copier"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -42,8 +41,11 @@ func (s *UserService) CreateUser(ctx context.Context, user *models.User) error {
 }
 
 func (s *UserService) UpdateUser(ctx context.Context, userId primitive.ObjectID, email string, req *dto.UserRequest) (*dto.UserResponse, error) {
-	item := &models.User{}
-	if err := copier.CopyWithOption(item, req, copier.Option{IgnoreEmpty: true}); err != nil {
+	item, err := s.Repo.FindUserByID(ctx, userId)
+	if err != nil {
+		return nil, err
+	}
+	if err := copier.Copy(item, req); err != nil {
 		return nil, err
 	}
 
@@ -61,11 +63,7 @@ func (s *UserService) UpdateUser(ctx context.Context, userId primitive.ObjectID,
 		item.Profile = profileUrl
 	}
 
-	updates, err := utils.StructToBsonMap(item)
-	if err != nil {
-		return nil, err
-	}
-	_, err = s.Repo.UpdateUser(ctx, userId, updates)
+	_, err = s.Repo.ReplaceUser(ctx, userId, item)
 	if err != nil {
 		return nil, err
 	}
@@ -90,10 +88,13 @@ func (s *UserService) VerifyShowcase(ctx context.Context, ownedPackages []primit
 }
 
 func (s *UserService) UpdateOwnerPackage(ctx context.Context, userId primitive.ObjectID, req dto.UpdateUserPackageRequest) error {
-	updates, err := utils.StructToBsonMap(req)
+	item, err := s.Repo.FindUserByID(ctx, userId)
 	if err != nil {
 		return err
 	}
-	_, err = s.Repo.UpdateUser(ctx, userId, updates)
+	if err := copier.Copy(item, req); err != nil {
+		return err
+	}
+	_, err = s.Repo.ReplaceUser(ctx, userId, item)
 	return err
 }

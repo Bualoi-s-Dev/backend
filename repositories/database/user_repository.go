@@ -2,8 +2,6 @@ package repositories
 
 import (
 	"context"
-	"fmt"
-	"log"
 
 	"github.com/Bualoi-s-Dev/backend/dto"
 	"github.com/Bualoi-s-Dev/backend/models"
@@ -73,13 +71,22 @@ func (repo *UserRepository) GetUserByEmail(ctx context.Context, email string) (*
 	return nil, mongo.ErrNoDocuments
 }
 
-func (repo *UserRepository) GetUserByID(ctx context.Context, id primitive.ObjectID) (*models.User, error) {
+func (repo *UserRepository) FindUserByID(ctx context.Context, id primitive.ObjectID) (*models.User, error) {
 	var user models.User
 	err := repo.Collection.FindOne(ctx, bson.M{"_id": id}).Decode(&user)
 	if err != nil {
 		return nil, err
 	}
 	return &user, nil
+}
+
+func (repo *UserRepository) FindEmailByID(ctx context.Context, id primitive.ObjectID) (string, error) {
+	var user models.User
+	err := repo.Collection.FindOne(ctx, bson.M{"_id": id}).Decode(&user)
+	if err != nil {
+		return "", err
+	}
+	return user.Email, nil
 }
 
 func (repo *UserRepository) CreateUser(ctx context.Context, user *models.User) error {
@@ -92,27 +99,19 @@ func (repo *UserRepository) CreateUser(ctx context.Context, user *models.User) e
 
 func (repo *UserRepository) UpdateUser(ctx context.Context, userId primitive.ObjectID, updates bson.M) (*mongo.UpdateResult, error) {
 	updateQuery := bson.M{"$set": updates}
-	fmt.Println("updateQuery :", updateQuery)
-	fmt.Println("userId :", userId)
-	// count, err := repo.Collection.CountDocuments(ctx, bson.M{"_id": userId})
-	// if err != nil {
-	// 	log.Println("Error checking document existence:", err)
-	// } else if count == 0 {
-	// 	log.Println("No document found with _id:", userId)
-	// }
 
 	res, err := repo.Collection.UpdateOne(ctx, bson.M{"_id": userId}, updateQuery)
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println("res :", res)
-	var updatedUser bson.M
-	err = repo.Collection.FindOne(ctx, bson.M{"_id": userId}).Decode(&updatedUser)
-	if err != nil {
-		log.Println("Error fetching updated document:", err)
-	} else {
-		log.Println("Updated document:", updatedUser)
-	}
 
+	return res, nil
+}
+
+func (repo *UserRepository) ReplaceUser(ctx context.Context, userId primitive.ObjectID, newUser *models.User) (*mongo.UpdateResult, error) {
+	res, err := repo.Collection.ReplaceOne(ctx, bson.M{"_id": userId}, newUser)
+	if err != nil {
+		return nil, err
+	}
 	return res, nil
 }

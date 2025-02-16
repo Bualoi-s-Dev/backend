@@ -2,7 +2,6 @@ package dto
 
 import (
 	"github.com/Bualoi-s-Dev/backend/models"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type PackageRequest struct {
@@ -15,8 +14,4 @@ type PackageStrictRequest struct {
 	Title  string             `bson:"title" json:"title" binding:"required" example:"Wedding Bliss Package"`
 	Type   models.PackageType `bson:"type" json:"type" binding:"required,package_type" example:"WEDDING_BLISS"`
 	Photos []string           `bson:"photos" json:"photos" binding:"required" example:"thisisbase64image1,thisisbase64image2"`
-}
-
-type UserShowcasePackageRequest struct {
-	PackageID []primitive.ObjectID `json:"packageIds" binding:"required" example:"12345678abcd,12345678abcd"`
 }

@@ -7,6 +7,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type PackageRepository struct {
@@ -83,9 +84,10 @@ func (repo *PackageRepository) UpdateOne(ctx context.Context, id string, updates
 		return nil, err
 	}
 
+	opts := options.Update().SetUpsert(false)
 	return repo.Collection.UpdateOne(ctx, bson.M{"_id": objectId}, bson.M{
 		"$set": updates,
-	})
+	}, opts)
 }
 
 func (repo *PackageRepository) DeleteOne(ctx context.Context, id string) (*mongo.DeleteResult, error) {

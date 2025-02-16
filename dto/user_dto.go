@@ -44,7 +44,7 @@ type UserResponse struct {
 
 type UpdateUserPackageRequest struct {
 	ShowcasePackages []primitive.ObjectID `bson:"showcase_packages,omitempty" json:"showcasePackages" example:"12345678abcd,12345678abcd"`
-	PackageID        []primitive.ObjectID `bson:"photographer_packages,omitempty" json:"photographerPackages" example:"12345678abcd,12345678abcd"`
+	Packages         []primitive.ObjectID `bson:"photographer_packages,omitempty" json:"photographerPackages" example:"12345678abcd,12345678abcd"`
 }
 
 type AuthUserCredentials struct {
