@@ -90,6 +90,12 @@ func (repo *UserRepository) FindEmailByID(ctx context.Context, id primitive.Obje
 }
 
 func (repo *UserRepository) CreateUser(ctx context.Context, user *models.User) error {
+	if user.ShowcasePackages == nil {
+		user.ShowcasePackages = []primitive.ObjectID{}
+	}
+	if user.Packages == nil {
+		user.Packages = []primitive.ObjectID{}
+	}
 	_, err := repo.Collection.InsertOne(ctx, user)
 	if err != nil {
 		return err

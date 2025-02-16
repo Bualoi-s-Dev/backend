@@ -68,6 +68,9 @@ func (repo *PackageRepository) GetManyId(ctx context.Context, packageIds []primi
 }
 
 func (repo *PackageRepository) CreateOne(ctx context.Context, item *models.Package) (*mongo.InsertOneResult, error) {
+	if item.PhotoUrls == nil {
+		item.PhotoUrls = []string{}
+	}
 	return repo.Collection.InsertOne(ctx, item)
 }
 func (repo *PackageRepository) ReplaceOne(ctx context.Context, id string, updates *models.Package) (*mongo.UpdateResult, error) {
