@@ -100,6 +100,11 @@ func (ctrl *PackageController) CreateOnePackage(c *gin.Context) {
 // @x-order 4
 func (ctrl *PackageController) UpdateOnePackage(c *gin.Context) {
 	id := c.Param("id")
+	err := ctrl.Service.CheckPackageExist(c.Request.Context(), id)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid package ID, " + err.Error()})
+		return
+	}
 	// Check the owner, only the owner can update the package
 	user := middleware.GetUserFromContext(c)
 	isOwner := ctrl.Service.CheckOwner(user, id)
@@ -137,6 +142,11 @@ func (ctrl *PackageController) UpdateOnePackage(c *gin.Context) {
 // @x-order 5
 func (ctrl *PackageController) DeleteOnePackage(c *gin.Context) {
 	id := c.Param("id")
+	err := ctrl.Service.CheckPackageExist(c.Request.Context(), id)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid package ID, " + err.Error()})
+		return
+	}
 	// Check the owner, only the owner can delete the package
 	user := middleware.GetUserFromContext(c)
 	isOwner := ctrl.Service.CheckOwner(user, id)
@@ -170,7 +180,7 @@ func (ctrl *PackageController) DeleteOnePackage(c *gin.Context) {
 			break
 		}
 	}
-	err := ctrl.UserService.UpdateOwnerPackage(c.Request.Context(), user.ID, userReq)
+	err = ctrl.UserService.UpdateOwnerPackage(c.Request.Context(), user.ID, userReq)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update user, " + err.Error()})
 		return

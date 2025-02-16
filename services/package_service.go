@@ -154,3 +154,8 @@ func (s *PackageService) CheckOwner(user *models.User, packageId string) bool {
 	}
 	return false
 }
+
+func (s *PackageService) CheckPackageExist(ctx context.Context, packageId string) error {
+	_, err := s.Repo.GetById(ctx, packageId)
+	return err
+}
