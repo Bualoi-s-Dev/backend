@@ -22,6 +22,9 @@ func main() {
 		AddEnum(models.ValidPackageTypes)
 	converter.
 		Add(models.User{}).
+		Add(dto.UserRequest{}).
+		Add(dto.UserResponse{}).
+		AddEnum(models.ValidUserRoles).
 		AddEnum(models.ValidBankNames)
 
 	// Change to interface

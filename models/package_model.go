@@ -5,8 +5,8 @@ import (
 )
 
 type Package struct {
-	ID        primitive.ObjectID `bson:"_id,omitempty" json:"id,omitempty" ts_type:"string" example:"12345678abcd"`
-	OwnerID   primitive.ObjectID `bson:"owner_id,omitempty" json:"ownerId,omitempty" ts_type:"string" example:"12345678abcd"`
+	ID        primitive.ObjectID `bson:"_id,omitempty" json:"id" ts_type:"string" example:"12345678abcd"`
+	OwnerID   primitive.ObjectID `bson:"owner_id,omitempty" json:"ownerId" ts_type:"string" example:"12345678abcd"`
 	Title     string             `form:"title" bson:"title" json:"title" binding:"required" example:"Wedding Bliss Package"`
 	Type      PackageType        `form:"type" bson:"type" json:"type" binding:"required,package_type" example:"WEDDING_BLISS"`
 	PhotoUrls []string           `bson:"photo_urls" json:"photoUrls" example:"/package/12345678abcd_1,/package/12345678abcd_2"`
