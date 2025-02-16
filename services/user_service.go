@@ -29,8 +29,12 @@ func (s *UserService) GetUser(ctx context.Context, email string) (*dto.UserRespo
 	return s.Repo.GetUserByEmail(ctx, email)
 }
 
-func (s *UserService) GetUserByID(ctx context.Context, id primitive.ObjectID) (*models.User, error) {
-	return s.Repo.GetUserByID(ctx, id)
+func (s *UserService) FindUserByID(ctx context.Context, id primitive.ObjectID) (*models.User, error) {
+	return s.Repo.FindUserByID(ctx, id)
+}
+
+func (s *UserService) FindEmailByID(ctx context.Context, id primitive.ObjectID) (string, error) {
+	return s.Repo.FindEmailByID(ctx, id)
 }
 
 func (s *UserService) CreateUser(ctx context.Context, user *models.User) error {

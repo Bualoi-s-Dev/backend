@@ -76,7 +76,11 @@ func (uc *UserController) GetUserProfileByID(c *gin.Context) {
 		return
 	}
 
-	userDb, err := uc.Service.GetUserByID(c.Request.Context(), objID)
+	userEmail, err := uc.Service.FindEmailByID(c.Request.Context(), objID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get user data"})
+	}
+	userDb, err := uc.Service.GetUser(c.Request.Context(), userEmail)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get user data"})
 		return
