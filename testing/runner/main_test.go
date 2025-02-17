@@ -9,6 +9,7 @@ import (
 
 	"github.com/Bualoi-s-Dev/backend/bootstrap"
 	"github.com/Bualoi-s-Dev/backend/configs"
+	"github.com/gin-gonic/gin"
 )
 
 var testServer *httptest.Server
@@ -37,6 +38,7 @@ func startTestServer() *httptest.Server {
 	log.Println("Starting test server...")
 
 	databaseName := "Testing"
+	gin.SetMode(gin.TestMode)
 
 	client := configs.ConnectMongoDB().Database(databaseName)
 	r := bootstrap.SetupServer(client)
