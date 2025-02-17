@@ -8,9 +8,9 @@ import (
 func PackageRoutes(router *gin.Engine, ctrl *controllers.PackageController) {
 	packageRoutes := router.Group("/package")
 	{
-		packageRoutes.GET("/", ctrl.GetAllPackages)
+		packageRoutes.GET("", ctrl.GetAllPackages)
 		packageRoutes.GET("/:id", ctrl.GetOnePackage)
-		packageRoutes.POST("/", ctrl.CreateOnePackage)
+		packageRoutes.POST("", ctrl.CreateOnePackage)
 		packageRoutes.PATCH("/:id", ctrl.UpdateOnePackage)
 		packageRoutes.DELETE("/:id", ctrl.DeleteOnePackage)
 	}

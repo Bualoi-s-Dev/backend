@@ -22,7 +22,7 @@ func (s *S3Service) UploadFile(file *multipart.FileHeader, key string) (string, 
 }
 
 func (s *S3Service) UploadBase64(fileBytes []byte, key string) (string, error) {
-	_, ext, err := DetectMimeType(string(fileBytes))
+	_, ext, err := s.DetectMimeType(string(fileBytes))
 	if err != nil {
 		return "", err
 	}
@@ -40,7 +40,21 @@ func (s *S3Service) DeleteObject(key string) error {
 	return s.Repo.DeleteObject(key)
 }
 
-func DetectMimeType(base64Str string) (string, string, error) {
+func (s *S3Service) VerifyBase64(base64Str string) error {
+	_, _, err := s.DetectMimeType(base64Str)
+	return err
+}
+
+func (s *S3Service) VerifyMultipleBase64(base64Strs []string) error {
+	for _, base64Str := range base64Strs {
+		if err := s.VerifyBase64(base64Str); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (s *S3Service) DetectMimeType(base64Str string) (string, string, error) {
 	parts := strings.SplitN(base64Str, ",", 2)
 	if len(parts) != 2 {
 		return "", "", fmt.Errorf("invalid base64 format")

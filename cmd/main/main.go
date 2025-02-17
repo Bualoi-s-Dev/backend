@@ -10,7 +10,8 @@ import (
 	"github.com/Bualoi-s-Dev/backend/controllers"
 	"github.com/Bualoi-s-Dev/backend/middleware"
 	"github.com/Bualoi-s-Dev/backend/models"
-	repositories "github.com/Bualoi-s-Dev/backend/repositories/database"
+	database "github.com/Bualoi-s-Dev/backend/repositories/database"
+	firebase "github.com/Bualoi-s-Dev/backend/repositories/firebase"
 	s3 "github.com/Bualoi-s-Dev/backend/repositories/s3"
 	"github.com/Bualoi-s-Dev/backend/routes"
 	"github.com/Bualoi-s-Dev/backend/services"
@@ -32,6 +33,7 @@ import (
 // @externalDocs.url          https://swagger.io/resources/open-api/
 func main() {
 	r := gin.Default()
+	r.RemoveExtraSlash = true
 
 	r.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{"http://localhost:3000"},
@@ -50,27 +52,30 @@ func main() {
 	}
 
 	// Init
-	packageRepo := repositories.NewPackageRepository(client.Collection("Package"))
-	userRepo := repositories.NewUserRepository(client.Collection("User"))
+	packageRepo := database.NewPackageRepository(client.Collection("Package"))
+	userRepo := database.NewUserRepository(client.Collection("User"))
 	s3Repo := s3.NewS3Repository()
+	firebaseRepo := firebase.NewFirebaseRepository(authClient)
 
 	s3Service := services.NewS3Service(s3Repo)
+	firebaseService := services.NewFirebaseService(firebaseRepo)
 	userService := services.NewUserService(userRepo, s3Service)
 	packageService := services.NewPackageService(packageRepo, s3Service)
 
 	packageController := controllers.NewPackageController(packageService, s3Service, userService)
-	userController := controllers.NewUserController(userService)
-	s3Controller := controllers.NewS3Controller(s3Service)
+	userController := controllers.NewUserController(userService, s3Service)
+	internalController := controllers.NewInternalController(firebaseService, s3Service)
 
 	// Swagger
 	routes.SwaggerRoutes(r)
 
 	// Add routes
+	routes.InternalRoutes(r, internalController)
+
 	r.Use(middleware.FirebaseAuthMiddleware(authClient, client.Collection("User"), userService))
 
 	routes.PackageRoutes(r, packageController)
 	routes.UserRoutes(r, userController)
-	routes.S3Routes(r, s3Controller)
 
 	r.Run()
 }

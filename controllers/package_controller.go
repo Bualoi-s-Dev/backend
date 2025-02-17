@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/Bualoi-s-Dev/backend/dto"
@@ -40,6 +41,7 @@ func (ctrl *PackageController) GetAllPackages(c *gin.Context) {
 // @Tags Package
 // @Summary Get a packages by id
 // @Description Retrieve a packages which matched id from the database
+// @Param id path string true "Package ID"
 // @Success 200 {object} models.Package
 // @Failure 400 {object} string "Bad Request"
 // @Router /package/{id} [get]
@@ -69,6 +71,9 @@ func (ctrl *PackageController) CreateOnePackage(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Bad request, " + err.Error()})
 		return
 	}
+	if err := ctrl.S3Service.VerifyMultipleBase64(itemInput.Photos); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Bad request Image, " + err.Error()})
+	}
 
 	user := middleware.GetUserFromContext(c)
 	item, err := ctrl.Service.CreateOne(c.Request.Context(), &itemInput, user.ID)
@@ -77,8 +82,8 @@ func (ctrl *PackageController) CreateOnePackage(c *gin.Context) {
 		return
 	}
 
-	user.Packages = append(user.Packages, item.ID)
-	_, err = ctrl.UserService.UpdateUser(c.Request.Context(), user.Email, user)
+	userReq := dto.UpdateUserPackageRequest{Packages: append(user.Packages, item.ID)}
+	err = ctrl.UserService.UpdateOwnerPackage(c.Request.Context(), user.ID, userReq)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update user, " + err.Error()})
 		return
@@ -89,6 +94,7 @@ func (ctrl *PackageController) CreateOnePackage(c *gin.Context) {
 // UpdateOnePackage godoc
 // @Tags Package
 // @Summary Patch a package
+// @Param id path string true "Package ID"
 // @Param request body dto.PackageRequest true "Replace Package Request"
 // @Success 200 {object} models.Package
 // @Failure 400 {object} string "Bad Request"
@@ -96,6 +102,11 @@ func (ctrl *PackageController) CreateOnePackage(c *gin.Context) {
 // @x-order 4
 func (ctrl *PackageController) UpdateOnePackage(c *gin.Context) {
 	id := c.Param("id")
+	err := ctrl.Service.CheckPackageExist(c.Request.Context(), id)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid package ID, " + err.Error()})
+		return
+	}
 	// Check the owner, only the owner can update the package
 	user := middleware.GetUserFromContext(c)
 	isOwner := ctrl.Service.CheckOwner(user, id)
@@ -108,6 +119,11 @@ func (ctrl *PackageController) UpdateOnePackage(c *gin.Context) {
 	if err := c.ShouldBindJSON(&updates); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Bad request, " + err.Error()})
 		return
+	}
+	if updates.Photos != nil && len(*updates.Photos) > 0 {
+		if err := ctrl.S3Service.VerifyMultipleBase64(*updates.Photos); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Bad request Image, " + err.Error()})
+		}
 	}
 
 	item, err := ctrl.Service.UpdateOne(c.Request.Context(), id, &updates)
@@ -122,12 +138,18 @@ func (ctrl *PackageController) UpdateOnePackage(c *gin.Context) {
 // @Tags Package
 // @Summary Delete a package
 // @Description Delete a package in the database
+// @Param id path string true "Package ID"
 // @Success 200 {object} string "OK"
 // @Failure 400 {object} string "Bad Request"
 // @Router /package/{id} [delete]
 // @x-order 5
 func (ctrl *PackageController) DeleteOnePackage(c *gin.Context) {
 	id := c.Param("id")
+	err := ctrl.Service.CheckPackageExist(c.Request.Context(), id)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid package ID, " + err.Error()})
+		return
+	}
 	// Check the owner, only the owner can delete the package
 	user := middleware.GetUserFromContext(c)
 	isOwner := ctrl.Service.CheckOwner(user, id)
@@ -141,14 +163,27 @@ func (ctrl *PackageController) DeleteOnePackage(c *gin.Context) {
 		return
 	}
 
+	userReq := dto.UpdateUserPackageRequest{}
 	// Remove the package from the user's packages
+	fmt.Println("id :", id)
+	fmt.Println("user.Packages :", user.Packages)
 	for i, packageId := range user.Packages {
+		fmt.Println("packageId.Hex() :", packageId.Hex())
 		if packageId.Hex() == id {
-			user.Packages = append(user.Packages[:i], user.Packages[i+1:]...)
+			userReq.Packages = append(user.Packages[:i], user.Packages[i+1:]...)
 			break
 		}
 	}
-	_, err := ctrl.UserService.UpdateUser(c.Request.Context(), user.Email, user)
+	// Remove the package from the user's showcase packages
+	fmt.Println("user.ShowcasePackages :", user.ShowcasePackages)
+	for i, packageId := range user.ShowcasePackages {
+		fmt.Println("packageId.Hex() :", packageId.Hex())
+		if packageId.Hex() == id {
+			userReq.ShowcasePackages = append(user.ShowcasePackages[:i], user.ShowcasePackages[i+1:]...)
+			break
+		}
+	}
+	err = ctrl.UserService.UpdateOwnerPackage(c.Request.Context(), user.ID, userReq)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update user, " + err.Error()})
 		return

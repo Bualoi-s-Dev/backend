@@ -32,9 +32,24 @@ func ValidateBankName(fl validator.FieldLevel) bool {
 	return false
 }
 
+// ValidateBankname checks if the UserRole is valid
+func ValidateUserRole(fl validator.FieldLevel) bool {
+	value := fl.Field().Interface().(UserRole)
+
+	// Check if the value exists in the validBankNames slice
+	for _, validRole := range ValidUserRoles {
+		if value == validRole.Value {
+			return true
+		}
+	}
+
+	return false
+}
+
 // RegisterCustomValidators registers custom validators to the validator
 // Add more validators here
 func RegisterCustomValidators(v *validator.Validate) {
 	v.RegisterValidation("package_type", ValidatePackageType)
 	v.RegisterValidation("bank_name", ValidateBankName)
+	v.RegisterValidation("user_role", ValidateUserRole)
 }

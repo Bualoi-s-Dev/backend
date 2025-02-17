@@ -8,7 +8,6 @@ import (
 	"github.com/Bualoi-s-Dev/backend/dto"
 	"github.com/Bualoi-s-Dev/backend/models"
 	repositories "github.com/Bualoi-s-Dev/backend/repositories/database"
-	"github.com/Bualoi-s-Dev/backend/utils"
 	"github.com/jinzhu/copier"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -48,21 +47,24 @@ func (s *PackageService) CreateOne(ctx context.Context, itemInput *dto.PackageSt
 }
 
 func (s *PackageService) UpdateOne(ctx context.Context, packageId string, updates *dto.PackageRequest) (*models.Package, error) {
-	pkg := &models.Package{}
+	// Fetch current package
+	pkg, err := s.Repo.GetById(ctx, packageId)
+	if err != nil {
+		return nil, err
+	}
+	// Replace with new values
 	if err := copier.Copy(pkg, updates); err != nil {
 		return nil, err
 	}
 
+	// Upload new photos if any
 	if updates.Photos != nil {
 		// Delete old photos
-		curPackage, findErr := s.GetById(ctx, packageId)
-		if findErr != nil {
-			return nil, findErr
-		}
-		delErr := s.DeletePackagePhotos(curPackage.PhotoUrls)
+		delErr := s.DeletePackagePhotos(pkg.PhotoUrls)
 		if delErr != nil {
 			return nil, delErr
 		}
+		pkg.PhotoUrls = []string{}
 
 		// Upload new photos
 		photoUrls, upErr := s.UploadPackagePhotos(*updates.Photos, packageId)
@@ -72,18 +74,8 @@ func (s *PackageService) UpdateOne(ctx context.Context, packageId string, update
 		pkg.PhotoUrls = photoUrls
 	}
 
-	item, err := utils.StructToBsonMap(pkg)
-	if err != nil {
-		return nil, err
-	}
-
-	_, err = s.Repo.UpdateOne(ctx, packageId, item)
-
-	updatedItem, findErr := s.GetById(ctx, packageId)
-	if findErr != nil {
-		return nil, findErr
-	}
-	return updatedItem, err
+	_, err = s.Repo.ReplaceOne(ctx, packageId, pkg)
+	return pkg, err
 }
 
 func (s *PackageService) DeleteOne(ctx context.Context, packageId string) error {
@@ -114,7 +106,7 @@ func (s *PackageService) NewPackageFromRequest(req *dto.PackageStrictRequest, ow
 }
 
 func (s *PackageService) UploadPackagePhotos(photoBase64 []string, id string) ([]string, error) {
-	var photoUrls []string
+	photoUrls := []string{}
 	for idx, photo := range photoBase64 {
 		// Add / to the photo path
 		photoUrl, err := s.S3Service.UploadBase64([]byte(photo), "package/"+id+"_"+strconv.Itoa(idx+1))
@@ -145,4 +137,9 @@ func (s *PackageService) CheckOwner(user *models.User, packageId string) bool {
 		}
 	}
 	return false
+}
+
+func (s *PackageService) CheckPackageExist(ctx context.Context, packageId string) error {
+	_, err := s.Repo.GetById(ctx, packageId)
+	return err
 }

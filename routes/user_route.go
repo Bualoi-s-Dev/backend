@@ -12,8 +12,8 @@ func UserRoutes(router *gin.Engine, userController *controllers.UserController) 
 
 		userRoutes.GET("/profile", userController.GetUserProfile)
 		userRoutes.GET("/profile/:id", userController.GetUserProfileByID)
-		userRoutes.PUT("/profile", userController.UpdateUserProfile)
+		userRoutes.PATCH("/profile", userController.UpdateUserProfile)
 
-		userRoutes.PUT("/profile/showcase", userController.UpdateUserShowcasePackage)
+		// userRoutes.PUT("/profile/showcase", userController.UpdateUserShowcasePackage)
 	}
 }

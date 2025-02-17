@@ -3,19 +3,20 @@ package controllers
 import (
 	"net/http"
 
+	"github.com/Bualoi-s-Dev/backend/dto"
 	"github.com/Bualoi-s-Dev/backend/middleware"
-	"github.com/Bualoi-s-Dev/backend/models"
 	"github.com/Bualoi-s-Dev/backend/services"
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type UserController struct {
-	Service *services.UserService
+	Service   *services.UserService
+	S3Service *services.S3Service
 }
 
-func NewUserController(service *services.UserService) *UserController {
-	return &UserController{Service: service}
+func NewUserController(service *services.UserService, s3Service *services.S3Service) *UserController {
+	return &UserController{Service: service, S3Service: s3Service}
 }
 
 // GetUserJWT godoc
@@ -41,7 +42,7 @@ func (uc *UserController) GetUserJWT(c *gin.Context) {
 // @Tags User
 // @Summary Get a user from database
 // @Description Retrieve a user from database
-// @Success 200 {object} models.User
+// @Success 200 {object} dto.UserResponse
 // @Failure 400 {object} string "Bad Request"
 // @Router /user/profile [get]
 func (uc *UserController) GetUserProfile(c *gin.Context) {
@@ -51,7 +52,7 @@ func (uc *UserController) GetUserProfile(c *gin.Context) {
 	// Call the service to get the user's profile picture URL
 	userDb, err := uc.Service.GetUser(c.Request.Context(), user.Email)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get user data"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get user data, " + err.Error()})
 		return
 	}
 
@@ -64,7 +65,7 @@ func (uc *UserController) GetUserProfile(c *gin.Context) {
 // @Summary Get a user profile by ID
 // @Description Retrieve a user profile from database by user ID
 // @Param id path string true "User ID"
-// @Success 200 {object} models.User
+// @Success 200 {object} dto.UserResponse
 // @Failure 400 {object} string "Bad Request"
 // @Router /user/profile/{id} [get]
 func (uc *UserController) GetUserProfileByID(c *gin.Context) {
@@ -75,7 +76,11 @@ func (uc *UserController) GetUserProfileByID(c *gin.Context) {
 		return
 	}
 
-	userDb, err := uc.Service.GetUserByID(c.Request.Context(), objID)
+	userEmail, err := uc.Service.FindEmailByID(c.Request.Context(), objID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get user data"})
+	}
+	userDb, err := uc.Service.GetUser(c.Request.Context(), userEmail)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get user data"})
 		return
@@ -84,75 +89,45 @@ func (uc *UserController) GetUserProfileByID(c *gin.Context) {
 	c.JSON(http.StatusOK, userDb)
 }
 
-
 // UpdateUserProfile godoc
 // @Tags User
 // @Summary Update user data
 // @Description Receive a user data and update it, the profile is base64 and return in url
-// @Param request body models.User true "Update User Request"
-// @Success 200 {object} models.User
+// @Param request body dto.UserRequest true "Update User Request"
+// @Success 200 {object} dto.UserResponse
 // @Failure 400 {object} string "Bad Request"
-// @Router /user/profile [put]
+// @Router /user/profile [patch]
 func (uc *UserController) UpdateUserProfile(c *gin.Context) {
 	// Retrieve user from context (set by FirebaseAuthMiddleware)
 	user := middleware.GetUserFromContext(c)
 
-	var userBody models.User
+	var userBody dto.UserRequest
 	if err := c.ShouldBindJSON(&userBody); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	userBody.ID = user.ID
 
-	isShowcaseValid := uc.Service.VerifyShowcase(c.Request.Context(), user.ShowcasePackages, userBody.ShowcasePackages)
-	if !isShowcaseValid {
-		c.JSON(http.StatusForbidden, gin.H{"error": "You do not own the package"})
-		return
+	if userBody.Profile != nil {
+		if err := uc.S3Service.VerifyBase64(*userBody.Profile); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid profile picture, " + err.Error()})
+			return
+		}
+	}
+
+	if userBody.ShowcasePackages != nil {
+		isShowcaseValid := uc.Service.VerifyShowcase(c.Request.Context(), user.Packages, *userBody.ShowcasePackages)
+		if !isShowcaseValid {
+			c.JSON(http.StatusForbidden, gin.H{"error": "You do not own the package"})
+			return
+		}
 	}
 
 	// Call the service to update the user's profile, include picture
-	newUser, err := uc.Service.UpdateUserWithNewImage(c.Request.Context(), user.ID.Hex(), user.Email, &userBody)
+	newUser, err := uc.Service.UpdateUser(c.Request.Context(), user.ID, user.Email, &userBody)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update profile, " + err.Error()})
 		return
 	}
 
 	c.JSON(http.StatusOK, newUser)
-}
-
-type UserShowcasePackageRequest struct {
-	PackageID []primitive.ObjectID `json:"packageIds" binding:"required" example:"12345678abcd,12345678abcd"`
-}
-
-// UpdateUserShowcasePackage godoc
-// @Tags User
-// @Summary Update user showcase packages
-// @Description Receive showcase packageIds and put it in user data
-// @Param request body UserShowcasePackageRequest true "Update showcase packages Request"
-// @Success 200 {object} models.User
-// @Failure 400 {object} string "Bad Request"
-// @Router /user/profile/showcase [put]
-func (uc *UserController) UpdateUserShowcasePackage(c *gin.Context) {
-	var req UserShowcasePackageRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-	}
-
-	// Check the owner
-	user := middleware.GetUserFromContext(c)
-	isShowcaseValid := uc.Service.VerifyShowcase(c.Request.Context(), user.ShowcasePackages, req.PackageID)
-	if !isShowcaseValid {
-		c.JSON(http.StatusForbidden, gin.H{"error": "You do not own the package"})
-		return
-	}
-
-	user.ShowcasePackages = req.PackageID
-	_, err := uc.Service.UpdateUser(c.Request.Context(), user.Email, user)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update showcase packages, " + err.Error()})
-		return
-	}
-
-	c.JSON(http.StatusOK, user)
-	return
 }

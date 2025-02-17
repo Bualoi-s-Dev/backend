@@ -38,7 +38,15 @@ func (repo *UserRepository) GetUserByEmail(ctx context.Context, email string) (*
 				"from":         "Package",               // Collection to join
 				"localField":   "photographer_packages", // Field in "users"
 				"foreignField": "_id",                   // Field in "packages"
-				"as":           "package_details",       // Output array field
+				"as":           "photographer_packages", // Output array field
+			},
+		},
+		{
+			"$lookup": bson.M{
+				"from":         "Package",           // Collection to join
+				"localField":   "showcase_packages", // Field in "users"
+				"foreignField": "_id",               // Field in "packages"
+				"as":           "showcase_packages", // Output array field
 			},
 		},
 	}
@@ -52,18 +60,18 @@ func (repo *UserRepository) GetUserByEmail(ctx context.Context, email string) (*
 
 	// Decode result
 	if cursor.Next(ctx) {
-		var res *dto.UserResponse
+		var res dto.UserResponse
 		err := cursor.Decode(&res)
 		if err != nil {
 			return nil, err
 		}
-		return res, nil
+		return &res, nil
 	}
 
 	return nil, mongo.ErrNoDocuments
 }
 
-func (repo *UserRepository) GetUserByID(ctx context.Context, id primitive.ObjectID) (*models.User, error) {
+func (repo *UserRepository) FindUserByID(ctx context.Context, id primitive.ObjectID) (*models.User, error) {
 	var user models.User
 	err := repo.Collection.FindOne(ctx, bson.M{"_id": id}).Decode(&user)
 	if err != nil {
@@ -72,7 +80,22 @@ func (repo *UserRepository) GetUserByID(ctx context.Context, id primitive.Object
 	return &user, nil
 }
 
+func (repo *UserRepository) FindEmailByID(ctx context.Context, id primitive.ObjectID) (string, error) {
+	var user models.User
+	err := repo.Collection.FindOne(ctx, bson.M{"_id": id}).Decode(&user)
+	if err != nil {
+		return "", err
+	}
+	return user.Email, nil
+}
+
 func (repo *UserRepository) CreateUser(ctx context.Context, user *models.User) error {
+	if user.ShowcasePackages == nil {
+		user.ShowcasePackages = []primitive.ObjectID{}
+	}
+	if user.Packages == nil {
+		user.Packages = []primitive.ObjectID{}
+	}
 	_, err := repo.Collection.InsertOne(ctx, user)
 	if err != nil {
 		return err
@@ -80,11 +103,21 @@ func (repo *UserRepository) CreateUser(ctx context.Context, user *models.User) e
 	return nil
 }
 
-func (repo *UserRepository) UpdateUser(ctx context.Context, email string, updates *models.User) (*models.User, error) {
+func (repo *UserRepository) UpdateUser(ctx context.Context, userId primitive.ObjectID, updates bson.M) (*mongo.UpdateResult, error) {
 	updateQuery := bson.M{"$set": updates}
-	_, err := repo.Collection.UpdateOne(ctx, bson.M{"email": email}, updateQuery)
+
+	res, err := repo.Collection.UpdateOne(ctx, bson.M{"_id": userId}, updateQuery)
 	if err != nil {
 		return nil, err
 	}
-	return updates, nil
+
+	return res, nil
+}
+
+func (repo *UserRepository) ReplaceUser(ctx context.Context, userId primitive.ObjectID, newUser *models.User) (*mongo.UpdateResult, error) {
+	res, err := repo.Collection.ReplaceOne(ctx, bson.M{"_id": userId}, newUser)
+	if err != nil {
+		return nil, err
+	}
+	return res, nil
 }

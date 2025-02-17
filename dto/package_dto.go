@@ -1,6 +1,8 @@
 package dto
 
-import "github.com/Bualoi-s-Dev/backend/models"
+import (
+	"github.com/Bualoi-s-Dev/backend/models"
+)
 
 type PackageRequest struct {
 	Title  *string             `bson:"title" json:"title" binding:"omitempty" example:"Wedding Bliss Package"`

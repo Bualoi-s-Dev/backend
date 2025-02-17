@@ -17,6 +17,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 	"github.com/aws/smithy-go"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type S3Repository struct {
@@ -89,9 +90,10 @@ func (s *S3Repository) UploadFile(file *multipart.FileHeader, key string) (strin
 }
 
 func (s *S3Repository) UploadBase64(fileBytes []byte, key string, contentType string) (string, error) {
+	genKey := key + "_" + primitive.NewObjectID().Hex()
 	_, uploadErr := s.Uploaders.LimitedImgUploader.Upload(context.TODO(), &s3.PutObjectInput{
 		Bucket:             aws.String(s.BucketName),
-		Key:                aws.String(key),
+		Key:                aws.String(genKey),
 		Body:               strings.NewReader(string(fileBytes)),
 		ACL:                types.ObjectCannedACLPublicRead, // Ensure public access
 		ContentDisposition: aws.String("inline"),            // Make file viewable in browser
@@ -102,7 +104,7 @@ func (s *S3Repository) UploadBase64(fileBytes []byte, key string, contentType st
 		return "", uploadErr
 	}
 
-	return "/" + key, nil
+	return "/" + genKey, nil
 }
 
 func (s *S3Repository) DeleteObject(key string) error {
