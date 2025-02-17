@@ -23,12 +23,15 @@ jobs:
           go-version: "1.23"
 
       - name: Create .env File
-        run: echo "${{ secrets.ENV_FILE }}" | tr -d '\r' > .env
+        run: |
+          echo "${{ secrets.ENV_FILE }}" | tr -d '\r' > .env
+          echo "${{ secrets.ENV_TEST_FILE }}" | tr -d '\r' > .env.test
 
       - name: Load Environment Variables
         run: |
           set -o allexport
           source .env
+          source .env.test
           set +o allexport
 
       - name: Install Swag
