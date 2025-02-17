@@ -26,6 +26,7 @@ jobs:
         run: |
           echo "${{ secrets.ENV_FILE }}" | tr -d '\r' > .env
           echo "${{ secrets.ENV_TEST_FILE }}" | tr -d '\r' > .env.test
+          printf "%s" "${{ secrets.PRIVATE_KEY }}" > private_key.json
 
       - name: Load Environment Variables
         run: |
