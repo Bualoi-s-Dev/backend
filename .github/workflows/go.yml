@@ -15,7 +15,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.GH_PAT }}
 
       - name: Set up Go
         uses: actions/setup-go@v5
@@ -25,11 +25,11 @@ jobs:
       - name: Install Swag
         run: go install github.com/swaggo/swag/cmd/swag@latest
 
-      - name: Tidy up Go modules
-        run: make tidy
-
       - name: Generate Swagger docs
         run: make swag
+
+      - name: Tidy up Go modules
+        run: make tidy
 
       - name: Check if Go code builds
         run: go build -v ./...
