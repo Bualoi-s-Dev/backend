@@ -20,7 +20,16 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.23'
+          go-version: "1.23"
+
+      - name: Create .env File
+        run: echo "${{ secrets.ENV_FILE }}" | tr -d '\r' > .env
+
+      - name: Load Environment Variables
+        run: |
+          set -o allexport
+          source .env
+          set +o allexport
 
       - name: Install Swag
         run: go install github.com/swaggo/swag/cmd/swag@latest
