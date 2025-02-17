@@ -20,20 +20,9 @@ import (
 // @externalDocs.description  OpenAPI
 // @externalDocs.url          https://swagger.io/resources/open-api/
 func main() {
-	// Check the -test flag
-	// testMode := flag.Bool("test", false, "Run in test mode")
-	// flag.Parse()
-
 	databaseName := "PhotoMatch"
-	// if *testMode {
-	// 	fmt.Println("Running in test mode...")
-	// 	databaseName = "Testing"
-	// }
-
 	configs.LoadEnv()
-
 	client := configs.ConnectMongoDB().Database(databaseName)
-	// fmt.Println("Using %s Database", databaseName)
 	r := bootstrap.SetupServer(client)
 	r.Run()
 }
