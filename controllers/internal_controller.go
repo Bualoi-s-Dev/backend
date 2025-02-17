@@ -89,7 +89,7 @@ func (ctrl *InternalController) Login(c *gin.Context) {
 
 	token, err := ctrl.FirebaseService.Login(c, req)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to login, " + err.Error()})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Failed to login, " + err.Error()})
 		return
 	}
 
@@ -105,7 +105,7 @@ func (ctrl *InternalController) Register(c *gin.Context) {
 
 	user, err := ctrl.FirebaseService.Register(c, req)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to register, " + err.Error()})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Failed to register, " + err.Error()})
 		return
 	}
 
