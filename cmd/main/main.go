@@ -1,20 +1,8 @@
 package main
 
 import (
-	"github.com/gin-contrib/cors"
-	"github.com/gin-gonic/gin"
-	"github.com/gin-gonic/gin/binding"
-	"github.com/go-playground/validator/v10"
-
+	"github.com/Bualoi-s-Dev/backend/bootstrap"
 	"github.com/Bualoi-s-Dev/backend/configs"
-	"github.com/Bualoi-s-Dev/backend/controllers"
-	"github.com/Bualoi-s-Dev/backend/middleware"
-	"github.com/Bualoi-s-Dev/backend/models"
-	database "github.com/Bualoi-s-Dev/backend/repositories/database"
-	firebase "github.com/Bualoi-s-Dev/backend/repositories/firebase"
-	s3 "github.com/Bualoi-s-Dev/backend/repositories/s3"
-	"github.com/Bualoi-s-Dev/backend/routes"
-	"github.com/Bualoi-s-Dev/backend/services"
 )
 
 // @title PhotoMatch API
@@ -32,50 +20,9 @@ import (
 // @externalDocs.description  OpenAPI
 // @externalDocs.url          https://swagger.io/resources/open-api/
 func main() {
-	r := gin.Default()
-	r.RemoveExtraSlash = true
-
-	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost:3000"},
-		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
-		AllowHeaders:     []string{"Origin", "Authorization", "Content-Type"},
-		AllowCredentials: true,
-	}))
-
+	databaseName := "PhotoMatch"
 	configs.LoadEnv()
-	client := configs.ConnectMongoDB().Database("PhotoMatch")
-	authClient := middleware.InitializeFirebaseAuth()
-
-	// Validator
-	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
-		models.RegisterCustomValidators(v)
-	}
-
-	// Init
-	packageRepo := database.NewPackageRepository(client.Collection("Package"))
-	userRepo := database.NewUserRepository(client.Collection("User"))
-	s3Repo := s3.NewS3Repository()
-	firebaseRepo := firebase.NewFirebaseRepository(authClient)
-
-	s3Service := services.NewS3Service(s3Repo)
-	firebaseService := services.NewFirebaseService(firebaseRepo)
-	userService := services.NewUserService(userRepo, s3Service)
-	packageService := services.NewPackageService(packageRepo, s3Service)
-
-	packageController := controllers.NewPackageController(packageService, s3Service, userService)
-	userController := controllers.NewUserController(userService, s3Service)
-	internalController := controllers.NewInternalController(firebaseService, s3Service)
-
-	// Swagger
-	routes.SwaggerRoutes(r)
-
-	// Add routes
-	routes.InternalRoutes(r, internalController)
-
-	r.Use(middleware.FirebaseAuthMiddleware(authClient, client.Collection("User"), userService))
-
-	routes.PackageRoutes(r, packageController)
-	routes.UserRoutes(r, userController)
-
+	client := configs.ConnectMongoDB().Database(databaseName)
+	r := bootstrap.SetupServer(client)
 	r.Run()
 }

@@ -9,32 +9,43 @@ on:
       - main
 
 jobs:
-  ## Use only docker is fine
-  ## TODO: build and test before docker compose
-  # build:
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Checkout repository
-  #       uses: actions/checkout@v4
-  #       with:
-  #         token: ${{ secrets.GH_PAT }}
+  testing:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GH_PAT }}
 
-  #     - name: Set up Go
-  #       uses: actions/setup-go@v5
-  #       with:
-  #         go-version: '1.23'
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.23"
 
-  #     - name: Install Swag
-  #       run: go install github.com/swaggo/swag/cmd/swag@latest
+      - name: Create .env File
+        run: |
+          echo "${{ secrets.ENV_FILE }}" | tr -d '\r' > .env
+          echo "${{ secrets.ENV_TEST_FILE }}" | tr -d '\r' > .env.test
+          echo '${{ secrets.PRIVATE_KEY }}' | jq '.' > private_key.json
 
-  #     - name: Generate Swagger docs
-  #       run: make swag
+      - name: Load Environment Variables
+        run: |
+          set -o allexport
+          source .env
+          source .env.test
+          set +o allexport
 
-  #     - name: Tidy up Go modules
-  #       run: make tidy
+      - name: Install Swag
+        run: go install github.com/swaggo/swag/cmd/swag@latest
 
-  #     - name: Check if Go code builds
-  #       run: go build -v ./...
+      - name: Generate Swagger docs
+        run: make swag
+
+      - name: Tidy up Go modules
+        run: make tidy
+
+      - name: Run tests
+        run: make testing
 
   docker-compose:
     # needs: build

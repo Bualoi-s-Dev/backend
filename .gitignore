@@ -4,7 +4,6 @@
 *.dll
 *.so
 *.dylib
-*.test
 
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
@@ -30,6 +29,7 @@ go.sum
 
 # Environment variables file
 .env
+.env.test
 
 # OS
 .DS_Store

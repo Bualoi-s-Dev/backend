@@ -8,5 +8,5 @@
 - [ ] Chore
 <!-- Select the type of change by putting an [x] in the box -->
 
-## 🔍 Description
+## Description
 <!-- Full describe the purpose of this PR -->
