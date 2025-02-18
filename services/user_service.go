@@ -9,15 +9,17 @@ import (
 	repositories "github.com/Bualoi-s-Dev/backend/repositories/database"
 	"github.com/jinzhu/copier"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"firebase.google.com/go/auth"
 )
 
 type UserService struct {
 	Repo      *repositories.UserRepository
 	S3Service *S3Service
+	AuthClient *auth.Client
 }
 
-func NewUserService(repo *repositories.UserRepository, s3Service *S3Service) *UserService {
-	return &UserService{Repo: repo, S3Service: s3Service}
+func NewUserService(repo *repositories.UserRepository, s3Service *S3Service, authClient *auth.Client) *UserService {
+	return &UserService{Repo: repo, S3Service: s3Service, AuthClient: authClient}
 }
 
 func (s *UserService) FindUser(ctx context.Context, email string) (*models.User, error) {
@@ -45,6 +47,11 @@ func (s *UserService) UpdateUser(ctx context.Context, userId primitive.ObjectID,
 	if err != nil {
 		return nil, err
 	}
+
+	//Check if the role is changed
+	roleChanged := req.Role != nil && models.UserRole(*req.Role) != item.Role
+
+
 	if err := copier.Copy(item, req); err != nil {
 		return nil, err
 	}
@@ -61,6 +68,27 @@ func (s *UserService) UpdateUser(ctx context.Context, userId primitive.ObjectID,
 		}
 
 		item.Profile = profileUrl
+	}
+
+	// call func change jwt role
+	if roleChanged {
+		newRole := models.UserRole(*req.Role)
+
+		//find user from firebase to get firebase UID
+		firebaseUser, err := s.AuthClient.GetUserByEmail(ctx, email)
+		if err != nil {
+			return nil, fmt.Errorf("failed to fetch Firebase user: %v", err)
+		}
+		firebaseUID := firebaseUser.UID
+
+		err = s.AuthClient.SetCustomUserClaims(ctx, firebaseUID, map[string]interface{}{
+			"role": string(newRole),
+		})
+		if err != nil {
+			return nil, fmt.Errorf("failed to update Firebase role: %v", err)
+		}
+
+		item.Role = newRole
 	}
 
 	_, err = s.Repo.ReplaceUser(ctx, userId, item)
