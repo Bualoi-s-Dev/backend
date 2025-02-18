@@ -122,3 +122,12 @@ func GetUserFromContext(c *gin.Context) *models.User {
 	}
 	return user.(*models.User)
 }
+
+func GetUserRoleFromContext(c *gin.Context) models.UserRole {
+	user := GetUserFromContext(c)
+	if user == nil {
+		log.Println("[ERROR] Role not found in context")
+		return models.Guest
+	}
+	return user.Role
+}
