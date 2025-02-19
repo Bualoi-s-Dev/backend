@@ -38,7 +38,7 @@ func SetupServer(client *mongo.Database) *gin.Engine {
 	// Init
 	packageRepo := database.NewPackageRepository(client.Collection("Package"))
 	userRepo := database.NewUserRepository(client.Collection("User"))
-	appointmentRepo := database.NewAppointmentRepository(client.Collection("Appointment"))
+	appointmentRepo := database.NewAppointmentRepository(client.Collection("Appointment"), client.Collection("Package"))
 	s3Repo := s3.NewS3Repository()
 	firebaseRepo := firebase.NewFirebaseRepository(authClient)
 

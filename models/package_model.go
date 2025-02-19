@@ -44,3 +44,12 @@ var ValidPackageTypes = []struct {
 	{TravelDiaries, string(TravelDiaries)},
 	{Other, string(Other)},
 }
+
+type Subpackage struct {
+	ID          primitive.ObjectID `bson:"_id,omitempty" json:"id" ts_type:"string" example:"12345678abcd" binding:"required"`
+	PackageID   primitive.ObjectID `bson:"package_id,omitempty" json:"packageId" ts_type:"string" example:"12345678abcd" binding:"required"`
+	Name        string             `form:"name" bson:"name" json:"name" binding:"required" example:"Basic Package"`
+	Description string             `form:"description" bson:"description" json:"description" binding:"required" example:"Basic package for wedding bliss"`
+	Price       int                `form:"price" bson:"price" json:"price" binding:"required" example:"5000"`         // (THB)
+	Duration    int                `form:"duration" bson:"duration" json:"duration" binding:"required" example:"120"` // (minutes)
+}
