@@ -23,8 +23,8 @@ func (s *AppointmentService) GetAllAppointment(ctx context.Context, userID primi
 	return s.Repo.GetAll(ctx, userID, userRole)
 }
 
-func (s *AppointmentService) GetAppointmentById(ctx context.Context, apopintmentID primitive.ObjectID, userID primitive.ObjectID, userRole models.UserRole) (*models.Appointment, error) {
-	return s.Repo.GetById(ctx, apopintmentID, userID, userRole)
+func (s *AppointmentService) GetAppointmentById(ctx context.Context, appointmentID, userID primitive.ObjectID, userRole models.UserRole) (*models.Appointment, error) {
+	return s.Repo.GetById(ctx, appointmentID, userID, userRole)
 }
 
 func (s *AppointmentService) CreateOneAppointment(ctx context.Context, appointment *models.Appointment) (*mongo.InsertOneResult, error) {
@@ -50,6 +50,6 @@ func (s *AppointmentService) FindPackageByID(ctx context.Context, id primitive.O
 // 	return s.Repo.UpdateAppointment(ctx, appointment)
 // }
 
-// func (s *AppointmentService) DeleteAppointment(ctx context.Context) error {
-// 	return s.Repo.DeleteAppointment(ctx)
-// }
+func (s *AppointmentService) DeleteAppointment(ctx context.Context, appointmentID primitive.ObjectID) error {
+	return s.Repo.DeleteAppointment(ctx, appointmentID)
+}

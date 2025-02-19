@@ -134,13 +134,31 @@ func (a *AppointmentController) CreateAppointment(c *gin.Context) {
 // 	c.JSON(http.StatusOK, appointment)
 // }
 
-// func (a *AppointmentController) DeleteAppointment(c *gin.Context) {
-// 	id := c.Param("id")
+func (a *AppointmentController) DeleteAppointment(c *gin.Context) {
+	user := middleware.GetUserFromContext(c)
 
-// 	err := a.AppointmentService.DeleteAppointment(c, id)
-// 	if err != nil {
-// 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-// 		return
-// 	}
-// 	c.JSON(http.StatusOK, gin.H{"message": "Appointment deleted successfully"})
-// }
+	if user.Role == "Guest" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Guest cannot access this endpoint"})
+		return
+	}
+
+	appointmentID_ := c.Param("id")
+	appointmentID, err := primitive.ObjectIDFromHex(appointmentID_)
+
+	appointment, err := a.AppointmentService.GetAppointmentById(c, appointmentID, user.ID, user.Role)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+	if appointment.CustomerID != user.ID && appointment.PhotographerID != user.ID {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "You are not authorized to delete this appointment"})
+		return
+	}
+
+	err = a.AppointmentService.DeleteAppointment(c, appointmentID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Appointment deleted successfully"})
+}

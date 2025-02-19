@@ -71,13 +71,11 @@ func (repo *AppointmentRepository) FindPackageByID(ctx context.Context, id primi
 }
 
 func (repo *AppointmentRepository) CreateAppointment(ctx context.Context, appointment *models.Appointment) (*mongo.InsertOneResult, error) {
-	// TODO: Available time checking
 	item, err := repo.AppointmentCollection.InsertOne(ctx, appointment)
 	return item, err
 }
 
 func (repo *AppointmentRepository) UpdateAppointment(ctx context.Context, id primitive.ObjectID, appointment *models.Appointment) error {
-	// TODO: Available time checking before mapping
 	_, err := repo.AppointmentCollection.UpdateOne(ctx, bson.M{"_id": id}, bson.M{"$set": appointment})
 	return err
 }

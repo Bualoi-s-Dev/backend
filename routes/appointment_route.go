@@ -4,11 +4,11 @@ package routes
 TODO: Implement the following routes:
 
 Appointment Group (/appointment)
-GET           : get all appointment of user (check user from middleware)
-GET /:id     : get appointment by id
-POST          :  post appointment
-PATCH /:id : update appointment
-DELETE /:id : delete appointment
+- [x] GET           : get all appointments of user (check user from middleware)
+- [x] GET /:id      : get appointment by id
+- [x] POST          : post appointment
+- [ ] PATCH /:id    : update appointment
+- [ ] DELETE /:id   : delete appointment
 */
 
 import (
@@ -26,6 +26,6 @@ func AppointmentRoutes(router *gin.Engine, ctrl *controllers.AppointmentControll
 		appointmentGroup.GET("/:id", ctrl.GetAppointmentById)
 		appointmentGroup.POST("", ctrl.CreateAppointment)
 		// appointmentGroup.PATCH("/:id", ctrl.UpdateAppointment)
-		// appointmentGroup.DELETE("/:id", ctrl.DeleteAppointment)
+		appointmentGroup.DELETE("/:id", ctrl.DeleteAppointment)
 	}
 }
