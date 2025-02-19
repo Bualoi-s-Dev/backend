@@ -17,13 +17,9 @@ func NewAppointmentRepository(collection *mongo.Collection) *AppointmentReposito
 	return &AppointmentRepository{Collection: collection}
 }
 
-func (repo *AppointmentRepository) GetAll(ctx context.Context, id string) ([]models.Appointment, error) {
+func (repo *AppointmentRepository) GetAll(ctx context.Context, id primitive.ObjectID) ([]models.Appointment, error) {
 	var items []models.Appointment
-	objectId, err := primitive.ObjectIDFromHex(id)
-	if err != nil {
-		return nil, err
-	}
-	cursor, err := repo.Collection.Find(ctx, bson.M{"_id": objectId})
+	cursor, err := repo.Collection.Find(ctx, bson.M{"_id": id})
 	if err != nil {
 		return nil, err
 	}
@@ -39,13 +35,9 @@ func (repo *AppointmentRepository) GetAll(ctx context.Context, id string) ([]mod
 	return items, nil
 }
 
-func (repo *AppointmentRepository) GetById(ctx context.Context, id string) (*models.Appointment, error) {
+func (repo *AppointmentRepository) GetById(ctx context.Context, id primitive.ObjectID) (*models.Appointment, error) {
 	var item models.Appointment
-	objectId, err := primitive.ObjectIDFromHex(id)
-	if err != nil {
-		return nil, err
-	}
-	err = repo.Collection.FindOne(ctx, bson.M{"_id": objectId}).Decode(&item)
+	err := repo.Collection.FindOne(ctx, bson.M{"_id": id}).Decode(&item)
 	if err != nil {
 		return nil, err
 	}
@@ -58,21 +50,13 @@ func (repo *AppointmentRepository) CreateAppointment(ctx context.Context, appoin
 	return err
 }
 
-func (repo *AppointmentRepository) UpdateAppointment(ctx context.Context, id string, appointment *models.Appointment) error {
+func (repo *AppointmentRepository) UpdateAppointment(ctx context.Context, id primitive.ObjectID, appointment *models.Appointment) error {
 	// TODO: Available time checking before mapping
-	objectId, err := primitive.ObjectIDFromHex(id)
-	if err != nil {
-		return err
-	}
-	_, err = repo.Collection.UpdateOne(ctx, bson.M{"_id": objectId}, bson.M{"$set": appointment})
+	_, err := repo.Collection.UpdateOne(ctx, bson.M{"_id": id}, bson.M{"$set": appointment})
 	return err
 }
 
-func (repo *AppointmentRepository) DeleteAppointment(ctx context.Context, id string) error {
-	objectId, err := primitive.ObjectIDFromHex(id)
-	if err != nil {
-		return err
-	}
-	_, err = repo.Collection.DeleteOne(ctx, bson.M{"_id": objectId})
+func (repo *AppointmentRepository) DeleteAppointment(ctx context.Context, id primitive.ObjectID) error {
+	_, err := repo.Collection.DeleteOne(ctx, bson.M{"_id": id})
 	return err
 }

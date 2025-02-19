@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/Bualoi-s-Dev/backend/dto"
+	"github.com/Bualoi-s-Dev/backend/middleware"
 	"github.com/Bualoi-s-Dev/backend/services"
 	"github.com/gin-gonic/gin"
 )
@@ -17,9 +18,9 @@ func NewAppointmentController(appointmentService *services.AppointmentService) *
 }
 
 func (a *AppointmentController) GetAllAppointment(c *gin.Context) {
-	userID := c.GetString("customer_id")
+	user := middleware.GetUserFromContext(c)
 
-	appointments, err := a.AppointmentService.GetAllAppointment(c, userID)
+	appointments, err := a.AppointmentService.GetAllAppointment(c, string(ugdser.ID))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -45,12 +46,12 @@ func (a *AppointmentController) CreateAppointment(c *gin.Context) {
 		return
 	}
 
-	err := a.AppointmentService.CreateAppointment(c, appointment)
+	err := a.AppointmentService.CreateAppointment(c)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusCreated, appointment)
+	c.JSON(http.StatusCreated)
 }
 
 func (a *AppointmentController) UpdateAppointment(c *gin.Context) {
@@ -62,12 +63,12 @@ func (a *AppointmentController) UpdateAppointment(c *gin.Context) {
 		return
 	}
 
-	err := a.AppointmentService.UpdateAppointment(c, id, appointment)
+	err := a.AppointmentService.UpdateAppointment(c, id)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, appointment)
+	c.JSON(http.StatusOK)
 }
 
 func (a *AppointmentController) DeleteAppointment(c *gin.Context) {
