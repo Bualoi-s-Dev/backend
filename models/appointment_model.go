@@ -6,9 +6,9 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-type Booking struct {
+type Appointment struct {
 	ID             primitive.ObjectID `bson:"_id,omitempty" json:"id,omitempty" example:"656e2b5e3f1a3c4d8b9e1234"`
-	UserID         string             `bson:"user_id" json:"user_id" example:"user_123"`
+	CustomerID     string             `bson:"customer_id" json:"customer_id" example:"customer_123"`
 	PhotographerID string             `bson:"photographer_id" json:"photographer_id" example:"photographer_456"`
 	PackageID      string             `bson:"package_id" json:"package_id" example:"package_789"`
 	SubPackageID   string             `bson:"sub_package_id" json:"sub_package_id" example:"sub_package_001"`

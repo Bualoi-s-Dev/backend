@@ -10,10 +10,10 @@ import (
 )
 
 type AppointmentService struct {
-	Repo repositories.AppointmentRepository
+	Repo *repositories.AppointmentRepository
 }
 
-func NewAppointmentService(repo repositories.AppointmentRepository) *AppointmentService {
+func NewAppointmentService(repo *repositories.AppointmentRepository) *AppointmentService {
 	return &AppointmentService{Repo: repo}
 }
 

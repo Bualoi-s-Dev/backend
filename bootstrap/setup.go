@@ -38,16 +38,19 @@ func SetupServer(client *mongo.Database) *gin.Engine {
 	// Init
 	packageRepo := database.NewPackageRepository(client.Collection("Package"))
 	userRepo := database.NewUserRepository(client.Collection("User"))
+	appointmentRepo := database.NewAppointmentRepository(client.Collection("Appointment"))
 	s3Repo := s3.NewS3Repository()
 	firebaseRepo := firebase.NewFirebaseRepository(authClient)
 
 	s3Service := services.NewS3Service(s3Repo)
 	firebaseService := services.NewFirebaseService(firebaseRepo)
 	userService := services.NewUserService(userRepo, s3Service)
+	appointmentService := services.NewAppointmentService(appointmentRepo)
 	packageService := services.NewPackageService(packageRepo, s3Service)
 
 	packageController := controllers.NewPackageController(packageService, s3Service, userService)
 	userController := controllers.NewUserController(userService, s3Service)
+	appointmentController := controllers.NewAppointmentController(appointmentService)
 	internalController := controllers.NewInternalController(firebaseService, s3Service)
 
 	// Swagger
@@ -60,6 +63,7 @@ func SetupServer(client *mongo.Database) *gin.Engine {
 
 	routes.PackageRoutes(r, packageController)
 	routes.UserRoutes(r, userController)
+	routes.AppointmentRoutes(r, appointmentController)
 
 	return r
 }
