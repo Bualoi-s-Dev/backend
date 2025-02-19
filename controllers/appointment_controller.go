@@ -39,6 +39,10 @@ func (a *AppointmentController) GetAllAppointment(c *gin.Context) {
 
 func (a *AppointmentController) GetAppointmentById(c *gin.Context) {
 	user := middleware.GetUserFromContext(c)
+	if user.Role == "Guest" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Guest cannot access this endpoint"})
+		return
+	}
 	appointmentID_ := c.Param("id")
 	appointmentID, err := primitive.ObjectIDFromHex(appointmentID_)
 	if err != nil {
@@ -48,7 +52,12 @@ func (a *AppointmentController) GetAppointmentById(c *gin.Context) {
 
 	appointment, err := a.AppointmentService.GetAppointmentById(c, appointmentID, user.ID, user.Role)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+
+	if appointment.CustomerID != user.ID && appointment.PhotographerID != user.ID {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "You are not authorized to view this appointment"})
 		return
 	}
 	c.JSON(http.StatusOK, appointment)
@@ -72,8 +81,6 @@ func (a *AppointmentController) CreateAppointment(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "start time must be in the future"})
 		return
 	}
-
-	// TODO: Verify the appointment later
 
 	subpackage, err := a.AppointmentService.FindSubpackageByID(c, itemInput.SubPackageID)
 	if err != nil {
@@ -99,13 +106,15 @@ func (a *AppointmentController) CreateAppointment(c *gin.Context) {
 		Location:       itemInput.Location,
 	}
 
-	item, err := a.AppointmentService.CreateOneAppointment(c, &appointment)
+	// TODO: Check Schedule before insertion
+
+	_, err = a.AppointmentService.CreateOneAppointment(c, &appointment)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusCreated, item)
+	c.JSON(http.StatusCreated, appointment)
 }
 
 // func (a *AppointmentController) UpdateAppointment(c *gin.Context) {

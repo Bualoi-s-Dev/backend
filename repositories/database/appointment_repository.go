@@ -2,7 +2,6 @@ package repositories
 
 import (
 	"context"
-	"errors"
 	"strings"
 
 	"github.com/Bualoi-s-Dev/backend/models"
@@ -47,14 +46,9 @@ func (repo *AppointmentRepository) GetAll(ctx context.Context, userID primitive.
 
 func (repo *AppointmentRepository) GetById(ctx context.Context, appointmentID primitive.ObjectID, userID primitive.ObjectID, userRole models.UserRole) (*models.Appointment, error) {
 	var item models.Appointment
-	// FIXME: This is not correct rn
 
 	if err := repo.AppointmentCollection.FindOne(ctx, bson.M{"_id": appointmentID}).Decode(&item); err != nil {
 		return nil, err
-	}
-
-	if item.CustomerID != userID && item.PhotographerID != userID {
-		return nil, errors.New("You are not authorized to view this appointment")
 	}
 
 	return &item, nil
