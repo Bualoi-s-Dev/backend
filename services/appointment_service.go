@@ -2,8 +2,9 @@ package services
 
 import (
 	"context"
-	"fmt"
 	"time"
+
+	"github.com/jinzhu/copier"
 
 	"errors"
 	// "time"
@@ -94,22 +95,11 @@ func (s *AppointmentService) UpdateAppointment(ctx context.Context, user *models
 		endTime := req.StartTime.Add(duration)
 		req.EndTime = &endTime
 	}
-	appointmentToUpdate := models.Appointment{
-		ID:             appointmentId,
-		CustomerID:     appointment.CustomerID,
-		PhotographerID: appointment.PhotographerID,
-		SubPackageID:   appointment.SubPackageID,
-		StartTime:      *req.StartTime,
-		EndTime:        *req.EndTime,
-		Status:         appointment.Status, // can't be edit here
-		Location:       *req.Location,
-	}
+	// use copier
+	copier.Copy(appointment, req)
+	// fmt.Print(appointment)
 
-	fmt.Println("appointmentToUpdate")
-	fmt.Println(appointmentToUpdate)
-	fmt.Println("================<<<<<<<<<<<<<<<<<")
-
-	return s.Repo.ReplaceAppointment(ctx, appointmentId, &appointmentToUpdate)
+	return s.Repo.ReplaceAppointment(ctx, appointmentId, appointment)
 }
 
 func (s *AppointmentService) DeleteAppointment(ctx context.Context, appointmentId primitive.ObjectID, user *models.User) error {

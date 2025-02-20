@@ -109,6 +109,7 @@ func (a *AppointmentController) CreateAppointment(c *gin.Context) {
 func (a *AppointmentController) UpdateAppointment(c *gin.Context) {
 	// user
 	user := middleware.GetUserFromContext(c)
+
 	appointmentId, err := GetIDFromParam(c)
 	if err != nil {
 		HandleError(c, err)
@@ -128,15 +129,10 @@ func (a *AppointmentController) UpdateAppointment(c *gin.Context) {
 	}
 
 	// TODO: maybe update requestBody or something later?
-	if req.EndTime != nil { // cannot update end time (End time Just a placeholder)
-		c.JSON(http.StatusBadRequest, gin.H{"error": "End time cannot be updated"})
-		return
-	}
 	if req.Status != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Status cannot be updated in this endpoint"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Status cannot be updated at this endpoint"})
 		return
 	}
-	// ENDFIXME
 
 	updatedAppointment, err := a.AppointmentService.UpdateAppointment(c.Request.Context(), user, appointmentId, &req)
 	if err != nil {
@@ -149,6 +145,7 @@ func (a *AppointmentController) UpdateAppointment(c *gin.Context) {
 
 func (a *AppointmentController) DeleteAppointment(c *gin.Context) {
 	user := middleware.GetUserFromContext(c)
+
 	appointmentId, err := GetIDFromParam(c)
 	if err != nil {
 		HandleError(c, err)
