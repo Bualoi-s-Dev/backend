@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/Bualoi-s-Dev/backend/bootstrap"
 	"github.com/Bualoi-s-Dev/backend/configs"
 )
@@ -24,5 +26,11 @@ func main() {
 	configs.LoadEnv()
 	client := configs.ConnectMongoDB().Database(databaseName)
 	r := bootstrap.SetupServer(client)
-	r.Run()
+	port := configs.GetEnv("PORT")
+	if port == "" {
+		fmt.Println("PORT is not set")
+		port = "8080"
+	}
+	fmt.Println("Server is running on port: " + port)
+	r.Run(":" + port)
 }
