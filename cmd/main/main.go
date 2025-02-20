@@ -32,5 +32,5 @@ func main() {
 		port = "8080"
 	}
 	fmt.Println("Server is running on port: " + port)
-	r.Run("0.0.0.0:" + port)
+	r.Run(":" + port)
 }
