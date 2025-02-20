@@ -1,5 +1,5 @@
 # Build stage
-FROM golang:latest AS builder
+FROM golang:alpine AS builder
 
 COPY . /app
 WORKDIR /app
@@ -19,21 +19,19 @@ RUN mkdir -p /app/swagger-ui && \
 # Production stage
 FROM alpine:latest
 
-# Install Nginx & Supervisor
-RUN apk update && apk add nginx supervisor
+# Create a non-root user
+RUN adduser -D -g '' appuser
 
 # Copy the Go binary and Swagger UI files
 COPY --from=builder /app /home/appuser/app
 
-# Configure Nginx
-COPY nginx.conf /etc/nginx/nginx.conf
-
-# Copy Supervisor config to manage both processes
-COPY supervisord.conf /etc/supervisord.conf
-
 WORKDIR /home/appuser/app
+
+# Set permissions
+RUN chown -R appuser:appuser /home/appuser/app
+USER appuser
 
 EXPOSE 8080
 
-# Run both Nginx and Go Gin using Supervisor
-CMD ["/usr/bin/supervisord", "-c", "/etc/supervisord.conf"]
+# Run the Go server directly
+CMD ["/home/appuser/app/appbin"]
