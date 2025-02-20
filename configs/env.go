@@ -9,12 +9,12 @@ import (
 
 func LoadEnv() {
 	if _, err := os.Stat(".env"); os.IsNotExist(err) {
-		log.Fatalln(".env file not found")
+		log.Println(".env file not found, ", err)
 	}
 
 	err := godotenv.Load()
 	if err != nil {
-		log.Fatalln("Error loading .env file")
+		log.Println("Error loading .env file")
 	}
 
 	err = godotenv.Load(".env.test")
