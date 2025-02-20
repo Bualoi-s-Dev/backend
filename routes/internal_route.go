@@ -22,6 +22,8 @@ func InternalRoutes(router *gin.Engine, ctrl *controllers.InternalController) {
 			firebaseGroup.POST("/login", ctrl.Login)
 			firebaseGroup.POST("/register", ctrl.Register)
 		}
+
+		internalGroup.GET("/health", ctrl.HealthCheck)
 	}
 
 }

@@ -111,3 +111,7 @@ func (ctrl *InternalController) Register(c *gin.Context) {
 
 	c.JSON(http.StatusOK, user)
 }
+
+func (ctrl *InternalController) HealthCheck(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{"message": "Service is healthy"})
+}
