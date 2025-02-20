@@ -70,14 +70,19 @@ func (repo *AppointmentRepository) FindPackageByID(ctx context.Context, id primi
 	return &item, nil
 }
 
-func (repo *AppointmentRepository) CreateAppointment(ctx context.Context, appointment *models.Appointment) (*mongo.InsertOneResult, error) {
-	item, err := repo.AppointmentCollection.InsertOne(ctx, appointment)
-	return item, err
+func (repo *AppointmentRepository) CreateAppointment(ctx context.Context, appointment *models.Appointment) (*models.Appointment, error) {
+	_, err := repo.AppointmentCollection.InsertOne(ctx, appointment)
+	return appointment, err
 }
 
-func (repo *AppointmentRepository) UpdateAppointment(ctx context.Context, id primitive.ObjectID, appointment *models.Appointment) error {
-	_, err := repo.AppointmentCollection.UpdateOne(ctx, bson.M{"_id": id}, bson.M{"$set": appointment})
-	return err
+// func (repo *AppointmentRepository) UpdateAppointment(ctx context.Context, id primitive.ObjectID, appointment *dto.AppointmentRequest) error {
+// 	_, err := repo.AppointmentCollection.UpdateOne(ctx, bson.M{"_id": id}, bson.M{"$set": appointment})
+// 	return err
+// }
+
+func (repo *AppointmentRepository) ReplaceAppointment(ctx context.Context, id primitive.ObjectID, appointment *models.Appointment) (*models.Appointment, error) {
+	_, err := repo.AppointmentCollection.ReplaceOne(ctx, bson.M{"_id": id}, appointment)
+	return appointment, err
 }
 
 func (repo *AppointmentRepository) DeleteAppointment(ctx context.Context, id primitive.ObjectID) error {

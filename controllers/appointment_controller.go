@@ -1,13 +1,11 @@
 package controllers
 
 import (
-	"fmt"
 	"net/http"
 	"time"
 
 	"github.com/Bualoi-s-Dev/backend/dto"
 	"github.com/Bualoi-s-Dev/backend/middleware"
-	"github.com/Bualoi-s-Dev/backend/models"
 	"github.com/Bualoi-s-Dev/backend/services"
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -21,6 +19,27 @@ func NewAppointmentController(appointmentService *services.AppointmentService) *
 	return &AppointmentController{AppointmentService: appointmentService}
 }
 
+func HandleError(c *gin.Context, err error) {
+	if err == services.ErrBadRequest {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid appointment id"})
+		return
+	}
+	if err == services.ErrUnauthorized {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User is not authorized to access this appointment"})
+		return
+	}
+	c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+}
+
+func GetIDFromParam(c *gin.Context) (primitive.ObjectID, error) {
+	appointmentID_ := c.Param("id")
+	appointmentId, err := primitive.ObjectIDFromHex(appointmentID_)
+	if err != nil {
+		return primitive.NilObjectID, services.ErrBadRequest
+	}
+	return appointmentId, nil
+}
+
 func (a *AppointmentController) GetAllAppointment(c *gin.Context) {
 	user := middleware.GetUserFromContext(c)
 
@@ -29,7 +48,7 @@ func (a *AppointmentController) GetAllAppointment(c *gin.Context) {
 		return
 	}
 
-	appointments, err := a.AppointmentService.GetAllAppointment(c, user.ID, user.Role)
+	appointments, err := a.AppointmentService.GetAllAppointment(c.Request.Context(), user)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -39,31 +58,24 @@ func (a *AppointmentController) GetAllAppointment(c *gin.Context) {
 
 func (a *AppointmentController) GetAppointmentById(c *gin.Context) {
 	user := middleware.GetUserFromContext(c)
-	if user.Role == "Guest" {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Guest cannot access this endpoint"})
-		return
-	}
-	appointmentID_ := c.Param("id")
-	appointmentID, err := primitive.ObjectIDFromHex(appointmentID_)
+
+	appointmentId, err := GetIDFromParam(c)
 	if err != nil {
-		fmt.Println("Invalid appointmentID:", err)
+		HandleError(c, err)
 		return
 	}
 
-	appointment, err := a.AppointmentService.GetAppointmentById(c, appointmentID, user.ID, user.Role)
+	appointment, err := a.AppointmentService.GetAppointmentById(c.Request.Context(), appointmentId, user)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		HandleError(c, err)
 		return
 	}
 
-	if appointment.CustomerID != user.ID && appointment.PhotographerID != user.ID {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "You are not authorized to view this appointment"})
-		return
-	}
 	c.JSON(http.StatusOK, appointment)
 }
 
 func (a *AppointmentController) CreateAppointment(c *gin.Context) {
+	// user
 	user := middleware.GetUserFromContext(c)
 
 	if user.Role != "Customer" {
@@ -71,94 +83,82 @@ func (a *AppointmentController) CreateAppointment(c *gin.Context) {
 		return
 	}
 
-	var itemInput dto.AppointmenStrictRequest
-	if err := c.ShouldBindJSON(&itemInput); err != nil {
+	// request
+	var req dto.AppointmenStrictRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Bad request, " + err.Error()})
 		return
 	}
 
-	if itemInput.StartTime.Before(time.Now()) {
+	if req.StartTime.Before(time.Now()) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "start time must be in the future"})
 		return
 	}
+	//
 
-	subpackage, err := a.AppointmentService.FindSubpackageByID(c, itemInput.SubPackageID)
+	appointment, err := a.AppointmentService.CreateOneAppointment(c.Request.Context(), user, &req)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	pkg, err := a.AppointmentService.FindPackageByID(c, subpackage.PackageID)
-
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	appointment := models.Appointment{
-		ID:             primitive.NewObjectID(),
-		CustomerID:     user.ID,
-		PhotographerID: pkg.OwnerID,
-		StartTime:      itemInput.StartTime,
-		EndTime:        itemInput.StartTime.Add(time.Duration(subpackage.Duration) * time.Minute),
-		SubPackageID:   itemInput.SubPackageID,
-		Status:         "Pending",
-		Location:       itemInput.Location,
-	}
-
-	// TODO: Check Schedule before insertion
-
-	_, err = a.AppointmentService.CreateOneAppointment(c, &appointment)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		HandleError(c, err)
 		return
 	}
 
 	c.JSON(http.StatusCreated, appointment)
 }
 
-// func (a *AppointmentController) UpdateAppointment(c *gin.Context) {
-// 	id := c.Param("id")
+// only update Appointment time and Location Only
+func (a *AppointmentController) UpdateAppointment(c *gin.Context) {
+	// user
+	user := middleware.GetUserFromContext(c)
+	appointmentId, err := GetIDFromParam(c)
+	if err != nil {
+		HandleError(c, err)
+		return
+	}
 
-// 	var appointmentRequest dto.AppointmentRequest
-// 	if err := c.ShouldBindJSON(&appointmentRequest); err != nil {
-// 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-// 		return
-// 	}
+	if user.Role != "Customer" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Only customer can update appointment"})
+		return
+	}
 
-// 	err := a.AppointmentService.UpdateAppointment(c, id)
-// 	if err != nil {
-// 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-// 		return
-// 	}
-// 	c.JSON(http.StatusOK, appointment)
-// }
+	// req
+	var req dto.AppointmentRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Bad request, " + err.Error()})
+		return
+	}
+
+	// TODO: maybe update requestBody or something later?
+	if req.EndTime != nil { // cannot update end time (End time Just a placeholder)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "End time cannot be updated"})
+		return
+	}
+	if req.Status != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Status cannot be updated in this endpoint"})
+		return
+	}
+	// ENDFIXME
+
+	updatedAppointment, err := a.AppointmentService.UpdateAppointment(c.Request.Context(), user, appointmentId, &req)
+	if err != nil {
+		HandleError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, updatedAppointment)
+}
 
 func (a *AppointmentController) DeleteAppointment(c *gin.Context) {
 	user := middleware.GetUserFromContext(c)
-
-	if user.Role == "Guest" {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Guest cannot access this endpoint"})
-		return
-	}
-
-	appointmentID_ := c.Param("id")
-	appointmentID, err := primitive.ObjectIDFromHex(appointmentID_)
-
-	appointment, err := a.AppointmentService.GetAppointmentById(c, appointmentID, user.ID, user.Role)
+	appointmentId, err := GetIDFromParam(c)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
-		return
-	}
-	if appointment.CustomerID != user.ID && appointment.PhotographerID != user.ID {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "You are not authorized to delete this appointment"})
+		HandleError(c, err)
 		return
 	}
 
-	err = a.AppointmentService.DeleteAppointment(c, appointmentID)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	if err := a.AppointmentService.DeleteAppointment(c.Request.Context(), appointmentId, user); err != nil {
+		HandleError(c, err)
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"message": "Appointment deleted successfully"})
+
+	c.JSON(http.StatusOK, gin.H{"message": "Appointment was deleted successfully"})
 }
