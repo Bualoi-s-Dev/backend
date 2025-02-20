@@ -1,17 +1,5 @@
 package routes
 
-/*
-TODO: Implement the following routes:
-
-Appointment Group (/appointment)
-- [x] GET           : get all appointments of user
-- [x] GET /:id      : get appointment by id
-- [x] POST          : post appointment
-- [ ] PATCH /:id    : update appointment
-- [ ] PATCH /:id    : photographer accept/reject appointment
-- [x] DELETE /:id   : delete appointment
-*/
-
 import (
 	"os"
 
