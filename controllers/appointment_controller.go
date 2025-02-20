@@ -28,6 +28,14 @@ func HandleError(c *gin.Context, err error) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "User is not authorized to access this appointment"})
 		return
 	}
+	if err == services.ErrStatusInvalid {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid status"})
+		return
+	}
+	if err == services.ErrStatusTime {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Cannot update status because the appointment has been started"})
+		return
+	}
 	c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 }
 
@@ -135,6 +143,39 @@ func (a *AppointmentController) UpdateAppointment(c *gin.Context) {
 	}
 
 	updatedAppointment, err := a.AppointmentService.UpdateAppointment(c.Request.Context(), user, appointmentId, &req)
+	if err != nil {
+		HandleError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, updatedAppointment)
+}
+
+func (a *AppointmentController) UpdateAppointmentStatus(c *gin.Context) {
+	user := middleware.GetUserFromContext(c)
+
+	appointmentId, err := GetIDFromParam(c)
+	if err != nil {
+		HandleError(c, err)
+		return
+	}
+
+	var req dto.AppointmentRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Bad request, " + err.Error()})
+		return
+	}
+
+	if req.StartTime != nil || req.EndTime != nil || req.Location != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Only status can be updated at this endpoint"})
+		return
+	}
+	if req.Status == nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Status is required"})
+		return
+	}
+
+	updatedAppointment, err := a.AppointmentService.UpdateAppointmentStatus(c.Request.Context(), user, appointmentId, &req)
 	if err != nil {
 		HandleError(c, err)
 		return

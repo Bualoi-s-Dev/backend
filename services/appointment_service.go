@@ -19,6 +19,9 @@ var (
 	ErrBadRequest     = errors.New("Invalid request data")
 	ErrInternalServer = errors.New("Internal server error")
 	ErrUnauthorized   = errors.New("Unauthorized")
+
+	ErrStatusInvalid = errors.New("Invalid status")
+	ErrStatusTime    = errors.New("Invalid status time")
 )
 
 type AppointmentService struct {
@@ -99,6 +102,24 @@ func (s *AppointmentService) UpdateAppointment(ctx context.Context, user *models
 	copier.Copy(appointment, req)
 	// fmt.Print(appointment)
 
+	return s.Repo.ReplaceAppointment(ctx, appointmentId, appointment)
+}
+
+func (s *AppointmentService) UpdateAppointmentStatus(ctx context.Context, user *models.User, appointmentId primitive.ObjectID, req *dto.AppointmentRequest) (*models.Appointment, error) {
+	appointment, err := s.getAuthorizedAppointment(ctx, user, appointmentId)
+	if err != nil {
+		return nil, err
+	}
+
+	if appointment.Status == "Canceled" || appointment.Status == "Completed" {
+		return nil, ErrStatusInvalid
+	}
+	if appointment.Status == "Accepted" && *req.Status == "Canceled" && time.Now().After(appointment.StartTime) {
+		return nil, ErrStatusTime
+	}
+	// TODO: Auto update status to "Completed" when time is up
+
+	appointment.Status = *req.Status
 	return s.Repo.ReplaceAppointment(ctx, appointmentId, appointment)
 }
 
