@@ -72,6 +72,7 @@ func (s *AppointmentService) CreateOneAppointment(ctx context.Context, user *mod
 		ID:             primitive.NewObjectID(),
 		CustomerID:     user.ID,
 		PhotographerID: pkg.OwnerID,
+		PackageID:      pkg.ID,
 		SubPackageID:   req.SubPackageID,
 		StartTime:      req.StartTime,
 		EndTime:        req.StartTime.Add(time.Duration(subpackage.Duration) * time.Minute),
@@ -89,8 +90,15 @@ func (s *AppointmentService) UpdateAppointment(ctx context.Context, user *models
 	if err != nil {
 		return nil, err
 	}
+
+	// if canceled or complete it can't be edited
+	if appointment.Status == "Canceled" || appointment.Status == "Completed" {
+		return nil, ErrStatusInvalid
+	}
+
 	if req.StartTime != nil {
-		if req.StartTime.Before(time.Now()) {
+		loc, _ := time.LoadLocation("Asia/Bangkok")
+		if req.StartTime.Before(time.Now().In(loc)) {
 			return nil, ErrBadRequest
 		}
 		// calculate duration Endtime - StartTime (from appointment)
@@ -117,7 +125,6 @@ func (s *AppointmentService) UpdateAppointmentStatus(ctx context.Context, user *
 	if appointment.Status == "Accepted" && *req.Status == "Canceled" && time.Now().After(appointment.StartTime) {
 		return nil, ErrStatusTime
 	}
-	// TODO: Auto update status to "Completed" when time is up
 
 	appointment.Status = *req.Status
 	return s.Repo.ReplaceAppointment(ctx, appointmentId, appointment)
