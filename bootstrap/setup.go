@@ -1,6 +1,7 @@
 package bootstrap
 
 import (
+	"github.com/Bualoi-s-Dev/backend/configs"
 	"github.com/Bualoi-s-Dev/backend/controllers"
 	"github.com/Bualoi-s-Dev/backend/middleware"
 	"github.com/Bualoi-s-Dev/backend/models"
@@ -28,7 +29,7 @@ func SetupServer(client *mongo.Database) *gin.Engine {
 		AllowCredentials: true,
 	}))
 
-	authClient := middleware.InitializeFirebaseAuth()
+	authClient := configs.InitializeFirebaseAuth()
 
 	// Validator
 	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {

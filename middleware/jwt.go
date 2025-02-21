@@ -4,7 +4,6 @@ import (
 	"context"
 	"log"
 	"net/http"
-	"os"
 	"strings"
 
 	"github.com/Bualoi-s-Dev/backend/models"
@@ -13,23 +12,8 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 
-	firebase "firebase.google.com/go"
 	"firebase.google.com/go/auth"
-	"google.golang.org/api/option"
 )
-
-func InitializeFirebaseAuth() *auth.Client {
-	opt := option.WithCredentialsFile(os.Getenv("FIREBASE_CREDENTIALS"))
-	app, err := firebase.NewApp(context.Background(), nil, opt)
-	if err != nil {
-		log.Fatalf("Error initializing Firebase: %v", err)
-	}
-	authClient, err := app.Auth(context.Background())
-	if err != nil {
-		log.Fatalf("Error getting Firebase Auth client: %v", err)
-	}
-	return authClient
-}
 
 func FirebaseAuthMiddleware(authClient *auth.Client, userCollection *mongo.Collection, userService *services.UserService) gin.HandlerFunc {
 	return func(c *gin.Context) {
