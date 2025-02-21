@@ -8,8 +8,8 @@ import (
 )
 
 func InternalRoutes(router *gin.Engine, ctrl *controllers.InternalController) {
+	internalGroup := router.Group("/internal")
 	if os.Getenv("APP_MODE") == "development" {
-		internalGroup := router.Group("/internal")
 
 		s3Group := internalGroup.Group("/s3")
 		{
@@ -22,8 +22,6 @@ func InternalRoutes(router *gin.Engine, ctrl *controllers.InternalController) {
 			firebaseGroup.POST("/login", ctrl.Login)
 			firebaseGroup.POST("/register", ctrl.Register)
 		}
-
-		internalGroup.GET("/health", ctrl.HealthCheck)
 	}
-
+	internalGroup.GET("/health", ctrl.HealthCheck)
 }
