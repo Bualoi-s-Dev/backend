@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"log"
 	"os"
-	"path/filepath"
 
 	secretmanager "cloud.google.com/go/secretmanager/apiv1"
 	"cloud.google.com/go/secretmanager/apiv1/secretmanagerpb"
@@ -44,12 +43,6 @@ func GetFirebaseCloudCredentials() string {
 	credentialsPath := os.Getenv("PROD_FIREBASE_CREDENTIALS_PATH")
 	if credentialsPath == "" {
 		log.Fatalf("CREDENTIALS_PATH environment variable not set")
-	}
-
-	// Ensure the directory exists
-	dir := filepath.Dir(credentialsPath)
-	if err := os.MkdirAll(dir, 0755); err != nil {
-		log.Fatalf("Failed to create directory: %v", err)
 	}
 
 	if err := os.WriteFile(credentialsPath, result.Payload.Data, 0644); err != nil {
