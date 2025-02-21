@@ -88,9 +88,27 @@ func FirebaseAuthMiddleware(authClient *auth.Client, userCollection *mongo.Colle
 			}
 
 			user = &newUser
+
+			// Set Firebase Custom Claim for role
+			err = authClient.SetCustomUserClaims(ctx, token.UID, map[string]interface{}{
+				"role": string(models.Guest),
+			})
+			if err != nil {
+				log.Printf("[ERROR] Failed to set custom claims: %v", err)
+				c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Failed to set role"})
+				return
+			}
+		}
+
+		// Extract role from Firebase Custom Claims
+		role, exists := token.Claims["role"].(string)
+		if !exists {
+			// Set default role if not exists
+			role = string(models.Guest)
 		}
 
 		// Store user in context
+		user.Role = models.UserRole(role)
 		c.Set("user", user)
 		c.Next()
 	}
@@ -103,4 +121,13 @@ func GetUserFromContext(c *gin.Context) *models.User {
 		return nil
 	}
 	return user.(*models.User)
+}
+
+func GetUserRoleFromContext(c *gin.Context) models.UserRole {
+	user := GetUserFromContext(c)
+	if user == nil {
+		log.Println("[ERROR] Role not found in context")
+		return models.Guest
+	}
+	return user.Role
 }
