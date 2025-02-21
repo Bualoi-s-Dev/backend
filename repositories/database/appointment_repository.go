@@ -2,7 +2,10 @@ package repositories
 
 import (
 	"context"
+	"fmt"
+	"log"
 	"strings"
+	"time"
 
 	"github.com/Bualoi-s-Dev/backend/models"
 	"go.mongodb.org/mongo-driver/bson"
@@ -20,6 +23,54 @@ func NewAppointmentRepository(appointmentCollection, packageCollection *mongo.Co
 		AppointmentCollection: appointmentCollection,
 		PackageCollection:     packageCollection,
 	}
+}
+
+func (repo *AppointmentRepository) AutoUpdateAppointmentStatus(ctx context.Context) error {
+
+	fmt.Println("Running scheduled update...")
+
+	// filter only start_time is grater than current time and status is "Pending"
+	// FIXME: wrong query -> not update???
+	loc, _ := time.LoadLocation("Asia/Bangkok")
+	t := time.Now().In(loc)
+	currentTime := time.Date(
+		t.Year(), t.Month(), t.Day(),
+		t.Hour(), t.Minute(), t.Second(),
+		t.Nanosecond(), time.UTC,
+	)
+
+	// fmt.Println("Querytime = ", currentTime)
+	go func() {
+		filter := bson.M{
+			"start_time": bson.M{"$lt": currentTime},
+			"status":     "Pending",
+		}
+
+		update := bson.M{"$set": bson.M{"status": "Canceled"}}
+		result, err := repo.AppointmentCollection.UpdateMany(ctx, filter, update)
+		if err != nil {
+			log.Println("Error updating documents:", err)
+		} else {
+			fmt.Printf("Autoupdated Pending to Canceled: %d documents\n", result.ModifiedCount)
+		}
+	}()
+
+	// filter only end_time is less than current time and status is "Accepted"
+	go func() {
+		filter := bson.M{
+			"end_time": bson.M{"$lt": currentTime},
+			"status":   "Accepted",
+		}
+		update := bson.M{"$set": bson.M{"status": "Completed"}}
+		result, err := repo.AppointmentCollection.UpdateMany(ctx, filter, update)
+		if err != nil {
+			log.Println("Error updating documents:", err)
+		} else {
+			fmt.Printf("Autoupdated Accepted to Completed: %d documents\n", result.ModifiedCount)
+		}
+	}()
+
+	return nil
 }
 
 func (repo *AppointmentRepository) GetAll(ctx context.Context, userID primitive.ObjectID, userRole models.UserRole) ([]models.Appointment, error) {

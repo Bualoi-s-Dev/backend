@@ -17,7 +17,23 @@ import (
 	s3 "github.com/Bualoi-s-Dev/backend/repositories/s3"
 )
 
-func SetupServer(client *mongo.Database) *gin.Engine {
+type ServerRepositories struct {
+	packageRepo     *database.PackageRepository
+	userRepo        *database.UserRepository
+	appointmentRepo *database.AppointmentRepository
+	s3Repo          *s3.S3Repository
+	firebaseRepo    *firebase.FirebaseRepository
+}
+
+type ServerServices struct {
+	packageService     *services.PackageService
+	userService        *services.UserService
+	appointmentService *services.AppointmentService
+	s3Service          *services.S3Service
+	firebaseService    *services.FirebaseService
+}
+
+func SetupServer(client *mongo.Database) (*gin.Engine, *ServerRepositories, *ServerServices) {
 	r := gin.Default()
 	r.RemoveExtraSlash = true
 
@@ -35,7 +51,6 @@ func SetupServer(client *mongo.Database) *gin.Engine {
 		models.RegisterCustomValidators(v)
 	}
 
-	// Init
 	packageRepo := database.NewPackageRepository(client.Collection("Package"))
 	userRepo := database.NewUserRepository(client.Collection("User"))
 	appointmentRepo := database.NewAppointmentRepository(client.Collection("Appointment"), client.Collection("Package"))
@@ -53,6 +68,21 @@ func SetupServer(client *mongo.Database) *gin.Engine {
 	appointmentController := controllers.NewAppointmentController(appointmentService)
 	internalController := controllers.NewInternalController(firebaseService, s3Service)
 
+	serverRepositories := &ServerRepositories{
+		packageRepo:     packageRepo,
+		userRepo:        userRepo,
+		appointmentRepo: appointmentRepo,
+		s3Repo:          s3Repo,
+		firebaseRepo:    firebaseRepo,
+	}
+	serverServices := &ServerServices{
+		packageService:     packageService,
+		userService:        userService,
+		appointmentService: appointmentService,
+		s3Service:          s3Service,
+		firebaseService:    firebaseService,
+	}
+
 	// Swagger
 	routes.SwaggerRoutes(r)
 
@@ -65,5 +95,5 @@ func SetupServer(client *mongo.Database) *gin.Engine {
 	routes.UserRoutes(r, userController)
 	routes.AppointmentRoutes(r, appointmentController)
 
-	return r
+	return r, serverRepositories, serverServices
 }

@@ -8,7 +8,7 @@ import (
 
 type AppointmentRequest struct { // cannot patch subpackage
 	StartTime *time.Time `bson:"start_time,omitempty" json:"start_time" example:"2025-02-18T10:00:00Z"`
-	EndTime   *time.Time `bson:"-" json:"-" example:"2025-02-18T12:00:00Z"`        // FIXME: remove this field (or not)?
+	EndTime   *time.Time `bson:"-" json:"-" example:"2025-02-18T12:00:00Z"`
 	Status    *string    `bson:"status,omitempty" json:"status" example:"pending"` // "pending", "accepted", "rejected", "completed"
 	Location  *string    `bson:"location,omitempty" json:"location" example:"Bangkok, Thailand"`
 }

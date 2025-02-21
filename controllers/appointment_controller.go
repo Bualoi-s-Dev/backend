@@ -90,7 +90,7 @@ func (a *AppointmentController) CreateAppointment(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Only customer can create appointment"})
 		return
 	}
-
+	loc, _ := time.LoadLocation("Asia/Bangkok")
 	// request
 	var req dto.AppointmenStrictRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -98,7 +98,7 @@ func (a *AppointmentController) CreateAppointment(c *gin.Context) {
 		return
 	}
 
-	if req.StartTime.Before(time.Now()) {
+	if req.StartTime.Before(time.Now().In(loc)) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "start time must be in the future"})
 		return
 	}
@@ -128,6 +128,7 @@ func (a *AppointmentController) UpdateAppointment(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Only customer can update appointment"})
 		return
 	}
+	// TODO: can be editted only while status is "Pending"
 
 	// req
 	var req dto.AppointmentRequest
@@ -136,7 +137,6 @@ func (a *AppointmentController) UpdateAppointment(c *gin.Context) {
 		return
 	}
 
-	// TODO: maybe update requestBody or something later?
 	if req.Status != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Status cannot be updated at this endpoint"})
 		return
@@ -184,7 +184,7 @@ func (a *AppointmentController) UpdateAppointmentStatus(c *gin.Context) {
 	c.JSON(http.StatusOK, updatedAppointment)
 }
 
-func (a *AppointmentController) DeleteAppointment(c *gin.Context) {
+func (a *AppointmentController) DeleteAppointment(c *gin.Context) { // only admin
 	user := middleware.GetUserFromContext(c)
 
 	appointmentId, err := GetIDFromParam(c)

@@ -41,7 +41,7 @@ func startTestServer() *httptest.Server {
 	gin.SetMode(gin.TestMode)
 
 	client := configs.ConnectMongoDB().Database(databaseName)
-	r := bootstrap.SetupServer(client)
+	r, _, _ := bootstrap.SetupServer(client)
 	testServer := httptest.NewServer(r)
 	return testServer
 }
