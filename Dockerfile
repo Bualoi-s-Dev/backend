@@ -31,6 +31,8 @@ WORKDIR /home/appuser/app
 RUN chown -R appuser:appuser /home/appuser/app
 USER appuser
 
+RUN ls -la /
+
 EXPOSE 8080
 
 # Run the Go server directly
