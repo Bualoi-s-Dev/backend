@@ -24,6 +24,9 @@ import (
 func main() {
 	databaseName := "PhotoMatch"
 	configs.LoadEnv()
+	if configs.GetEnv("APP_MODE") == "development" {
+		databaseName = "PhotoMatch_Dev"
+	}
 	client := configs.ConnectMongoDB().Database(databaseName)
 	r := bootstrap.SetupServer(client)
 	port := configs.GetEnv("PORT")
