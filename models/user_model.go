@@ -23,6 +23,21 @@ type User struct {
 	Packages         []primitive.ObjectID `bson:"photographer_packages,omitempty" json:"photographerPackages" ts_type:"string[]" example:"12345678abcd,12345678abcd"`
 }
 
+func NewUser(email string) *User {
+	return &User{
+		ID:               primitive.NewObjectID(),
+		Email:            email,
+		Name:             "",
+		Gender:           "",
+		Profile:          "",
+		Phone:            "",
+		Location:         "",
+		Role:             Guest,
+		ShowcasePackages: []primitive.ObjectID{},
+		Packages:         []primitive.ObjectID{},
+	}
+}
+
 type UserRole string
 
 const (
