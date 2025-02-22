@@ -3,7 +3,6 @@ package repositories
 import (
 	"context"
 
-	"github.com/Bualoi-s-Dev/backend/dto"
 	"github.com/Bualoi-s-Dev/backend/models"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -27,50 +26,6 @@ func (repo *UserRepository) FindUserByEmail(ctx context.Context, email string) (
 	return &user, nil
 }
 
-func (repo *UserRepository) GetUserByEmail(ctx context.Context, email string) (*dto.UserResponse, error) {
-	// var user models.User
-	pipeline := []bson.M{
-		{
-			"$match": bson.M{"email": email}, // Filter user
-		},
-		{
-			"$lookup": bson.M{
-				"from":         "Package",               // Collection to join
-				"localField":   "photographer_packages", // Field in "users"
-				"foreignField": "_id",                   // Field in "packages"
-				"as":           "photographer_packages", // Output array field
-			},
-		},
-		{
-			"$lookup": bson.M{
-				"from":         "Package",           // Collection to join
-				"localField":   "showcase_packages", // Field in "users"
-				"foreignField": "_id",               // Field in "packages"
-				"as":           "showcase_packages", // Output array field
-			},
-		},
-	}
-
-	// Run aggregation
-	cursor, err := repo.Collection.Aggregate(ctx, pipeline)
-	if err != nil {
-		return nil, err
-	}
-	defer cursor.Close(ctx) // Ensure cursor is closed after function exits
-
-	// Decode result
-	if cursor.Next(ctx) {
-		var res dto.UserResponse
-		err := cursor.Decode(&res)
-		if err != nil {
-			return nil, err
-		}
-		return &res, nil
-	}
-
-	return nil, mongo.ErrNoDocuments
-}
-
 func (repo *UserRepository) FindUserByID(ctx context.Context, id primitive.ObjectID) (*models.User, error) {
 	var user models.User
 	err := repo.Collection.FindOne(ctx, bson.M{"_id": id}).Decode(&user)
@@ -92,9 +47,6 @@ func (repo *UserRepository) FindEmailByID(ctx context.Context, id primitive.Obje
 func (repo *UserRepository) CreateUser(ctx context.Context, user *models.User) error {
 	if user.ShowcasePackages == nil {
 		user.ShowcasePackages = []primitive.ObjectID{}
-	}
-	if user.Packages == nil {
-		user.Packages = []primitive.ObjectID{}
 	}
 	_, err := repo.Collection.InsertOne(ctx, user)
 	if err != nil {
