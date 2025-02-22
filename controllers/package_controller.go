@@ -23,7 +23,7 @@ func NewPackageController(service *services.PackageService, s3Service *services.
 // @Tags Package
 // @Summary Get a list of packages
 // @Description Retrieve all packages from the database
-// @Success 200 {object} []models.Package
+// @Success 200 {object} []dto.PackageResponse
 // @Failure 400 {object} string "Bad Request"
 // @Router /package [get]
 // @x-order 1
@@ -51,7 +51,7 @@ func (ctrl *PackageController) GetAllPackages(c *gin.Context) {
 // @Summary Get a packages by id
 // @Description Retrieve a packages which matched id from the database
 // @Param id path string true "Package ID"
-// @Success 200 {object} models.Package
+// @Success 200 {object} dto.PackageResponse
 // @Failure 400 {object} string "Bad Request"
 // @Router /package/{id} [get]
 // @x-order 2
@@ -76,7 +76,7 @@ func (ctrl *PackageController) GetOnePackage(c *gin.Context) {
 // @Summary Create a package
 // @Description Create a package in the database
 // @Param request body dto.PackageRequest true "Create Package Request"
-// @Success 200 {object} models.Package
+// @Success 200 {object} dto.PackageResponse
 // @Failure 400 {object} string "Bad Request"
 // @Router /package [post]
 // @x-order 3
@@ -114,7 +114,7 @@ func (ctrl *PackageController) CreateOnePackage(c *gin.Context) {
 // @Summary Patch a package
 // @Param id path string true "Package ID"
 // @Param request body dto.PackageRequest true "Replace Package Request"
-// @Success 200 {object} models.Package
+// @Success 200 {object} dto.PackageResponse
 // @Failure 400 {object} string "Bad Request"
 // @Router /package/{id} [patch]
 // @x-order 4

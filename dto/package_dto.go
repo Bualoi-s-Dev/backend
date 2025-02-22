@@ -17,7 +17,7 @@ type PackageResponse struct {
 	Title       string              `form:"title" bson:"title" json:"title" binding:"required" example:"Wedding Bliss Package"`
 	Type        models.PackageType  `form:"type" bson:"type" json:"type" binding:"required,package_type" example:"WEDDING_BLISS"`
 	PhotoUrls   []string            `bson:"photo_urls" json:"photoUrls" example:"/package/12345678abcd_1,/package/12345678abcd_2"`
-	SubPackages []models.Subpackage `bson:"sub_packages,omitempty" json:"subPackages" example:"[{\"id\":\"12345678abcd\",\"packageId\":\"12345678abcd\",\"title\":\"Wedding Bliss Package\",\"description\":\"This is a package for wedding\",\"price\":10000,\"isInf\":false,\"repeatedDay\":[\"MON\",\"TUE\",\"WED\"],\"avaliableStartTime\":\"15:04\",\"avaliableEndTime\":\"16:27\",\"avaliableStartDay\":\"2021-01-01\",\"avaliableEndDay\":\"2021-12-31\"}]"`
+	SubPackages []models.Subpackage `bson:"sub_packages,omitempty" json:"subPackages"`
 }
 
 func (item *PackageRequest) ToModel(ownerId primitive.ObjectID) *models.Package {

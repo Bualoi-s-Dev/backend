@@ -19,6 +19,13 @@ func NewSubpackageController(service *services.SubpackageService, packageService
 	return &SubpackageController{Service: service, PackageService: packageService}
 }
 
+// GetAllSubpackages godoc
+// @Summary Get all subpackages
+// @Description Get all subpackages
+// @Tags Subpackage
+// @Success 200 {object} []models.Subpackage
+// @Failure 400 {object} string "Bad Request"
+// @Router /subpackage [GET]
 func (ctrl *SubpackageController) GetAllSubpackages(c *gin.Context) {
 	items, err := ctrl.Service.GetAll(c.Request.Context())
 	if err != nil {
@@ -28,6 +35,15 @@ func (ctrl *SubpackageController) GetAllSubpackages(c *gin.Context) {
 	c.JSON(http.StatusOK, items)
 }
 
+// CreateSubpackage godoc
+// @Summary Create a subpackage for a package
+// @Description Create a subpackage for a package, require all fields in the request
+// @Tags Subpackage
+// @Param packageId path string true "Package ID"
+// @Param request body dto.SubpackageRequest true "Create Subpackage Request"
+// @Success 200 {object} models.Subpackage
+// @Failure 400 {object} string "Bad Request"
+// @Router /subpackage/{packageId} [POST]
 func (ctrl *SubpackageController) CreateSubpackage(c *gin.Context) {
 	var itemRequest dto.SubpackageRequest
 	if err := c.ShouldBindJSON(&itemRequest); err != nil {
@@ -58,6 +74,15 @@ func (ctrl *SubpackageController) CreateSubpackage(c *gin.Context) {
 	c.JSON(http.StatusCreated, item)
 }
 
+// UpdateSubpackage godoc
+// @Summary Update an existed subpackage
+// @Description Update an existed subpackage
+// @Tags Subpackage
+// @Param subpackageId path string true "Subpackage ID"
+// @Param request body dto.SubpackageRequest true "Update Subpackage Request"
+// @Success 200 {object} models.Subpackage
+// @Failure 400 {object} string "Bad Request"
+// @Router /subpackage/{subpackageId} [PATCH]
 func (ctrl *SubpackageController) UpdateSubpackage(c *gin.Context) {
 	id := c.Param("subpackageId")
 	var itemRequest dto.SubpackageRequest
@@ -79,6 +104,14 @@ func (ctrl *SubpackageController) UpdateSubpackage(c *gin.Context) {
 	c.JSON(http.StatusOK, item)
 }
 
+// DeleteSubpackage godoc
+// @Summary Delete an existed subpackage
+// @Description Delete an existed subpackage
+// @Tags Subpackage
+// @Param subpackageId path string true "Subpackage ID"
+// @Success 200 {object} string "Subpackage id {id} deleted successfully"
+// @Failure 400 {object} string "Bad Request"
+// @Router /subpackage/{subpackageId} [DELETE]
 func (ctrl *SubpackageController) DeleteSubpackage(c *gin.Context) {
 	id := c.Param("subpackageId")
 	if err := ctrl.Service.Delete(c.Request.Context(), id); err != nil {
