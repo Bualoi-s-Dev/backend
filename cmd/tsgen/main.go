@@ -18,7 +18,6 @@ func main() {
 	converter.
 		Add(models.Package{}).
 		Add(dto.PackageRequest{}).
-		Add(dto.PackageStrictRequest{}).
 		AddEnum(models.ValidPackageTypes)
 	converter.
 		Add(models.User{}).
