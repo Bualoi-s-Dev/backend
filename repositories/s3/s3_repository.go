@@ -1,12 +1,12 @@
 package repositories
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"log"
 	"mime/multipart"
 	"os"
-	"strings"
 
 	"context"
 
@@ -33,7 +33,7 @@ type S3Uploaders struct {
 func NewUploaders(client *s3.Client) *S3Uploaders {
 	DefaultUploader := manager.NewUploader(client)
 	LimitedImgUploader := manager.NewUploader(client, func(u *manager.Uploader) {
-		u.PartSize = 8 << 20 // 8 MiB
+		u.PartSize = 10 << 20 // 10 MiB
 	})
 	return &S3Uploaders{
 		DefaultUploader:    DefaultUploader,
@@ -65,12 +65,11 @@ func NewS3Repository() *S3Repository {
 
 func (s *S3Repository) UploadFile(file *multipart.FileHeader, key string) (string, error) {
 	uploadFile, err := file.Open()
-	defer uploadFile.Close()
-
 	if err != nil {
 		log.Println("Error while opening the file.")
 		return "", err
 	}
+	defer uploadFile.Close()
 
 	_, uploadErr := s.Uploaders.LimitedImgUploader.Upload(context.TODO(), &s3.PutObjectInput{
 		Bucket:             aws.String(s.BucketName),
@@ -94,7 +93,7 @@ func (s *S3Repository) UploadBase64(fileBytes []byte, key string, contentType st
 	_, uploadErr := s.Uploaders.LimitedImgUploader.Upload(context.TODO(), &s3.PutObjectInput{
 		Bucket:             aws.String(s.BucketName),
 		Key:                aws.String(genKey),
-		Body:               strings.NewReader(string(fileBytes)),
+		Body:               bytes.NewReader(fileBytes),
 		ACL:                types.ObjectCannedACLPublicRead, // Ensure public access
 		ContentDisposition: aws.String("inline"),            // Make file viewable in browser
 		ContentType:        aws.String(contentType),         // Preserve file type
