@@ -10,4 +10,11 @@ type PackageRequest struct {
 	Photos *[]string           `bson:"photos" json:"photos" binding:"omitempty" example:"thisisbase64image1,thisisbase64image2"`
 }
 
+
+func (item *PackageRequest) ToModel(ownerId primitive.ObjectID) *models.Package {
+	return &models.Package{
+		OwnerID: ownerId,
+		Title:   *item.Title,
+		Type:    *item.Type,
+	}
 }
