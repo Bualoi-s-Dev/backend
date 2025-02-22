@@ -55,7 +55,7 @@ func (ctrl *SubpackageController) CreateSubpackage(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create item, " + err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, item)
+	c.JSON(http.StatusCreated, item)
 }
 
 func (ctrl *SubpackageController) UpdateSubpackage(c *gin.Context) {
