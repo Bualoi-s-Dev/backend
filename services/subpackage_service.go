@@ -27,7 +27,7 @@ func (s *SubpackageService) GetById(ctx context.Context, id string) (*models.Sub
 	return s.Repository.GetById(ctx, id)
 }
 
-func (s *SubpackageService) GetByPackageId(ctx context.Context, packageId string) ([]models.Subpackage, error) {
+func (s *SubpackageService) GetByPackageId(ctx context.Context, packageId primitive.ObjectID) ([]models.Subpackage, error) {
 	return s.Repository.GetByPackageId(ctx, packageId)
 }
 

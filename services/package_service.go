@@ -13,12 +13,13 @@ import (
 )
 
 type PackageService struct {
-	Repo      *repositories.PackageRepository
-	S3Service *S3Service
+	Repo              *repositories.PackageRepository
+	S3Service         *S3Service
+	SubpackageService *SubpackageService
 }
 
-func NewPackageService(repo *repositories.PackageRepository, s3Service *S3Service) *PackageService {
-	return &PackageService{Repo: repo, S3Service: s3Service}
+func NewPackageService(repo *repositories.PackageRepository, s3Service *S3Service, subpackageService *SubpackageService) *PackageService {
+	return &PackageService{Repo: repo, S3Service: s3Service, SubpackageService: subpackageService}
 }
 
 func (s *PackageService) GetAll(ctx context.Context) ([]models.Package, error) {
@@ -152,4 +153,20 @@ func (s *PackageService) VerifyStrictRequest(ctx context.Context, req *dto.Packa
 		return errors.New("photos is required")
 	}
 	return nil
+}
+
+func (s *PackageService) MappedToPackageResponse(ctx context.Context, item *models.Package) (*dto.PackageResponse, error) {
+	subpackages, err := s.SubpackageService.GetByPackageId(ctx, item.ID)
+	if err != nil {
+		return nil, err
+	}
+	return &dto.PackageResponse{
+		ID:          item.ID,
+		OwnerID:     item.OwnerID,
+		Title:       item.Title,
+		Type:        item.Type,
+		PhotoUrls:   item.PhotoUrls,
+		SubPackages: subpackages,
+	}, nil
+
 }

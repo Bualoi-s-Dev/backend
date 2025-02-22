@@ -48,13 +48,9 @@ func (r *SubpackageRepository) GetById(ctx context.Context, id string) (*models.
 	return &item, nil
 }
 
-func (r *SubpackageRepository) GetByPackageId(ctx context.Context, packageId string) ([]models.Subpackage, error) {
+func (r *SubpackageRepository) GetByPackageId(ctx context.Context, packageId primitive.ObjectID) ([]models.Subpackage, error) {
 	var items []models.Subpackage
-	oPackageId, err := primitive.ObjectIDFromHex(packageId)
-	if err != nil {
-		return nil, err
-	}
-	cursor, err := r.Collection.Find(ctx, bson.M{"package_id": oPackageId})
+	cursor, err := r.Collection.Find(ctx, bson.M{"package_id": packageId})
 	if err != nil {
 		return nil, err
 	}

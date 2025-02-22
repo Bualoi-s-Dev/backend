@@ -33,7 +33,17 @@ func (ctrl *PackageController) GetAllPackages(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch items, " + err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, items)
+
+	var res []dto.PackageResponse
+	for _, item := range items {
+		mappedItem, err := ctrl.Service.MappedToPackageResponse(c.Request.Context(), &item)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to map item, " + err.Error()})
+			return
+		}
+		res = append(res, *mappedItem)
+	}
+	c.JSON(http.StatusOK, res)
 }
 
 // GetOnePackage godoc
@@ -52,7 +62,13 @@ func (ctrl *PackageController) GetOnePackage(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch item, " + err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, item)
+
+	res, err := ctrl.Service.MappedToPackageResponse(c.Request.Context(), item)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to map item, " + err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, res)
 }
 
 // CreateOnePackage godoc
@@ -85,7 +101,12 @@ func (ctrl *PackageController) CreateOnePackage(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, item)
+	res, err := ctrl.Service.MappedToPackageResponse(c.Request.Context(), item)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to map item, " + err.Error()})
+		return
+	}
+	c.JSON(http.StatusCreated, res)
 }
 
 // UpdateOnePackage godoc
@@ -132,7 +153,13 @@ func (ctrl *PackageController) UpdateOnePackage(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update item, " + err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, item)
+
+	res, err := ctrl.Service.MappedToPackageResponse(c.Request.Context(), item)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to map item, " + err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, res)
 }
 
 // DeleteOnePackage godoc

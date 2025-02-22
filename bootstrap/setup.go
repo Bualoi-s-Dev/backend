@@ -45,12 +45,12 @@ func SetupServer(client *mongo.Database) *gin.Engine {
 
 	s3Service := services.NewS3Service(s3Repo)
 	firebaseService := services.NewFirebaseService(firebaseRepo)
-	packageService := services.NewPackageService(packageRepo, s3Service)
-	userService := services.NewUserService(userRepo, s3Service, packageService, authClient)
 	subpackageService := services.NewSubpackageService(subpackageRepo)
+	packageService := services.NewPackageService(packageRepo, s3Service, subpackageService)
+	userService := services.NewUserService(userRepo, s3Service, packageService, authClient)
 
 	packageController := controllers.NewPackageController(packageService, s3Service, userService)
-	subPackageController := controllers.NewSubpackageController(subpackageService)
+	subPackageController := controllers.NewSubpackageController(subpackageService, packageService)
 	userController := controllers.NewUserController(userService, s3Service)
 	internalController := controllers.NewInternalController(firebaseService, s3Service)
 

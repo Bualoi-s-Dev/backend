@@ -11,11 +11,12 @@ import (
 )
 
 type SubpackageController struct {
-	Service *services.SubpackageService
+	Service        *services.SubpackageService
+	PackageService *services.PackageService
 }
 
-func NewSubpackageController(service *services.SubpackageService) *SubpackageController {
-	return &SubpackageController{Service: service}
+func NewSubpackageController(service *services.SubpackageService, packageService *services.PackageService) *SubpackageController {
+	return &SubpackageController{Service: service, PackageService: packageService}
 }
 
 func (ctrl *SubpackageController) GetAllSubpackages(c *gin.Context) {
@@ -41,6 +42,10 @@ func (ctrl *SubpackageController) CreateSubpackage(c *gin.Context) {
 	packageIdParam := c.Param("packageId")
 	packageId, err := primitive.ObjectIDFromHex(packageIdParam)
 	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid package ID, " + err.Error()})
+		return
+	}
+	if _, err := ctrl.PackageService.GetById(c.Request.Context(), packageIdParam); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid package ID, " + err.Error()})
 		return
 	}
