@@ -10,6 +10,7 @@ import (
 
 	"github.com/Bualoi-s-Dev/backend/dto"
 	"github.com/Bualoi-s-Dev/backend/models"
+	"github.com/Bualoi-s-Dev/backend/utils"
 	"github.com/cucumber/godog"
 )
 
@@ -18,8 +19,6 @@ type SubpackageScenario struct {
 	Token      string
 	Package    *dto.PackageResponse
 	Subpackage *models.Subpackage
-
-	Response *http.Response
 }
 
 func (s *SubpackageScenario) InitializeScenario(ctx *godog.ScenarioContext) {
@@ -31,7 +30,9 @@ func (s *SubpackageScenario) InitializeScenario(ctx *godog.ScenarioContext) {
 	ctx.When(`^the photographer updates a subpackage$`, s.thePhotographerUpdatesASubpackage)
 	ctx.When(`^the photographer deletes a subpackage$`, s.thePhotographerDeletesASubpackage)
 
-	ctx.Then(`^the subpackage is (created and added to the package|updated|deleted)$`, s.theSubpackageResponseIsOK)
+	ctx.Then(`^the subpackage is created and added to the package$`, s.theSubpackageIsCreated)
+	ctx.Then(`^the subpackage is updated$`, s.theSubpackageIsUpdated)
+	ctx.Then(`^the subpackage is deleted$`, s.theSubpackageIsDeleted)
 }
 
 func (s *SubpackageScenario) thePhotographerIsLoggedIn() error {
@@ -77,14 +78,12 @@ func (s *SubpackageScenario) thePhotographerHasAPackage() error {
 	if err != nil {
 		return err
 	}
-	s.Response = res
 
 	var packageResponse dto.PackageResponse
 	if err := json.NewDecoder(res.Body).Decode(&packageResponse); err != nil {
 		return err
 	}
 	s.Package = &packageResponse
-
 	return nil
 }
 
@@ -145,6 +144,12 @@ func (s *SubpackageScenario) thePhotographerUpdatesASubpackage() error {
 	if res.StatusCode != http.StatusOK {
 		return fmt.Errorf("failed to update subpackage, status code: %d", res.StatusCode)
 	}
+
+	var subpackage models.Subpackage
+	if err := json.NewDecoder(res.Body).Decode(&subpackage); err != nil {
+		return err
+	}
+	s.Subpackage = &subpackage
 	return nil
 }
 
@@ -166,9 +171,70 @@ func (s *SubpackageScenario) thePhotographerDeletesASubpackage() error {
 	return nil
 }
 
-func (s *SubpackageScenario) theSubpackageResponseIsOK() error {
-	if s.Response.StatusCode == http.StatusOK || s.Response.StatusCode == http.StatusCreated {
-		return nil
+func (s *SubpackageScenario) theSubpackageIsCreated() error {
+	expect := models.Subpackage{
+		PackageID:          s.Package.ID,
+		Title:              "dev",
+		Description:        "1234556",
+		Price:              123,
+		Duration:           23,
+		IsInf:              true,
+		RepeatedDay:        []models.DayName{models.Sunday, models.Wednesday},
+		AvaliableStartTime: "15:11",
+		AvaliableEndTime:   "16:00",
+		AvaliableStartDay:  "2022-12-22",
+		AvaliableEndDay:    "2023-01-22",
 	}
-	return fmt.Errorf("expected status code 200 or 201, got %d", s.Response.StatusCode)
+	if err := utils.CompareStructsExcept(expect, *s.Subpackage, []string{"ID"}); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *SubpackageScenario) theSubpackageIsUpdated() error {
+	expect := models.Subpackage{
+		PackageID:          s.Package.ID,
+		Title:              "dev123",
+		Description:        "1234556",
+		Price:              123,
+		Duration:           23,
+		IsInf:              true,
+		RepeatedDay:        []models.DayName{models.Sunday, models.Wednesday},
+		AvaliableStartTime: "15:11",
+		AvaliableEndTime:   "16:00",
+		AvaliableStartDay:  "2022-12-22",
+		AvaliableEndDay:    "2023-01-22",
+	}
+	if err := utils.CompareStructsExcept(expect, *s.Subpackage, []string{"ID"}); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *SubpackageScenario) theSubpackageIsDeleted() error {
+	req, err := http.NewRequest("GET", s.Server.URL+"/subpackage", nil)
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Authorization", "Bearer "+s.Token)
+
+	client := &http.Client{}
+	res, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	if res.StatusCode != http.StatusOK {
+		return fmt.Errorf("failed to delete subpackage, status code: %d", res.StatusCode)
+	}
+
+	var subPackages []models.Subpackage
+	if err := json.NewDecoder(res.Body).Decode(&subPackages); err != nil {
+		return err
+	}
+	for _, subPackage := range subPackages {
+		if subPackage.ID.Hex() == s.Subpackage.ID.Hex() {
+			return fmt.Errorf("subpackage still exists")
+		}
+	}
+	return nil
 }
