@@ -3,7 +3,6 @@ package services
 import (
 	"context"
 	"errors"
-	"fmt"
 
 	"github.com/Bualoi-s-Dev/backend/dto"
 	"github.com/Bualoi-s-Dev/backend/models"
@@ -39,7 +38,6 @@ func (s *SubpackageService) Create(ctx context.Context, subpackage *models.Subpa
 
 func (s *SubpackageService) Update(ctx context.Context, id string, subpackage *dto.SubpackageRequest) error {
 	bsonSubpackage, err := utils.StructToBsonMap(subpackage)
-	fmt.Println(bsonSubpackage)
 	if err != nil {
 		return err
 	}
