@@ -3,14 +3,14 @@ package testing_runner
 import (
 	"testing"
 
-	features "github.com/Bualoi-s-Dev/backend/testing/features"
+	scenarios "github.com/Bualoi-s-Dev/backend/testing/scenarios"
 	utils "github.com/Bualoi-s-Dev/backend/testing/utils"
 )
 
 func TestUserFeatures(t *testing.T) {
 	server := GetTestServer()
 
-	scenario := &features.UserScenario{Server: server}
+	scenario := &scenarios.UserScenario{Server: server}
 	testSuite := utils.SetupGodog("user.feature", scenario.InitializeScenario)
 	status := testSuite.Run()
 	if status != 0 {
