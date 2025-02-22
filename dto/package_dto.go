@@ -10,8 +10,4 @@ type PackageRequest struct {
 	Photos *[]string           `bson:"photos" json:"photos" binding:"omitempty" example:"thisisbase64image1,thisisbase64image2"`
 }
 
-type PackageStrictRequest struct {
-	Title  string             `bson:"title" json:"title" binding:"required" example:"Wedding Bliss Package"`
-	Type   models.PackageType `bson:"type" json:"type" binding:"required,package_type" example:"WEDDING_BLISS"`
-	Photos []string           `bson:"photos" json:"photos" binding:"required" example:"thisisbase64image1,thisisbase64image2"`
 }

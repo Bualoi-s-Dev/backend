@@ -2,7 +2,7 @@ package services
 
 import (
 	"context"
-	"strconv"
+	"errors"
 	"strings"
 
 	"github.com/Bualoi-s-Dev/backend/dto"
@@ -30,13 +30,21 @@ func (s *PackageService) GetById(ctx context.Context, packageId string) (*models
 }
 
 func (s *PackageService) GetByList(ctx context.Context, packageIds []primitive.ObjectID) ([]models.Package, error) {
+	if len(packageIds) == 0 {
+		return []models.Package{}, nil
+	}
 	return s.Repo.GetManyId(ctx, packageIds)
 }
 
-func (s *PackageService) CreateOne(ctx context.Context, itemInput *dto.PackageStrictRequest, ownerId primitive.ObjectID) (*models.Package, error) {
-	item := s.NewPackageFromRequest(itemInput, ownerId)
+func (s *PackageService) GetByOwnerId(ctx context.Context, ownerId primitive.ObjectID) ([]models.Package, error) {
+	return s.Repo.GetByOwnerId(ctx, ownerId)
+}
 
-	photoUrls, upErr := s.UploadPackagePhotos(itemInput.Photos, item.ID.Hex())
+func (s *PackageService) CreateOne(ctx context.Context, itemInput *dto.PackageRequest, ownerId primitive.ObjectID) (*models.Package, error) {
+	item := itemInput.ToModel(ownerId)
+	item.ID = primitive.NewObjectID()
+
+	photoUrls, upErr := s.UploadPackagePhotos(*itemInput.Photos, item.ID.Hex())
 	if upErr != nil {
 		return nil, upErr
 	}
@@ -95,21 +103,11 @@ func (s *PackageService) DeleteOne(ctx context.Context, packageId string) error 
 
 // Helper function
 
-func (s *PackageService) NewPackageFromRequest(req *dto.PackageStrictRequest, ownerId primitive.ObjectID) *models.Package {
-	item := models.Package{
-		ID:      primitive.NewObjectID(),
-		OwnerID: ownerId,
-		Title:   req.Title,
-		Type:    req.Type,
-	}
-	return &item
-}
-
 func (s *PackageService) UploadPackagePhotos(photoBase64 []string, id string) ([]string, error) {
 	photoUrls := []string{}
-	for idx, photo := range photoBase64 {
+	for _, photo := range photoBase64 {
 		// Add / to the photo path
-		photoUrl, err := s.S3Service.UploadBase64([]byte(photo), "package/"+id+"_"+strconv.Itoa(idx+1))
+		photoUrl, err := s.S3Service.UploadBase64([]byte(photo), "package/"+id)
 		if err != nil {
 			return nil, err
 		}
@@ -130,16 +128,28 @@ func (s *PackageService) DeletePackagePhotos(photoUrls []string) error {
 	return nil
 }
 
-func (s *PackageService) CheckOwner(user *models.User, packageId string) bool {
-	for _, id := range user.Packages {
-		if id.Hex() == packageId {
-			return true
-		}
+func (s *PackageService) CheckOwner(ctx context.Context, user *models.User, packageId string) (bool, error) {
+	pkg, err := s.Repo.GetById(ctx, packageId)
+	if err != nil {
+		return false, err
 	}
-	return false
+	return pkg.OwnerID == user.ID, nil
 }
 
 func (s *PackageService) CheckPackageExist(ctx context.Context, packageId string) error {
 	_, err := s.Repo.GetById(ctx, packageId)
 	return err
+}
+
+func (s *PackageService) VerifyStrictRequest(ctx context.Context, req *dto.PackageRequest) error {
+	if req.Title == nil {
+		return errors.New("title is required")
+	}
+	if req.Type == nil {
+		return errors.New("type is required")
+	}
+	if req.Photos == nil {
+		return errors.New("photos is required")
+	}
+	return nil
 }
