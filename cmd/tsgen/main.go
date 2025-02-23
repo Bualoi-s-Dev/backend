@@ -27,6 +27,12 @@ func main() {
 		AddEnum(models.ValidUserRoles).
 		AddEnum(models.ValidBankNames)
 
+	converter.
+		Add(models.Appointment{}).
+		Add(dto.AppointmentRequest{}).
+		Add(dto.AppointmenStrictRequest{}).
+		AddEnum(models.ValidAppointmentStatus)
+
 	// Change to interface
 	converter.CreateInterface = true
 

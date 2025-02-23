@@ -14,7 +14,26 @@ type Appointment struct {
 	SubPackageID   primitive.ObjectID `bson:"sub_package_id" json:"sub_package_id" example:"sub_package_001"`
 	StartTime      time.Time          `bson:"start_time" json:"start_time" example:"2025-02-18T10:00:00Z"`
 	EndTime        time.Time          `bson:"end_time" json:"end_time" example:"2025-02-18T12:00:00Z"`
-	Status         string             `bson:"status" json:"status" example:"pending"` // "pending", "accepted", "rejected", "completed"
+	Status         AppointmentStatus  `bson:"status" json:"status" example:"pending"` // "pending", "accepted", "rejected", "completed"
 	Location       string             `bson:"location,omitempty" json:"location" example:"Bangkok, Thailand"`
 	// Payment       Payment            `bson:"payment,omitempty" json:"payment,omitempty" example:"{...}"`
+}
+
+type AppointmentStatus string
+
+const (
+	Pending   AppointmentStatus = "Pending"
+	Accepted  AppointmentStatus = "Accepted"
+	Rejected  AppointmentStatus = "Rejected"
+	Completed AppointmentStatus = "Completed"
+)
+
+var ValidAppointmentStatus = []struct {
+	Value  AppointmentStatus
+	TSName string
+}{
+	{Pending, string(Pending)},
+	{Accepted, string(Accepted)},
+	{Rejected, string(Rejected)},
+	{Completed, string(Completed)},
 }
