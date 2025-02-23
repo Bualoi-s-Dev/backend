@@ -30,6 +30,10 @@ func main() {
 		Add(models.Subpackage{}).
 		Add(dto.SubpackageRequest{}).
 		AddEnum(models.ValidDayNames)
+	converter.
+		Add(models.BusyTime{}).
+		Add(dto.BusyTimeRequest{}).
+		AddEnum(models.ValidBusyTimeTypes)
 
 	// Change to interface
 	converter.CreateInterface = true

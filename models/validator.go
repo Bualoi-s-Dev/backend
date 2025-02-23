@@ -80,6 +80,20 @@ func ValidateDate(fl validator.FieldLevel) bool {
 	return err == nil
 }
 
+// ValidateBusyTimeType checks if the BusyTimeType is valid
+func ValidateBusyTimeType(fl validator.FieldLevel) bool {
+	value := fl.Field().Interface().(BusyTimeType)
+
+	// Check if the value exists in the validBankNames slice
+	for _, validType := range ValidBusyTimeTypes {
+		if value == validType.Value {
+			return true
+		}
+	}
+
+	return false
+}
+
 // RegisterCustomValidators registers custom validators to the validator
 // Add more validators here
 func RegisterCustomValidators(v *validator.Validate) {
@@ -89,4 +103,5 @@ func RegisterCustomValidators(v *validator.Validate) {
 	v.RegisterValidation("day_names", ValidateDayNames)
 	v.RegisterValidation("time_format", ValidateTime)
 	v.RegisterValidation("date_format", ValidateDate)
+	v.RegisterValidation("busy_time_type", ValidateBusyTimeType)
 }

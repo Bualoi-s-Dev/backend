@@ -40,6 +40,7 @@ func SetupServer(client *mongo.Database) *gin.Engine {
 	packageRepo := database.NewPackageRepository(client.Collection("Package"))
 	subpackageRepo := database.NewSubpackageRepository(client.Collection("Subpackage"))
 	userRepo := database.NewUserRepository(client.Collection("User"))
+	busyTimeRepo := database.NewBusyTimeRepository(client.Collection("BusyTime"))
 	s3Repo := s3.NewS3Repository()
 	firebaseRepo := firebase.NewFirebaseRepository(authClient)
 
@@ -48,10 +49,12 @@ func SetupServer(client *mongo.Database) *gin.Engine {
 	subpackageService := services.NewSubpackageService(subpackageRepo)
 	packageService := services.NewPackageService(packageRepo, s3Service, subpackageService)
 	userService := services.NewUserService(userRepo, s3Service, packageService, authClient)
+	busyTimeService := services.NewBusyTimeService(busyTimeRepo, subpackageRepo, packageRepo)
 
 	packageController := controllers.NewPackageController(packageService, s3Service, userService)
 	subPackageController := controllers.NewSubpackageController(subpackageService, packageService)
-	userController := controllers.NewUserController(userService, s3Service)
+	userController := controllers.NewUserController(userService, s3Service, busyTimeService)
+	BusyTimeController := controllers.NewBusyTimeController(busyTimeService)
 	internalController := controllers.NewInternalController(firebaseService, s3Service)
 
 	// Swagger
@@ -65,6 +68,7 @@ func SetupServer(client *mongo.Database) *gin.Engine {
 	routes.PackageRoutes(r, packageController)
 	routes.SubpackageRoutes(r, subPackageController)
 	routes.UserRoutes(r, userController)
+	routes.BusyTimeRoutes(r, BusyTimeController)
 
 	return r
 }
