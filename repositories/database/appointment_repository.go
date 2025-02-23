@@ -14,14 +14,10 @@ import (
 
 type AppointmentRepository struct {
 	AppointmentCollection *mongo.Collection
-	PackageCollection     *mongo.Collection
 }
 
 func NewAppointmentRepository(appointmentCollection, packageCollection *mongo.Collection) *AppointmentRepository {
-	return &AppointmentRepository{
-		AppointmentCollection: appointmentCollection,
-		PackageCollection:     packageCollection,
-	}
+	return &AppointmentRepository{AppointmentCollection: appointmentCollection}
 }
 
 func (repo *AppointmentRepository) AutoUpdateAppointmentStatus(ctx context.Context) error {
@@ -80,7 +76,7 @@ func (repo *AppointmentRepository) GetAll(ctx context.Context, userID primitive.
 	} else if userRole == models.Customer {
 		fieldToFind = "customer_id"
 	} else {
-		return nil, fmt.Errorf("Guest cannot have appointments")
+		return nil, fmt.Errorf("Guest cannot have appointments") // shouldn't have this error because authorization check
 	}
 	cursor, err := repo.AppointmentCollection.Find(ctx, bson.M{
 		fieldToFind: userID,
@@ -111,31 +107,10 @@ func (repo *AppointmentRepository) GetById(ctx context.Context, appointmentID pr
 	return &item, nil
 }
 
-func (repo *AppointmentRepository) FindSubpackageByID(ctx context.Context, id primitive.ObjectID) (*models.Subpackage, error) {
-	var item models.Subpackage
-	if err := repo.PackageCollection.FindOne(ctx, bson.M{"_id": id}).Decode(&item); err != nil {
-		return nil, err
-	}
-	return &item, nil
-}
-
-func (repo *AppointmentRepository) FindPackageByID(ctx context.Context, id primitive.ObjectID) (*models.Package, error) {
-	var item models.Package
-	if err := repo.PackageCollection.FindOne(ctx, bson.M{"_id": id}).Decode(&item); err != nil {
-		return nil, err
-	}
-	return &item, nil
-}
-
 func (repo *AppointmentRepository) CreateAppointment(ctx context.Context, appointment *models.Appointment) (*models.Appointment, error) {
 	_, err := repo.AppointmentCollection.InsertOne(ctx, appointment)
 	return appointment, err
 }
-
-// func (repo *AppointmentRepository) UpdateAppointment(ctx context.Context, id primitive.ObjectID, appointment *dto.AppointmentRequest) error {
-// 	_, err := repo.AppointmentCollection.UpdateOne(ctx, bson.M{"_id": id}, bson.M{"$set": appointment})
-// 	return err
-// }
 
 func (repo *AppointmentRepository) ReplaceAppointment(ctx context.Context, id primitive.ObjectID, appointment *models.Appointment) (*models.Appointment, error) {
 	_, err := repo.AppointmentCollection.ReplaceOne(ctx, bson.M{"_id": id}, appointment)

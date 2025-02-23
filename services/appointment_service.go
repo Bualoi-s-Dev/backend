@@ -29,21 +29,6 @@ type AppointmentService struct {
 }
 
 // literally just getbyID and check if the user is authorized
-func (a *AppointmentService) getAuthorizedAppointment(ctx context.Context, user *models.User, appointmentId primitive.ObjectID) (*models.Appointment, error) {
-	if user.Role == "Guest" {
-		return nil, ErrUnauthorized
-	}
-
-	appointment, err := a.Repo.GetById(ctx, appointmentId, user.ID, user.Role)
-	if err != nil {
-		return nil, ErrBadRequest
-	}
-
-	if appointment.CustomerID != user.ID && appointment.PhotographerID != user.ID {
-		return nil, ErrUnauthorized
-	}
-	return appointment, nil
-}
 
 func NewAppointmentService(repo *repositories.AppointmentRepository) *AppointmentService {
 	return &AppointmentService{Repo: repo}
@@ -53,8 +38,16 @@ func (s *AppointmentService) GetAllAppointment(ctx context.Context, user *models
 	return s.Repo.GetAll(ctx, user.ID, user.Role)
 }
 
-func (s *AppointmentService) GetAppointmentById(ctx context.Context, appointmentId primitive.ObjectID, user *models.User) (*models.Appointment, error) {
-	return s.getAuthorizedAppointment(ctx, user, appointmentId)
+func (s *AppointmentService) GetAppointmentById(ctx context.Context, user *models.User, appointmentId primitive.ObjectID) (*models.Appointment, error) {
+	appointment, err := s.Repo.GetById(ctx, appointmentId, user.ID, user.Role)
+	if err != nil {
+		return nil, ErrBadRequest
+	}
+
+	if appointment.CustomerID != user.ID && appointment.PhotographerID != user.ID {
+		return nil, ErrUnauthorized
+	}
+	return appointment, nil
 }
 
 func (s *AppointmentService) CreateOneAppointment(ctx context.Context, user *models.User, req *dto.AppointmenStrictRequest) (*models.Appointment, error) {
@@ -86,7 +79,7 @@ func (s *AppointmentService) CreateOneAppointment(ctx context.Context, user *mod
 
 func (s *AppointmentService) UpdateAppointment(ctx context.Context, user *models.User, appointmentId primitive.ObjectID, req *dto.AppointmentRequest) (*models.Appointment, error) {
 
-	appointment, err := s.getAuthorizedAppointment(ctx, user, appointmentId)
+	appointment, err := s.GetAppointmentById(ctx, user, appointmentId)
 	if err != nil {
 		return nil, err
 	}
@@ -114,7 +107,7 @@ func (s *AppointmentService) UpdateAppointment(ctx context.Context, user *models
 }
 
 func (s *AppointmentService) UpdateAppointmentStatus(ctx context.Context, user *models.User, appointmentId primitive.ObjectID, req *dto.AppointmentRequest) (*models.Appointment, error) {
-	appointment, err := s.getAuthorizedAppointment(ctx, user, appointmentId)
+	appointment, err := s.GetAppointmentById(ctx, user, appointmentId)
 	if err != nil {
 		return nil, err
 	}
@@ -131,7 +124,7 @@ func (s *AppointmentService) UpdateAppointmentStatus(ctx context.Context, user *
 }
 
 func (s *AppointmentService) DeleteAppointment(ctx context.Context, appointmentId primitive.ObjectID, user *models.User) error {
-	if _, err := s.getAuthorizedAppointment(ctx, user, appointmentId); err != nil {
+	if _, err := s.GetAppointmentById(ctx, user, appointmentId); err != nil {
 		return err
 	}
 	return s.Repo.DeleteAppointment(ctx, appointmentId)

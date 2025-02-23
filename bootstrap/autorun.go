@@ -10,7 +10,7 @@ func AutoUpdate(ctx context.Context, serverRepositories *ServerRepositories) err
 	var tickerTime time.Duration
 	if os.Getenv("APP_MODE") == "development" {
 		// tickerTime = 1 * time.Minute
-		tickerTime = 10 * time.Second
+		tickerTime = 30 * time.Second
 	} else {
 		tickerTime = 15 * time.Minute
 	}

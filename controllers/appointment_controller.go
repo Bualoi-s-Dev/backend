@@ -39,7 +39,7 @@ func HandleError(c *gin.Context, err error) {
 	c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 }
 
-func GetIDFromParam(c *gin.Context) (primitive.ObjectID, error) {
+func getIDFromParam(c *gin.Context) (primitive.ObjectID, error) {
 	appointmentID_ := c.Param("id")
 	appointmentId, err := primitive.ObjectIDFromHex(appointmentID_)
 	if err != nil {
@@ -67,7 +67,12 @@ func (a *AppointmentController) GetAllAppointment(c *gin.Context) {
 func (a *AppointmentController) GetAppointmentById(c *gin.Context) {
 	user := middleware.GetUserFromContext(c)
 
-	appointmentId, err := GetIDFromParam(c)
+	if user.Role == "Guest" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Guest cannot access this endpoint"})
+		return
+	}
+
+	appointmentId, err := getIDFromParam(c)
 	if err != nil {
 		HandleError(c, err)
 		return
@@ -118,7 +123,7 @@ func (a *AppointmentController) UpdateAppointment(c *gin.Context) {
 	// user
 	user := middleware.GetUserFromContext(c)
 
-	appointmentId, err := GetIDFromParam(c)
+	appointmentId, err := getIDFromParam(c)
 	if err != nil {
 		HandleError(c, err)
 		return
@@ -154,7 +159,7 @@ func (a *AppointmentController) UpdateAppointment(c *gin.Context) {
 func (a *AppointmentController) UpdateAppointmentStatus(c *gin.Context) {
 	user := middleware.GetUserFromContext(c)
 
-	appointmentId, err := GetIDFromParam(c)
+	appointmentId, err := getIDFromParam(c)
 	if err != nil {
 		HandleError(c, err)
 		return
@@ -187,7 +192,7 @@ func (a *AppointmentController) UpdateAppointmentStatus(c *gin.Context) {
 func (a *AppointmentController) DeleteAppointment(c *gin.Context) { // only admin
 	user := middleware.GetUserFromContext(c)
 
-	appointmentId, err := GetIDFromParam(c)
+	appointmentId, err := getIDFromParam(c)
 	if err != nil {
 		HandleError(c, err)
 		return
