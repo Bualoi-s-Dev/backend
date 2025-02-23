@@ -54,6 +54,7 @@ func SetupServer(client *mongo.Database) *gin.Engine {
 	packageController := controllers.NewPackageController(packageService, s3Service, userService)
 	subPackageController := controllers.NewSubpackageController(subpackageService, packageService)
 	userController := controllers.NewUserController(userService, s3Service)
+	BusyTimeController := controllers.NewBusyTimeController(busyTimeService)
 	internalController := controllers.NewInternalController(firebaseService, s3Service)
 
 	// Swagger
@@ -67,6 +68,7 @@ func SetupServer(client *mongo.Database) *gin.Engine {
 	routes.PackageRoutes(r, packageController)
 	routes.SubpackageRoutes(r, subPackageController)
 	routes.UserRoutes(r, userController)
+	routes.BusyTimeRoutes(r, BusyTimeController)
 
 	return r
 }
