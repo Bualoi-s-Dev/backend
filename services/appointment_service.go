@@ -50,8 +50,8 @@ func (s *AppointmentService) GetAppointmentById(ctx context.Context, user *model
 	return appointment, nil
 }
 
-func (s *AppointmentService) CreateOneAppointment(ctx context.Context, user *models.User, req *dto.AppointmenStrictRequest) (*models.Appointment, error) {
-	subpackage, err := s.Repo.FindSubpackageByID(ctx, req.SubPackageID)
+func (s *AppointmentService) CreateOneAppointment(ctx context.Context, user *models.User, subpackageId primitive.ObjectID, req *dto.AppointmenStrictRequest) (*models.Appointment, error) {
+	subpackage, err := s.Repo.FindSubpackageByID(ctx, subPackageId)
 	if err != nil {
 		return nil, ErrInternalServer
 	}
@@ -66,7 +66,7 @@ func (s *AppointmentService) CreateOneAppointment(ctx context.Context, user *mod
 		CustomerID:     user.ID,
 		PhotographerID: pkg.OwnerID,
 		PackageID:      pkg.ID,
-		SubPackageID:   req.SubPackageID,
+		SubPackageID:   subpackageId,
 		StartTime:      req.StartTime,
 		EndTime:        req.StartTime.Add(time.Duration(subpackage.Duration) * time.Minute),
 		Status:         "Pending",

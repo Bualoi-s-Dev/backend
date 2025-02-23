@@ -40,12 +40,21 @@ func HandleError(c *gin.Context, err error) {
 }
 
 func getIDFromParam(c *gin.Context) (primitive.ObjectID, error) {
-	appointmentID_ := c.Param("id")
-	appointmentId, err := primitive.ObjectIDFromHex(appointmentID_)
+	appointmentId_ := c.Param("id")
+	appointmentId, err := primitive.ObjectIDFromHex(appointmentId_)
 	if err != nil {
 		return primitive.NilObjectID, services.ErrBadRequest
 	}
 	return appointmentId, nil
+}
+
+func getSubpackageIDFromParam(c *gin.Context) (primitive.ObjectID, error) {
+	subpackageId_ := c.Param("subpackageId")
+	subpackageId, err := primitive.ObjectIDFromHex(subpackageId_)
+	if err != nil {
+		return primitive.NilObjectID, services.ErrBadRequest
+	}
+	return subpackageId, nil
 }
 
 func (a *AppointmentController) GetAllAppointment(c *gin.Context) {
@@ -78,7 +87,7 @@ func (a *AppointmentController) GetAppointmentById(c *gin.Context) {
 		return
 	}
 
-	appointment, err := a.AppointmentService.GetAppointmentById(c.Request.Context(), appointmentId, user)
+	appointment, err := a.AppointmentService.GetAppointmentById(c.Request.Context(), user, appointmentId)
 	if err != nil {
 		HandleError(c, err)
 		return
@@ -97,6 +106,11 @@ func (a *AppointmentController) CreateAppointment(c *gin.Context) {
 	}
 	loc, _ := time.LoadLocation("Asia/Bangkok")
 	// request
+
+	subpackageId, err := getSubpackageIDFromParam(c)
+	if err != nil {
+		HandleError(c, err)
+	}
 	var req dto.AppointmenStrictRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Bad request, " + err.Error()})
@@ -109,7 +123,7 @@ func (a *AppointmentController) CreateAppointment(c *gin.Context) {
 	}
 	//
 
-	appointment, err := a.AppointmentService.CreateOneAppointment(c.Request.Context(), user, &req)
+	appointment, err := a.AppointmentService.CreateOneAppointment(c.Request.Context(), user, subpackageId, &req)
 	if err != nil {
 		HandleError(c, err)
 		return

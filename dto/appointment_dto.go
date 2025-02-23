@@ -2,8 +2,6 @@ package dto
 
 import (
 	"time"
-
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type AppointmentRequest struct { // cannot patch subpackage
@@ -14,8 +12,6 @@ type AppointmentRequest struct { // cannot patch subpackage
 }
 
 type AppointmenStrictRequest struct {
-	SubPackageID primitive.ObjectID `bson:"sub_package_id" json:"sub_package_id" example:"507f1f77bcf86cd799439011"`
-
 	StartTime time.Time `bson:"start_time" json:"start_time" example:"2025-02-18T10:00:00Z"`
 	Status    string    `bson:"status" json:"status" example:"pending"` // "pending", "accepted", "rejected", "completed"
 	Location  string    `bson:"location" json:"location" example:"Bangkok, Thailand"`

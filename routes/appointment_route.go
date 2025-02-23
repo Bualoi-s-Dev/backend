@@ -10,7 +10,7 @@ func AppointmentRoutes(router *gin.Engine, ctrl *controllers.AppointmentControll
 
 	appointmentGroup.GET("", ctrl.GetAllAppointment)
 	appointmentGroup.GET("/:id", ctrl.GetAppointmentById)
-	appointmentGroup.POST("", ctrl.CreateAppointment)
+	appointmentGroup.POST("/:subpackageId", ctrl.CreateAppointment)
 	appointmentGroup.PATCH("/:id", ctrl.UpdateAppointment)
 	appointmentGroup.PATCH("/status/:id", ctrl.UpdateAppointmentStatus)
 	appointmentGroup.DELETE("/:id", ctrl.DeleteAppointment)
