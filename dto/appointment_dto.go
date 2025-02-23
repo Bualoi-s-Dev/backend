@@ -2,13 +2,19 @@ package dto
 
 import (
 	"time"
+
+	"github.com/Bualoi-s-Dev/backend/models"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type AppointmentRequest struct { // cannot patch subpackage
 	StartTime *time.Time `bson:"start_time,omitempty" json:"start_time" example:"2025-02-18T10:00:00Z"`
 	EndTime   *time.Time `bson:"-" json:"-" example:"2025-02-18T12:00:00Z"`
-	Status    *string    `bson:"status,omitempty" json:"status" example:"pending"` // "pending", "accepted", "rejected", "completed"
 	Location  *string    `bson:"location,omitempty" json:"location" example:"Bangkok, Thailand"`
+}
+
+type AppointmentUpdateStatusRequest struct {
+	Status *string `bson:"status,omitempty" json:"status" example:"pending"` // "pending", "accepted", "rejected", "completed"
 }
 
 type AppointmenStrictRequest struct {
@@ -29,4 +35,18 @@ type AppointmentResponse struct {
 	Status    string    `bson:"status" json:"status" example:"pending"` // "pending", "accepted", "rejected", "completed"
 	Location  string    `bson:"location,omitempty" json:"location" example:"Bangkok, Thailand"`
 	// Payment       Payment   `bson:"payment,omitempty" json:"payment,omitempty" example:"{...}"`
+}
+
+func (req *AppointmenStrictRequest) ToModel(user *models.User, pkg *models.Package, subpackage *models.Subpackage) *models.Appointment {
+	return &models.Appointment{
+		ID:             primitive.NewObjectID(),
+		CustomerID:     user.ID,
+		PhotographerID: pkg.OwnerID,
+		PackageID:      pkg.ID,
+		SubPackageID:   subpackage.ID,
+		StartTime:      req.StartTime,
+		EndTime:        req.StartTime.Add(time.Duration(subpackage.Duration) * time.Minute),
+		Status:         "Pending",
+		Location:       req.Location,
+	}
 }

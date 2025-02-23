@@ -156,11 +156,6 @@ func (a *AppointmentController) UpdateAppointment(c *gin.Context) {
 		return
 	}
 
-	if req.Status != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Status cannot be updated at this endpoint"})
-		return
-	}
-
 	updatedAppointment, err := a.AppointmentService.UpdateAppointment(c.Request.Context(), user, appointmentId, &req)
 	if err != nil {
 		HandleError(c, err)
@@ -179,16 +174,12 @@ func (a *AppointmentController) UpdateAppointmentStatus(c *gin.Context) {
 		return
 	}
 
-	var req dto.AppointmentRequest
+	var req dto.AppointmentUpdateStatusRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Bad request, " + err.Error()})
 		return
 	}
 
-	if req.StartTime != nil || req.EndTime != nil || req.Location != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Only status can be updated at this endpoint"})
-		return
-	}
 	if req.Status == nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Status is required"})
 		return

@@ -4,14 +4,13 @@ import (
 	"context"
 	"time"
 
-	"github.com/jinzhu/copier"
-
 	"errors"
 	// "time"
 
 	"github.com/Bualoi-s-Dev/backend/dto"
 	"github.com/Bualoi-s-Dev/backend/models"
 	repositories "github.com/Bualoi-s-Dev/backend/repositories/database"
+	"github.com/jinzhu/copier"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -65,20 +64,10 @@ func (s *AppointmentService) CreateOneAppointment(ctx context.Context, user *mod
 		return nil, ErrInternalServer
 	}
 
-	appointment := models.Appointment{
-		ID:             primitive.NewObjectID(),
-		CustomerID:     user.ID,
-		PhotographerID: pkg.OwnerID,
-		PackageID:      pkg.ID,
-		SubPackageID:   subpackageId,
-		StartTime:      req.StartTime,
-		EndTime:        req.StartTime.Add(time.Duration(subpackage.Duration) * time.Minute),
-		Status:         "Pending",
-		Location:       req.Location,
-	}
+	appointment := req.ToModel(user, pkg, subpackage)
 
 	// TODO: Check Schedule before create
-	return s.AppointmentRepo.CreateAppointment(ctx, &appointment)
+	return s.AppointmentRepo.CreateAppointment(ctx, appointment)
 }
 
 func (s *AppointmentService) UpdateAppointment(ctx context.Context, user *models.User, appointmentId primitive.ObjectID, req *dto.AppointmentRequest) (*models.Appointment, error) {
@@ -103,14 +92,15 @@ func (s *AppointmentService) UpdateAppointment(ctx context.Context, user *models
 		endTime := req.StartTime.Add(duration)
 		req.EndTime = &endTime
 	}
-	// use copier
-	copier.Copy(appointment, req)
-	// fmt.Print(appointment)
+
+	if err := copier.Copy(appointment, req); err != nil {
+		return nil, ErrBadRequest
+	}
 
 	return s.AppointmentRepo.ReplaceAppointment(ctx, appointmentId, appointment)
 }
 
-func (s *AppointmentService) UpdateAppointmentStatus(ctx context.Context, user *models.User, appointmentId primitive.ObjectID, req *dto.AppointmentRequest) (*models.Appointment, error) {
+func (s *AppointmentService) UpdateAppointmentStatus(ctx context.Context, user *models.User, appointmentId primitive.ObjectID, req *dto.AppointmentUpdateStatusRequest) (*models.Appointment, error) {
 	appointment, err := s.GetAppointmentById(ctx, user, appointmentId)
 	if err != nil {
 		return nil, err
