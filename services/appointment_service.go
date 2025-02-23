@@ -25,21 +25,25 @@ var (
 )
 
 type AppointmentService struct {
-	Repo *repositories.AppointmentRepository
+	AppointmentRepo *repositories.AppointmentRepository
+	PackageRepo     *repositories.PackageRepository
 }
 
 // literally just getbyID and check if the user is authorized
 
-func NewAppointmentService(repo *repositories.AppointmentRepository) *AppointmentService {
-	return &AppointmentService{Repo: repo}
+func NewAppointmentService(appointmentRepo *repositories.AppointmentRepository, packageRepo *repositories.PackageRepository) *AppointmentService {
+	return &AppointmentService{
+		AppointmentRepo: appointmentRepo,
+		PackageRepo:     packageRepo,
+	}
 }
 
 func (s *AppointmentService) GetAllAppointment(ctx context.Context, user *models.User) ([]models.Appointment, error) {
-	return s.Repo.GetAll(ctx, user.ID, user.Role)
+	return s.AppointmentRepo.GetAll(ctx, user.ID, user.Role)
 }
 
 func (s *AppointmentService) GetAppointmentById(ctx context.Context, user *models.User, appointmentId primitive.ObjectID) (*models.Appointment, error) {
-	appointment, err := s.Repo.GetById(ctx, appointmentId, user.ID, user.Role)
+	appointment, err := s.AppointmentRepo.GetById(ctx, appointmentId, user.ID, user.Role)
 	if err != nil {
 		return nil, ErrBadRequest
 	}
@@ -51,12 +55,12 @@ func (s *AppointmentService) GetAppointmentById(ctx context.Context, user *model
 }
 
 func (s *AppointmentService) CreateOneAppointment(ctx context.Context, user *models.User, subpackageId primitive.ObjectID, req *dto.AppointmenStrictRequest) (*models.Appointment, error) {
-	subpackage, err := s.Repo.FindSubpackageByID(ctx, subPackageId)
+	subpackage, err := s.PackageRepo.GetSubpackageById(ctx, subpackageId.Hex())
 	if err != nil {
 		return nil, ErrInternalServer
 	}
 
-	pkg, err := s.Repo.FindPackageByID(ctx, subpackage.PackageID)
+	pkg, err := s.PackageRepo.GetById(ctx, subpackage.PackageID.Hex())
 	if err != nil {
 		return nil, ErrInternalServer
 	}
@@ -74,7 +78,7 @@ func (s *AppointmentService) CreateOneAppointment(ctx context.Context, user *mod
 	}
 
 	// TODO: Check Schedule before create
-	return s.Repo.CreateAppointment(ctx, &appointment)
+	return s.AppointmentRepo.CreateAppointment(ctx, &appointment)
 }
 
 func (s *AppointmentService) UpdateAppointment(ctx context.Context, user *models.User, appointmentId primitive.ObjectID, req *dto.AppointmentRequest) (*models.Appointment, error) {
@@ -103,7 +107,7 @@ func (s *AppointmentService) UpdateAppointment(ctx context.Context, user *models
 	copier.Copy(appointment, req)
 	// fmt.Print(appointment)
 
-	return s.Repo.ReplaceAppointment(ctx, appointmentId, appointment)
+	return s.AppointmentRepo.ReplaceAppointment(ctx, appointmentId, appointment)
 }
 
 func (s *AppointmentService) UpdateAppointmentStatus(ctx context.Context, user *models.User, appointmentId primitive.ObjectID, req *dto.AppointmentRequest) (*models.Appointment, error) {
@@ -120,12 +124,12 @@ func (s *AppointmentService) UpdateAppointmentStatus(ctx context.Context, user *
 	}
 
 	appointment.Status = *req.Status
-	return s.Repo.ReplaceAppointment(ctx, appointmentId, appointment)
+	return s.AppointmentRepo.ReplaceAppointment(ctx, appointmentId, appointment)
 }
 
 func (s *AppointmentService) DeleteAppointment(ctx context.Context, appointmentId primitive.ObjectID, user *models.User) error {
 	if _, err := s.GetAppointmentById(ctx, user, appointmentId); err != nil {
 		return err
 	}
-	return s.Repo.DeleteAppointment(ctx, appointmentId)
+	return s.AppointmentRepo.DeleteAppointment(ctx, appointmentId)
 }

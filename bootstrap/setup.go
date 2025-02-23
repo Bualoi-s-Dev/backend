@@ -60,7 +60,7 @@ func SetupServer(client *mongo.Database) (*gin.Engine, *ServerRepositories, *Ser
 	s3Service := services.NewS3Service(s3Repo)
 	firebaseService := services.NewFirebaseService(firebaseRepo)
 	userService := services.NewUserService(userRepo, s3Service)
-	appointmentService := services.NewAppointmentService(appointmentRepo)
+	appointmentService := services.NewAppointmentService(appointmentRepo, packageRepo)
 	packageService := services.NewPackageService(packageRepo, s3Service)
 
 	packageController := controllers.NewPackageController(packageService, s3Service, userService)
