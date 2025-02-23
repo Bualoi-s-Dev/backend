@@ -57,6 +57,13 @@ func getSubpackageIDFromParam(c *gin.Context) (primitive.ObjectID, error) {
 	return subpackageId, nil
 }
 
+// GetAllAppointment godoc
+// @Tags Appointment
+// @Summary Get all available appointments
+// @Description Retrieve all available appointments that the user can see from the database
+// @Success 200 {array} dto.AppointmentResponse
+// @Failure 401 {object} string "Unauthorized"
+// @Router /appointment [get]
 func (a *AppointmentController) GetAllAppointment(c *gin.Context) {
 	user := middleware.GetUserFromContext(c)
 
@@ -73,6 +80,16 @@ func (a *AppointmentController) GetAllAppointment(c *gin.Context) {
 	c.JSON(http.StatusOK, appointments)
 }
 
+// GetAppointmentById godoc
+// @Tags Appointment
+// @Summary Get appointment by ID
+// @Description Retrieve a specific appointment by its ID
+// @Param id path string true "Appointment ID"
+// @Success 200 {object} dto.AppointmentResponse
+// @Failure 400 {object} string "Invalid appointment id"
+// @Failure 401 {object} string "Unauthorized"
+// @Failure 500 {object} string "Internal Server Error"
+// @Router /appointment/{id} [get]
 func (a *AppointmentController) GetAppointmentById(c *gin.Context) {
 	user := middleware.GetUserFromContext(c)
 
@@ -96,6 +113,16 @@ func (a *AppointmentController) GetAppointmentById(c *gin.Context) {
 	c.JSON(http.StatusOK, appointment)
 }
 
+// GetAppointmentById godoc
+// @Tags Appointment
+// @Summary Get appointment by ID
+// @Description Retrieve a specific appointment by its ID
+// @Param id path string true "Appointment ID"
+// @Success 200 {object} dto.AppointmentResponse
+// @Failure 400 {object} string "Invalid appointment id"
+// @Failure 401 {object} string "Unauthorized"
+// @Failure 500 {object} string "Internal Server Error"
+// @Router /appointment/{id} [get]
 func (a *AppointmentController) CreateAppointment(c *gin.Context) {
 	// user
 	user := middleware.GetUserFromContext(c)
@@ -132,7 +159,16 @@ func (a *AppointmentController) CreateAppointment(c *gin.Context) {
 	c.JSON(http.StatusCreated, appointment)
 }
 
-// only update Appointment time and Location Only
+// UpdateAppointment godoc
+// @Tags Appointment
+// @Summary Update appointment
+// @Description Update the time and location of a specific appointment by its ID
+// @Param id path string true "Appointment ID"
+// @Success 200 {object} dto.AppointmentResponse
+// @Failure 400 {object} string "Invalid appointment id"
+// @Failure 401 {object} string "Unauthorized"
+// @Failure 500 {object} string "Internal Server Error"
+// @Router /appointment/{id} [put]
 func (a *AppointmentController) UpdateAppointment(c *gin.Context) {
 	// user
 	user := middleware.GetUserFromContext(c)
@@ -165,6 +201,16 @@ func (a *AppointmentController) UpdateAppointment(c *gin.Context) {
 	c.JSON(http.StatusOK, updatedAppointment)
 }
 
+// UpdateAppointmentStatus godoc
+// @Tags Appointment
+// @Summary Update appointment status
+// @Description Update the status of a specific appointment by its ID
+// @Param id path string true "Appointment ID"
+// @Success 200 {object} dto.AppointmentResponse
+// @Failure 400 {object} string "Invalid appointment id"
+// @Failure 401 {object} string "Unauthorized"
+// @Failure 500 {object} string "Internal Server Error"
+// @Router /appointment/status/{id} [put]
 func (a *AppointmentController) UpdateAppointmentStatus(c *gin.Context) {
 	user := middleware.GetUserFromContext(c)
 
@@ -194,6 +240,16 @@ func (a *AppointmentController) UpdateAppointmentStatus(c *gin.Context) {
 	c.JSON(http.StatusOK, updatedAppointment)
 }
 
+// DeleteAppointment godoc
+// @Tags Appointment
+// @Summary Delete appointment
+// @Description Delete a specific appointment by its ID
+// @Param id path string true "Appointment ID"
+// @Success 200 {object} string "Appointment was deleted successfully"
+// @Failure 400 {object} string "Invalid appointment id"
+// @Failure 401 {object} string "Unauthorized"
+// @Failure 500 {object} string "Internal Server Error"
+// @Router /appointment/{id} [delete]
 func (a *AppointmentController) DeleteAppointment(c *gin.Context) { // only admin
 	user := middleware.GetUserFromContext(c)
 
