@@ -38,16 +38,19 @@ func SetupServer(client *mongo.Database) *gin.Engine {
 
 	// Init
 	packageRepo := database.NewPackageRepository(client.Collection("Package"))
+	subpackageRepo := database.NewSubpackageRepository(client.Collection("Subpackage"))
 	userRepo := database.NewUserRepository(client.Collection("User"))
 	s3Repo := s3.NewS3Repository()
 	firebaseRepo := firebase.NewFirebaseRepository(authClient)
 
 	s3Service := services.NewS3Service(s3Repo)
 	firebaseService := services.NewFirebaseService(firebaseRepo)
-	userService := services.NewUserService(userRepo, s3Service, authClient)
-	packageService := services.NewPackageService(packageRepo, s3Service)
+	subpackageService := services.NewSubpackageService(subpackageRepo)
+	packageService := services.NewPackageService(packageRepo, s3Service, subpackageService)
+	userService := services.NewUserService(userRepo, s3Service, packageService, authClient)
 
 	packageController := controllers.NewPackageController(packageService, s3Service, userService)
+	subPackageController := controllers.NewSubpackageController(subpackageService, packageService)
 	userController := controllers.NewUserController(userService, s3Service)
 	internalController := controllers.NewInternalController(firebaseService, s3Service)
 
@@ -60,6 +63,7 @@ func SetupServer(client *mongo.Database) *gin.Engine {
 	r.Use(middleware.FirebaseAuthMiddleware(authClient, client.Collection("User"), userService))
 
 	routes.PackageRoutes(r, packageController)
+	routes.SubpackageRoutes(r, subPackageController)
 	routes.UserRoutes(r, userController)
 
 	return r

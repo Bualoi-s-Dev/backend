@@ -7,6 +7,7 @@ import (
 	"log"
 	"mime/multipart"
 	"os"
+	"time"
 
 	"context"
 
@@ -89,8 +90,11 @@ func (s *S3Repository) UploadFile(file *multipart.FileHeader, key string) (strin
 }
 
 func (s *S3Repository) UploadBase64(fileBytes []byte, key string, contentType string) (string, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
 	genKey := key + "_" + primitive.NewObjectID().Hex()
-	_, uploadErr := s.Uploaders.LimitedImgUploader.Upload(context.TODO(), &s3.PutObjectInput{
+	_, uploadErr := s.Uploaders.LimitedImgUploader.Upload(ctx, &s3.PutObjectInput{
 		Bucket:             aws.String(s.BucketName),
 		Key:                aws.String(genKey),
 		Body:               bytes.NewReader(fileBytes),
@@ -114,7 +118,6 @@ func (s *S3Repository) DeleteObject(key string) error {
 	}
 
 	_, err := s.Client.DeleteObject(context.TODO(), input)
-	fmt.Println("err :", err)
 	if err != nil {
 		var apiErr *smithy.GenericAPIError
 		if errors.As(err, &apiErr) {

@@ -9,7 +9,6 @@ import (
 	"github.com/Bualoi-s-Dev/backend/models"
 	"github.com/Bualoi-s-Dev/backend/services"
 	"github.com/gin-gonic/gin"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 
 	"firebase.google.com/go/auth"
@@ -54,24 +53,15 @@ func FirebaseAuthMiddleware(authClient *auth.Client, userCollection *mongo.Colle
 			log.Printf("[INFO] User not found: %s. Creating new user...", email)
 
 			// Create new user
-			newUser := models.User{
-				ID:       primitive.NewObjectID(),
-				Email:    email,
-				Name:     "",
-				Gender:   "",
-				Profile:  "",
-				Phone:    "",
-				Location: "",
-				Role:     models.Guest,
-			}
+			newUser := models.NewUser(email)
 
-			if err := userService.CreateUser(ctx, &newUser); err != nil {
+			if err := userService.CreateUser(ctx, newUser); err != nil {
 				log.Printf("[ERROR] Failed to create user: %v", err)
 				c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Failed to create user"})
 				return
 			}
 
-			user = &newUser
+			user = newUser
 
 			// Set Firebase Custom Claim for role
 			err = authClient.SetCustomUserClaims(ctx, token.UID, map[string]interface{}{
