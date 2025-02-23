@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"strings"
 	"time"
 
 	"github.com/Bualoi-s-Dev/backend/models"
@@ -30,7 +29,7 @@ func (repo *AppointmentRepository) AutoUpdateAppointmentStatus(ctx context.Conte
 	fmt.Println("Running scheduled update...")
 
 	// filter only start_time is grater than current time and status is "Pending"
-	// FIXME: wrong query -> not update???
+	// TODO: Fix this curse later
 	loc, _ := time.LoadLocation("Asia/Bangkok")
 	t := time.Now().In(loc)
 	currentTime := time.Date(
@@ -75,7 +74,14 @@ func (repo *AppointmentRepository) AutoUpdateAppointmentStatus(ctx context.Conte
 
 func (repo *AppointmentRepository) GetAll(ctx context.Context, userID primitive.ObjectID, userRole models.UserRole) ([]models.Appointment, error) {
 	var items []models.Appointment
-	fieldToFind := strings.ToLower(string(userRole)) + "_id" // photographer_id or customer_id
+	var fieldToFind string
+	if userRole == models.Photographer {
+		fieldToFind = "photographer_id"
+	} else if userRole == models.Customer {
+		fieldToFind = "customer_id"
+	} else {
+		return nil, fmt.Errorf("Guest cannot have appointments")
+	}
 	cursor, err := repo.AppointmentCollection.Find(ctx, bson.M{
 		fieldToFind: userID,
 	})
