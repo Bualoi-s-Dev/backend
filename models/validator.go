@@ -85,7 +85,7 @@ func ValidateBusyTimeType(fl validator.FieldLevel) bool {
 	value := fl.Field().Interface().(BusyTimeType)
 
 	// Check if the value exists in the validBankNames slice
-	for _, validType := range ValidBusyTimeType {
+	for _, validType := range ValidBusyTimeTypes {
 		if value == validType.Value {
 			return true
 		}

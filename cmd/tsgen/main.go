@@ -33,9 +33,8 @@ func main() {
 	converter.
 		Add(models.BusyTime{}).
 		Add(dto.BusyTimeRequest{}).
-		Add(dto.BusyTimeResponse{}).
-		AddEnum(models.ValidateBusyTimeType)
-		
+		AddEnum(models.ValidBusyTimeTypes)
+
 	// Change to interface
 	converter.CreateInterface = true
 

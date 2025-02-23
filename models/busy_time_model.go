@@ -20,7 +20,7 @@ const (
 	TypeAppointment  BusyTimeType = "Appointment"
 )
 
-var ValidBusyTimeType = []struct {
+var ValidBusyTimeTypes = []struct {
 	Value  BusyTimeType
 	TSName string
 }{
