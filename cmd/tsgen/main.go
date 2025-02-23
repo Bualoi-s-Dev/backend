@@ -18,7 +18,7 @@ func main() {
 	converter.
 		Add(models.Package{}).
 		Add(dto.PackageRequest{}).
-		Add(dto.PackageStrictRequest{}).
+		Add(dto.PackageResponse{}).
 		AddEnum(models.ValidPackageTypes)
 	converter.
 		Add(models.User{}).
@@ -26,6 +26,10 @@ func main() {
 		Add(dto.UserResponse{}).
 		AddEnum(models.ValidUserRoles).
 		AddEnum(models.ValidBankNames)
+	converter.
+		Add(models.Subpackage{}).
+		Add(dto.SubpackageRequest{}).
+		AddEnum(models.ValidDayNames)
 
 	converter.
 		Add(models.Appointment{}).

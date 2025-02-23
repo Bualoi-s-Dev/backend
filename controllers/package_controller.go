@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/Bualoi-s-Dev/backend/dto"
@@ -24,7 +23,7 @@ func NewPackageController(service *services.PackageService, s3Service *services.
 // @Tags Package
 // @Summary Get a list of packages
 // @Description Retrieve all packages from the database
-// @Success 200 {object} []models.Package
+// @Success 200 {object} []dto.PackageResponse
 // @Failure 400 {object} string "Bad Request"
 // @Router /package [get]
 // @x-order 1
@@ -34,7 +33,17 @@ func (ctrl *PackageController) GetAllPackages(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch items, " + err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, items)
+
+	var res []dto.PackageResponse
+	for _, item := range items {
+		mappedItem, err := ctrl.Service.MappedToPackageResponse(c.Request.Context(), &item)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to map item, " + err.Error()})
+			return
+		}
+		res = append(res, *mappedItem)
+	}
+	c.JSON(http.StatusOK, res)
 }
 
 // GetOnePackage godoc
@@ -42,7 +51,7 @@ func (ctrl *PackageController) GetAllPackages(c *gin.Context) {
 // @Summary Get a packages by id
 // @Description Retrieve a packages which matched id from the database
 // @Param id path string true "Package ID"
-// @Success 200 {object} models.Package
+// @Success 200 {object} dto.PackageResponse
 // @Failure 400 {object} string "Bad Request"
 // @Router /package/{id} [get]
 // @x-order 2
@@ -53,25 +62,35 @@ func (ctrl *PackageController) GetOnePackage(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch item, " + err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, item)
+
+	res, err := ctrl.Service.MappedToPackageResponse(c.Request.Context(), item)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to map item, " + err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, res)
 }
 
 // CreateOnePackage godoc
 // @Tags Package
 // @Summary Create a package
 // @Description Create a package in the database
-// @Param request body dto.PackageStrictRequest true "Create Package Request"
-// @Success 200 {object} models.Package
+// @Param request body dto.PackageRequest true "Create Package Request"
+// @Success 200 {object} dto.PackageResponse
 // @Failure 400 {object} string "Bad Request"
 // @Router /package [post]
 // @x-order 3
 func (ctrl *PackageController) CreateOnePackage(c *gin.Context) {
-	var itemInput dto.PackageStrictRequest
+	var itemInput dto.PackageRequest
 	if err := c.ShouldBindJSON(&itemInput); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Bad request, " + err.Error()})
 		return
 	}
-	if err := ctrl.S3Service.VerifyMultipleBase64(itemInput.Photos); err != nil {
+	if err := ctrl.Service.VerifyStrictRequest(c.Request.Context(), &itemInput); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Bad request, " + err.Error()})
+		return
+	}
+	if err := ctrl.S3Service.VerifyMultipleBase64(*itemInput.Photos); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Bad request Image, " + err.Error()})
 	}
 
@@ -82,13 +101,12 @@ func (ctrl *PackageController) CreateOnePackage(c *gin.Context) {
 		return
 	}
 
-	userReq := dto.UpdateUserPackageRequest{Packages: append(user.Packages, item.ID)}
-	err = ctrl.UserService.UpdateOwnerPackage(c.Request.Context(), user.ID, userReq)
+	res, err := ctrl.Service.MappedToPackageResponse(c.Request.Context(), item)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update user, " + err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to map item, " + err.Error()})
 		return
 	}
-	c.JSON(http.StatusCreated, item)
+	c.JSON(http.StatusCreated, res)
 }
 
 // UpdateOnePackage godoc
@@ -96,7 +114,7 @@ func (ctrl *PackageController) CreateOnePackage(c *gin.Context) {
 // @Summary Patch a package
 // @Param id path string true "Package ID"
 // @Param request body dto.PackageRequest true "Replace Package Request"
-// @Success 200 {object} models.Package
+// @Success 200 {object} dto.PackageResponse
 // @Failure 400 {object} string "Bad Request"
 // @Router /package/{id} [patch]
 // @x-order 4
@@ -109,7 +127,11 @@ func (ctrl *PackageController) UpdateOnePackage(c *gin.Context) {
 	}
 	// Check the owner, only the owner can update the package
 	user := middleware.GetUserFromContext(c)
-	isOwner := ctrl.Service.CheckOwner(user, id)
+	isOwner, err := ctrl.Service.CheckOwner(c.Request.Context(), user, id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to check owner, " + err.Error()})
+		return
+	}
 	if !isOwner {
 		c.JSON(http.StatusForbidden, gin.H{"error": "You do not own the package"})
 		return
@@ -131,7 +153,13 @@ func (ctrl *PackageController) UpdateOnePackage(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update item, " + err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, item)
+
+	res, err := ctrl.Service.MappedToPackageResponse(c.Request.Context(), item)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to map item, " + err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, res)
 }
 
 // DeleteOnePackage godoc
@@ -152,7 +180,11 @@ func (ctrl *PackageController) DeleteOnePackage(c *gin.Context) {
 	}
 	// Check the owner, only the owner can delete the package
 	user := middleware.GetUserFromContext(c)
-	isOwner := ctrl.Service.CheckOwner(user, id)
+	isOwner, err := ctrl.Service.CheckOwner(c.Request.Context(), user, id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to check owner, " + err.Error()})
+		return
+	}
 	if !isOwner {
 		c.JSON(http.StatusForbidden, gin.H{"error": "You do not own the package"})
 		return
@@ -163,30 +195,5 @@ func (ctrl *PackageController) DeleteOnePackage(c *gin.Context) {
 		return
 	}
 
-	userReq := dto.UpdateUserPackageRequest{}
-	// Remove the package from the user's packages
-	fmt.Println("id :", id)
-	fmt.Println("user.Packages :", user.Packages)
-	for i, packageId := range user.Packages {
-		fmt.Println("packageId.Hex() :", packageId.Hex())
-		if packageId.Hex() == id {
-			userReq.Packages = append(user.Packages[:i], user.Packages[i+1:]...)
-			break
-		}
-	}
-	// Remove the package from the user's showcase packages
-	fmt.Println("user.ShowcasePackages :", user.ShowcasePackages)
-	for i, packageId := range user.ShowcasePackages {
-		fmt.Println("packageId.Hex() :", packageId.Hex())
-		if packageId.Hex() == id {
-			userReq.ShowcasePackages = append(user.ShowcasePackages[:i], user.ShowcasePackages[i+1:]...)
-			break
-		}
-	}
-	err = ctrl.UserService.UpdateOwnerPackage(c.Request.Context(), user.ID, userReq)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update user, " + err.Error()})
-		return
-	}
 	c.JSON(http.StatusOK, gin.H{"message": "Item deleted successfully"})
 }

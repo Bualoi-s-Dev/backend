@@ -78,6 +78,24 @@ func (repo *PackageRepository) GetManyId(ctx context.Context, packageIds []primi
 	return items, nil
 }
 
+func (repo *PackageRepository) GetByOwnerId(ctx context.Context, ownerId primitive.ObjectID) ([]models.Package, error) {
+	var items []models.Package
+	cursor, err := repo.Collection.Find(ctx, bson.M{"owner_id": ownerId})
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+
+	if err := cursor.All(ctx, &items); err != nil {
+		return nil, err
+	}
+
+	if items == nil {
+		items = []models.Package{}
+	}
+	return items, nil
+}
+
 func (repo *PackageRepository) CreateOne(ctx context.Context, item *models.Package) (*mongo.InsertOneResult, error) {
 	if item.PhotoUrls == nil {
 		item.PhotoUrls = []string{}

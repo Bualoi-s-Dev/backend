@@ -1,6 +1,7 @@
 package bootstrap
 
 import (
+	"github.com/Bualoi-s-Dev/backend/configs"
 	"github.com/Bualoi-s-Dev/backend/controllers"
 	"github.com/Bualoi-s-Dev/backend/middleware"
 	"github.com/Bualoi-s-Dev/backend/models"
@@ -44,7 +45,7 @@ func SetupServer(client *mongo.Database) (*gin.Engine, *ServerRepositories, *Ser
 		AllowCredentials: true,
 	}))
 
-	authClient := middleware.InitializeFirebaseAuth()
+	authClient := configs.InitializeFirebaseAuth()
 
 	// Validator
 	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
@@ -52,6 +53,7 @@ func SetupServer(client *mongo.Database) (*gin.Engine, *ServerRepositories, *Ser
 	}
 
 	packageRepo := database.NewPackageRepository(client.Collection("Package"))
+	subpackageRepo := database.NewSubpackageRepository(client.Collection("Subpackage"))
 	userRepo := database.NewUserRepository(client.Collection("User"))
 	appointmentRepo := database.NewAppointmentRepository(client.Collection("Appointment"), client.Collection("Package"))
 	s3Repo := s3.NewS3Repository()
@@ -59,11 +61,13 @@ func SetupServer(client *mongo.Database) (*gin.Engine, *ServerRepositories, *Ser
 
 	s3Service := services.NewS3Service(s3Repo)
 	firebaseService := services.NewFirebaseService(firebaseRepo)
-	userService := services.NewUserService(userRepo, s3Service)
 	appointmentService := services.NewAppointmentService(appointmentRepo, packageRepo)
-	packageService := services.NewPackageService(packageRepo, s3Service)
+	subpackageService := services.NewSubpackageService(subpackageRepo)
+	packageService := services.NewPackageService(packageRepo, s3Service, subpackageService)
+	userService := services.NewUserService(userRepo, s3Service, packageService, authClient)
 
 	packageController := controllers.NewPackageController(packageService, s3Service, userService)
+	subPackageController := controllers.NewSubpackageController(subpackageService, packageService)
 	userController := controllers.NewUserController(userService, s3Service)
 	appointmentController := controllers.NewAppointmentController(appointmentService)
 	internalController := controllers.NewInternalController(firebaseService, s3Service)
@@ -92,6 +96,7 @@ func SetupServer(client *mongo.Database) (*gin.Engine, *ServerRepositories, *Ser
 	r.Use(middleware.FirebaseAuthMiddleware(authClient, client.Collection("User"), userService))
 
 	routes.PackageRoutes(r, packageController)
+	routes.SubpackageRoutes(r, subPackageController)
 	routes.UserRoutes(r, userController)
 	routes.AppointmentRoutes(r, appointmentController)
 

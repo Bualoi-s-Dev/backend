@@ -10,9 +10,11 @@ import (
 	"github.com/Bualoi-s-Dev/backend/bootstrap"
 	"github.com/Bualoi-s-Dev/backend/configs"
 	"github.com/gin-gonic/gin"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 var testServer *httptest.Server
+var testMongoDB *mongo.Database
 
 func TestMain(m *testing.M) {
 	rootDir, err := filepath.Abs("../../") // Adjust path to root
@@ -41,7 +43,10 @@ func startTestServer() *httptest.Server {
 	gin.SetMode(gin.TestMode)
 
 	client := configs.ConnectMongoDB().Database(databaseName)
+
+	testMongoDB = client
 	r, _, _ := bootstrap.SetupServer(client)
+
 	testServer := httptest.NewServer(r)
 	return testServer
 }
@@ -55,4 +60,8 @@ func stopTestServer(server *httptest.Server) {
 
 func GetTestServer() *httptest.Server {
 	return testServer
+}
+
+func GetTestMongoDB() *mongo.Database {
+	return testMongoDB
 }

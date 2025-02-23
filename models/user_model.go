@@ -20,7 +20,20 @@ type User struct {
 	Facebook         string               `bson:"facebook,omitempty" json:"facebook" example:"Meen"`
 	Instagram        string               `bson:"instagram,omitempty" json:"instagram" example:"Meen"`
 	ShowcasePackages []primitive.ObjectID `bson:"showcase_packages,omitempty" json:"showcasePackages" ts_type:"string[]" example:"12345678abcd,12345678abcd"`
-	Packages         []primitive.ObjectID `bson:"photographer_packages,omitempty" json:"photographerPackages" ts_type:"string[]" example:"12345678abcd,12345678abcd"`
+}
+
+func NewUser(email string) *User {
+	return &User{
+		ID:               primitive.NewObjectID(),
+		Email:            email,
+		Name:             "",
+		Gender:           "",
+		Profile:          "",
+		Phone:            "",
+		Location:         "",
+		Role:             Guest,
+		ShowcasePackages: []primitive.ObjectID{},
+	}
 }
 
 type UserRole string

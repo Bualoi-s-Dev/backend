@@ -50,7 +50,7 @@ func (uc *UserController) GetUserProfile(c *gin.Context) {
 	user := middleware.GetUserFromContext(c)
 
 	// Call the service to get the user's profile picture URL
-	userDb, err := uc.Service.GetUser(c.Request.Context(), user.Email)
+	userDb, err := uc.Service.GetUserByEmail(c.Request.Context(), user.Email)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get user data, " + err.Error()})
 		return
@@ -76,11 +76,7 @@ func (uc *UserController) GetUserProfileByID(c *gin.Context) {
 		return
 	}
 
-	userEmail, err := uc.Service.FindEmailByID(c.Request.Context(), objID)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get user data"})
-	}
-	userDb, err := uc.Service.GetUser(c.Request.Context(), userEmail)
+	userDb, err := uc.Service.GetUserByID(c.Request.Context(), objID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get user data"})
 		return
@@ -115,7 +111,11 @@ func (uc *UserController) UpdateUserProfile(c *gin.Context) {
 	}
 
 	if userBody.ShowcasePackages != nil {
-		isShowcaseValid := uc.Service.VerifyShowcase(c.Request.Context(), user.Packages, *userBody.ShowcasePackages)
+		isShowcaseValid, err := uc.Service.VerifyShowcase(c.Request.Context(), user.ID, *userBody.ShowcasePackages)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to verify showcase, " + err.Error()})
+			return
+		}
 		if !isShowcaseValid {
 			c.JSON(http.StatusForbidden, gin.H{"error": "You do not own the package"})
 			return

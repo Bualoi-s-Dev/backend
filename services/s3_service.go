@@ -26,7 +26,6 @@ func (s *S3Service) UploadBase64(fileBytes []byte, key string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	fmt.Println("ext :", ext)
 
 	imageData, err := base64.StdEncoding.DecodeString(strings.Split(string(fileBytes), ",")[1])
 	if err != nil {

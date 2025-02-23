@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/Bualoi-s-Dev/backend/bootstrap"
 	"github.com/Bualoi-s-Dev/backend/configs"
@@ -24,8 +25,19 @@ import (
 func main() {
 	databaseName := "PhotoMatch"
 	configs.LoadEnv()
+	if configs.GetEnv("APP_MODE") == "development" {
+		databaseName = "PhotoMatch_Dev"
+	}
 	client := configs.ConnectMongoDB().Database(databaseName)
+
 	r, serverRepositories, _ := bootstrap.SetupServer(client)
 	go bootstrap.AutoUpdate(context.TODO(), serverRepositories)
-	r.Run()
+  
+	port := configs.GetEnv("PORT")
+	if port == "" {
+		fmt.Println("PORT is not set")
+		port = "8080"
+	}
+	fmt.Println("Server is running on port: " + port)
+	r.Run(":" + port)
 }

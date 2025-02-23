@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"firebase.google.com/go/auth"
 	"github.com/Bualoi-s-Dev/backend/dto"
 	"github.com/Bualoi-s-Dev/backend/models"
 	repositories "github.com/Bualoi-s-Dev/backend/repositories/database"
@@ -12,28 +13,40 @@ import (
 )
 
 type UserService struct {
-	Repo      *repositories.UserRepository
-	S3Service *S3Service
+	Repo           *repositories.UserRepository
+	S3Service      *S3Service
+	PackageService *PackageService
+	AuthClient     *auth.Client
 }
 
-func NewUserService(repo *repositories.UserRepository, s3Service *S3Service) *UserService {
-	return &UserService{Repo: repo, S3Service: s3Service}
+func NewUserService(repo *repositories.UserRepository, s3Service *S3Service, packageService *PackageService, authClient *auth.Client) *UserService {
+	return &UserService{Repo: repo, S3Service: s3Service, PackageService: packageService, AuthClient: authClient}
 }
 
 func (s *UserService) FindUser(ctx context.Context, email string) (*models.User, error) {
 	return s.Repo.FindUserByEmail(ctx, email)
 }
 
-func (s *UserService) GetUser(ctx context.Context, email string) (*dto.UserResponse, error) {
-	return s.Repo.GetUserByEmail(ctx, email)
-}
-
-func (s *UserService) FindUserByID(ctx context.Context, id primitive.ObjectID) (*models.User, error) {
-	return s.Repo.FindUserByID(ctx, id)
-}
-
 func (s *UserService) FindEmailByID(ctx context.Context, id primitive.ObjectID) (string, error) {
 	return s.Repo.FindEmailByID(ctx, id)
+}
+
+func (s *UserService) GetUserByEmail(ctx context.Context, email string) (*dto.UserResponse, error) {
+	user, err := s.Repo.FindUserByEmail(ctx, email)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.mappedToUserResponse(ctx, user)
+}
+
+func (s *UserService) GetUserByID(ctx context.Context, userId primitive.ObjectID) (*dto.UserResponse, error) {
+	user, err := s.Repo.FindUserByID(ctx, userId)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.mappedToUserResponse(ctx, user)
 }
 
 func (s *UserService) CreateUser(ctx context.Context, user *models.User) error {
@@ -45,6 +58,10 @@ func (s *UserService) UpdateUser(ctx context.Context, userId primitive.ObjectID,
 	if err != nil {
 		return nil, err
 	}
+
+	// Check if the role is changed
+	roleChanged := req.Role != nil && models.UserRole(*req.Role) != item.Role
+
 	if err := copier.Copy(item, req); err != nil {
 		return nil, err
 	}
@@ -52,7 +69,6 @@ func (s *UserService) UpdateUser(ctx context.Context, userId primitive.ObjectID,
 	if req.Profile != nil && *req.Profile != "" {
 		key := "profile/" + userId.Hex()
 		// Try to delete the existing profile picture
-		fmt.Println("key :", key)
 		_ = s.S3Service.DeleteObject(key)
 
 		profileUrl, err := s.S3Service.UploadBase64([]byte(*req.Profile), key)
@@ -63,38 +79,85 @@ func (s *UserService) UpdateUser(ctx context.Context, userId primitive.ObjectID,
 		item.Profile = profileUrl
 	}
 
+	// call func change jwt role
+	if roleChanged {
+		newRole := models.UserRole(*req.Role)
+
+		// find user from firebase to get firebase UID
+		firebaseUser, err := s.AuthClient.GetUserByEmail(ctx, email)
+		if err != nil {
+			return nil, fmt.Errorf("failed to fetch Firebase user: %v", err)
+		}
+		firebaseUID := firebaseUser.UID
+
+		err = s.AuthClient.SetCustomUserClaims(ctx, firebaseUID, map[string]interface{}{
+			"role": string(newRole),
+		})
+		if err != nil {
+			return nil, fmt.Errorf("failed to update Firebase role: %v", err)
+		}
+
+		item.Role = newRole
+	}
+
 	_, err = s.Repo.ReplaceUser(ctx, userId, item)
 	if err != nil {
 		return nil, err
 	}
-	res, err := s.Repo.GetUserByEmail(ctx, email)
+
+	// map to dto.response
+	res, err := s.mappedToUserResponse(ctx, item)
 	if err != nil {
 		return nil, err
 	}
 	return res, nil
 }
 
-func (s *UserService) VerifyShowcase(ctx context.Context, ownedPackages []primitive.ObjectID, checkPackages []primitive.ObjectID) bool {
+func (s *UserService) VerifyShowcase(ctx context.Context, ownerId primitive.ObjectID, checkPackages []primitive.ObjectID) (bool, error) {
+	ownedPackages, err := s.PackageService.GetByOwnerId(ctx, ownerId)
+	if err != nil {
+		return false, err
+	}
+
 	ownedMap := make(map[string]struct{}, len(ownedPackages))
 	for _, pkg := range ownedPackages {
-		ownedMap[pkg.Hex()] = struct{}{} // Using an empty struct{} to save memory
+		ownedMap[pkg.ID.Hex()] = struct{}{} // Using an empty struct{} to save memory
 	}
 	for _, pkgID := range checkPackages {
 		if _, ok := ownedMap[pkgID.Hex()]; !ok {
-			return false
+			return false, nil
 		}
 	}
-	return true
+	return true, nil
 }
 
-func (s *UserService) UpdateOwnerPackage(ctx context.Context, userId primitive.ObjectID, req dto.UpdateUserPackageRequest) error {
-	item, err := s.Repo.FindUserByID(ctx, userId)
+func (s *UserService) mappedToUserResponse(ctx context.Context, user *models.User) (*dto.UserResponse, error) {
+	packages, err := s.PackageService.GetByOwnerId(ctx, user.ID)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	if err := copier.Copy(item, req); err != nil {
-		return err
+
+	showcasePackages, err := s.PackageService.GetByList(ctx, user.ShowcasePackages)
+	if err != nil {
+		return nil, err
 	}
-	_, err = s.Repo.ReplaceUser(ctx, userId, item)
-	return err
+
+	return &dto.UserResponse{
+		ID:               user.ID,
+		Email:            user.Email,
+		Name:             user.Name,
+		Gender:           user.Gender,
+		Profile:          user.Profile,
+		Phone:            user.Phone,
+		Location:         user.Location,
+		Role:             user.Role,
+		Description:      user.Description,
+		BankName:         user.BankName,
+		BankAccount:      user.BankAccount,
+		LineID:           user.LineID,
+		Facebook:         user.Facebook,
+		Instagram:        user.Instagram,
+		ShowcasePackages: showcasePackages,
+		Packages:         packages,
+	}, nil
 }

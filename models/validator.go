@@ -1,6 +1,8 @@
 package models
 
 import (
+	"time"
+
 	"github.com/go-playground/validator/v10"
 )
 
@@ -46,6 +48,7 @@ func ValidateUserRole(fl validator.FieldLevel) bool {
 	return false
 }
 
+
 // ValidateAppointmentStatus check if AppointmentStatus is valid
 func ValidateAppointmentStatus(fl validator.FieldLevel) bool {
 	value := fl.Field().Interface().(AppointmentStatus)
@@ -57,6 +60,37 @@ func ValidateAppointmentStatus(fl validator.FieldLevel) bool {
 		}
 	}
 	return false
+
+func ValidateDayNames(fl validator.FieldLevel) bool {
+	field := fl.Field().Interface().([]DayName)
+
+	for _, day := range field {
+		isValid := false
+		for _, validDay := range ValidDayNames {
+			if day == validDay.Value {
+				isValid = true
+				break
+			}
+		}
+		if !isValid {
+			return false
+		}
+	}
+	return true
+}
+
+// Validate time format
+func ValidateTime(fl validator.FieldLevel) bool {
+	value := fl.Field().Interface().(string)
+	_, err := time.Parse("15:04", value)
+	return err == nil
+}
+
+// Validate date format
+func ValidateDate(fl validator.FieldLevel) bool {
+	value := fl.Field().Interface().(string)
+	_, err := time.Parse("2006-01-02", value)
+	return err == nil
 }
 
 // RegisterCustomValidators registers custom validators to the validator
@@ -66,4 +100,7 @@ func RegisterCustomValidators(v *validator.Validate) {
 	v.RegisterValidation("bank_name", ValidateBankName)
 	v.RegisterValidation("user_role", ValidateUserRole)
 	v.RegisterValidation("appointment_status", ValidateAppointmentStatus)
+	v.RegisterValidation("day_names", ValidateDayNames)
+	v.RegisterValidation("time_format", ValidateTime)
+	v.RegisterValidation("date_format", ValidateDate)
 }
