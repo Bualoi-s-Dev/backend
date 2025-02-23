@@ -48,7 +48,6 @@ func ValidateUserRole(fl validator.FieldLevel) bool {
 	return false
 }
 
-
 // ValidateAppointmentStatus check if AppointmentStatus is valid
 func ValidateAppointmentStatus(fl validator.FieldLevel) bool {
 	value := fl.Field().Interface().(AppointmentStatus)
@@ -60,6 +59,7 @@ func ValidateAppointmentStatus(fl validator.FieldLevel) bool {
 		}
 	}
 	return false
+}
 
 func ValidateDayNames(fl validator.FieldLevel) bool {
 	field := fl.Field().Interface().([]DayName)
