@@ -36,8 +36,8 @@ func (s *BusyTimeService) GetByPhotographerId(ctx context.Context, photographerI
 	return s.Repository.GetByPhotographerId(ctx, photographerId)
 }
 
-func (s *BusyTimeService) Create(ctx context.Context, request *dto.BusyTimeRequest) error {
-	model := request.ToModel()
+func (s *BusyTimeService) Create(ctx context.Context, request *dto.BusyTimeRequest, photographerID primitive.ObjectID) error {
+	model := request.ToModel(photographerID)
 	return s.Repository.Create(ctx, *model)
 }
 

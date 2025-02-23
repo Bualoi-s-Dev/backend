@@ -13,6 +13,8 @@ func UserRoutes(router *gin.Engine, userController *controllers.UserController) 
 		userRoutes.GET("/profile", userController.GetUserProfile)
 		userRoutes.GET("/profile/:id", userController.GetUserProfileByID)
 		userRoutes.PATCH("/profile", userController.UpdateUserProfile)
+		
+		userRoutes.POST("/busytime", userController.CreateUserBusyTime)
 
 		// userRoutes.PUT("/profile/showcase", userController.UpdateUserShowcasePackage)
 	}

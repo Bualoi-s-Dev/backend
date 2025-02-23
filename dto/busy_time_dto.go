@@ -7,15 +7,14 @@ import (
 )
 
 type BusyTimeRequest struct {
-	PhotographerID *primitive.ObjectID  `bson:"photographer_id" json:"photographerId" binding:"required" example:"12345678abcd"`
 	Type           *models.BusyTimeType `bson:"type" json:"type" binding:"required" example:"PHOTOGRAPHER"`
 	StartTime      *time.Time           `bson:"start_time" json:"startTime" binding:"required" example:"2025-02-23T10:00:00Z"`
 	EndTime        *time.Time           `bson:"end_time" json:"endTime" binding:"required" example:"2025-02-23T12:00:00Z"`
 }
 
-func (item *BusyTimeRequest) ToModel() *models.BusyTime {
+func (item *BusyTimeRequest) ToModel(photographerID primitive.ObjectID) *models.BusyTime {
 	return &models.BusyTime{
-		PhotographerID: *item.PhotographerID,
+		PhotographerID: photographerID,
 		Type:           *item.Type,
 		StartTime:      *item.StartTime,
 		EndTime:        *item.EndTime,
