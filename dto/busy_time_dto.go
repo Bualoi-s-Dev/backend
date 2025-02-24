@@ -10,7 +10,7 @@ import (
 type BusyTimeRequest struct {
 	Type      *models.BusyTimeType `bson:"type" json:"type" binding:"required" example:"PHOTOGRAPHER"`
 	StartTime *time.Time           `bson:"start_time" json:"startTime" binding:"required" example:"2025-02-23T10:00:00Z"`
-	EndTime   *time.Time           `bson:"end_time" json:"endTime" binding:"required" example:"2025-02-23T12:00:00Z"` // TODO: remove json body later <- this only gen from start time + subpackage duration
+	EndTime   *time.Time           `bson:"end_time" json:"endTime" binding:"required" example:"2025-02-23T12:00:00Z"`
 	IsValid   *bool                `bson:"is_valid" json:"isValid" example:"true"`
 }
 
