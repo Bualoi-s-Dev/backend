@@ -173,7 +173,6 @@ func (a *AppointmentController) CreateAppointment(c *gin.Context) {
 // @Failure 500 {object} string "Internal Server Error"
 // @Router /appointment/{id} [put]
 func (a *AppointmentController) UpdateAppointment(c *gin.Context) {
-	// FIXME: I Forgot but something(s) must be fixed
 	// user
 	user := middleware.GetUserFromContext(c)
 	role := middleware.GetUserRoleFromContext(c)
@@ -198,6 +197,16 @@ func (a *AppointmentController) UpdateAppointment(c *gin.Context) {
 		return
 	}
 
+	busyTime, err := a.BusyTimeService.GetById(c.Request.Context(), appointment.BusyTimeID.Hex())
+	if err != nil {
+		apperrors.HandleError(c, err, "Cannot get the busyTime from this busyTimeId")
+		return
+	}
+	if busyTime.IsValid { // status is pending and current busyTime is valid => impossible
+		apperrors.HandleError(c, apperrors.ErrInternalServer, "busyTime cannot be valid if current appointment status is pending")
+		return
+	}
+
 	// req
 	var req dto.AppointmentRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -205,7 +214,47 @@ func (a *AppointmentController) UpdateAppointment(c *gin.Context) {
 		return
 	}
 
-	updatedAppointment, err := a.AppointmentService.UpdateAppointment(c.Request.Context(), user, appointmentId, &req)
+	// update time => need to update busy time too
+	if req.StartTime != nil {
+		if err := a.BusyTimeService.Delete(c, busyTime.ID.Hex()); err != nil {
+			apperrors.HandleError(c, err, "(Update Status) Could not delete appointment before update")
+		}
+
+		// calculate endTime from busyTime and startTime
+		loc, _ := time.LoadLocation("Asia/Bangkok")
+		currentTime := time.Now().In(loc)
+		if req.StartTime.Before(currentTime) {
+			apperrors.HandleError(c, apperrors.ErrBadRequest, "Cannot channge appointment start time before current Time: "+currentTime.String())
+			return
+		}
+
+		// calculate duration Endtime - StartTime (from appointment)
+		duration := busyTime.EndTime.Sub(busyTime.StartTime)
+		endTime := req.StartTime.Add(duration)
+
+		busyTimeReq := &dto.BusyTimeRequest{
+			Type:      &busyTime.Type,
+			StartTime: req.StartTime,
+			EndTime:   &endTime,
+			IsValid:   &busyTime.IsValid, // false
+		}
+
+		if err := a.BusyTimeService.Create(c, busyTimeReq, appointment.PhotographerID); err != nil {
+			// Error becuase the new startTime is conflict with the photgrapher's BusyTime
+			busyTimeReq.StartTime = &busyTime.StartTime
+			busyTimeReq.EndTime = &busyTime.EndTime
+			if err := a.BusyTimeService.Create(c, busyTimeReq, appointment.PhotographerID); err != nil {
+				apperrors.HandleError(c, apperrors.ErrInternalServer, "(On update status) Can't recreate the same busyTime after deleted") // shouldn't happen
+				return
+			}
+			apperrors.HandleError(c, err, "(Update Status) Could not re-create appointment")
+			return
+		}
+		// } ENDTODO:
+
+	}
+
+	updatedAppointment, err := a.AppointmentService.UpdateAppointment(c.Request.Context(), user, appointment, &req)
 	if err != nil {
 		apperrors.HandleError(c, err, "Cannot update this appointment")
 		return

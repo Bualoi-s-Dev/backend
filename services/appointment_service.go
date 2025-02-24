@@ -2,7 +2,6 @@ package services
 
 import (
 	"context"
-	"time"
 
 	"github.com/Bualoi-s-Dev/backend/apperrors"
 
@@ -60,28 +59,7 @@ func (s *AppointmentService) CreateOneAppointment(ctx context.Context, user *mod
 	return s.AppointmentRepo.CreateAppointment(ctx, appointment)
 }
 
-func (s *AppointmentService) UpdateAppointment(ctx context.Context, user *models.User, appointmentId primitive.ObjectID, req *dto.AppointmentRequest) (*models.Appointment, error) {
-
-	appointment, err := s.GetAppointmentById(ctx, user, appointmentId)
-	if err != nil {
-		return nil, err
-	}
-
-	if req.StartTime != nil {
-		loc, _ := time.LoadLocation("Asia/Bangkok")
-		if req.StartTime.Before(time.Now().In(loc)) {
-			return nil, apperrors.ErrAppointmentStatusTime
-		}
-		busyTime, err := s.BusyTimeRepo.GetById(ctx, appointment.BusyTimeID.Hex())
-		if err != nil {
-			return nil, err
-		}
-		// calculate duration Endtime - StartTime (from appointment)
-		duration := busyTime.EndTime.Sub(busyTime.StartTime)
-		endTime := req.StartTime.Add(duration)
-		req.EndTime = &endTime
-	}
-
+func (s *AppointmentService) UpdateAppointment(ctx context.Context, user *models.User, appointment *models.Appointment, req *dto.AppointmentRequest) (*models.Appointment, error) {
 	if err := copier.Copy(appointment, req); err != nil {
 		return nil, err
 	}
