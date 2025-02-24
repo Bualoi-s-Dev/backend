@@ -67,11 +67,6 @@ func (s *AppointmentService) UpdateAppointment(ctx context.Context, user *models
 		return nil, err
 	}
 
-	// Can edit only pending status
-	if appointment.Status != models.AppointmentPending {
-		return nil, apperrors.ErrAppointmentStatusInvalid
-	}
-
 	if req.StartTime != nil {
 		loc, _ := time.LoadLocation("Asia/Bangkok")
 		if req.StartTime.Before(time.Now().In(loc)) {
@@ -91,35 +86,12 @@ func (s *AppointmentService) UpdateAppointment(ctx context.Context, user *models
 		return nil, err
 	}
 
-	return s.AppointmentRepo.ReplaceAppointment(ctx, appointmentId, appointment)
+	return s.AppointmentRepo.ReplaceAppointment(ctx, appointment)
 }
 
-func (s *AppointmentService) UpdateAppointmentStatus(ctx context.Context, user *models.User, appointmentId primitive.ObjectID, req *dto.AppointmentUpdateStatusRequest) (*models.Appointment, error) {
-	appointment, err := s.GetAppointmentById(ctx, user, appointmentId)
-	if err != nil {
-		return nil, err
-	}
-
-	busyTime, err := s.BusyTimeRepo.GetById(ctx, appointment.BusyTimeID.Hex())
-	if err != nil {
-		return nil, err
-	}
-
-	// cannot update any to complete, it done via AutoUpdate
-	if *req.Status == models.AppointmentCompleted {
-		return nil, apperrors.ErrAppointmentStatusInvalid
-	}
-
-	// cannot change if it an terminal status
-	if appointment.Status == models.AppointmentCanceled || appointment.Status == models.AppointmentCompleted || appointment.Status == models.AppointmentRejected {
-		return nil, apperrors.ErrAppointmentStatusInvalid
-	}
-	if appointment.Status == models.AppointmentAccepted && *req.Status == models.AppointmentCanceled && time.Now().After(busyTime.StartTime) { // cannot canceled when appointment has begun
-		return nil, apperrors.ErrAppointmentStatusTime
-	}
-
-	appointment.Status = *req.Status
-	return s.AppointmentRepo.ReplaceAppointment(ctx, appointmentId, appointment)
+func (s *AppointmentService) UpdateAppointmentStatus(ctx context.Context, user *models.User, appointment *models.Appointment, req *dto.AppointmentUpdateStatusRequest) (*models.Appointment, error) {
+	appointment.Status = req.Status
+	return s.AppointmentRepo.ReplaceAppointment(ctx, appointment)
 }
 
 func (s *AppointmentService) DeleteAppointment(ctx context.Context, appointmentId primitive.ObjectID, user *models.User) error {

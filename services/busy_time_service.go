@@ -38,7 +38,6 @@ func (s *BusyTimeService) GetByPhotographerId(ctx context.Context, photographerI
 }
 
 func (s *BusyTimeService) Create(ctx context.Context, request *dto.BusyTimeRequest, photographerId primitive.ObjectID) error {
-
 	model := request.ToModel(photographerId)
 	isAvailable, err := s.IsPhotographerAvailable(ctx, photographerId, model.StartTime, model.EndTime)
 	if err != nil {
@@ -47,14 +46,19 @@ func (s *BusyTimeService) Create(ctx context.Context, request *dto.BusyTimeReque
 	if !isAvailable {
 		return apperrors.ErrTimeOverlapped
 	}
-	return s.Repository.Create(ctx, *model)
+	return s.Repository.Create(ctx, model)
 }
 
-func (s *BusyTimeService) CreateBySubpackage(ctx context.Context, request *dto.BusyTimeRequest, subpackageId primitive.ObjectID) (*models.BusyTime, error) {
+func (s *BusyTimeService) CreateFromSubpackage(ctx context.Context, request *dto.BusyTimeRequest, subpackageId primitive.ObjectID) (*models.BusyTime, error) {
 	subpackage, err := s.SubpackageRepo.GetById(ctx, subpackageId.Hex())
 	if err != nil {
 		return nil, err
 	}
+
+	// subpackage.Duration // minute
+	// set end time = start time + duration(in minute)
+	EndTime := request.StartTime.Add(time.Duration(subpackage.Duration) * time.Minute)
+	request.EndTime = &EndTime
 
 	pkg, err := s.PackageRepo.GetById(ctx, subpackage.PackageID.Hex())
 	if err != nil {
@@ -62,7 +66,7 @@ func (s *BusyTimeService) CreateBySubpackage(ctx context.Context, request *dto.B
 	}
 
 	photographerId := pkg.OwnerID
-	model := request.ToModel(photographerId)
+	model := request.ToModel(photographerId) // when customer create first time
 	isAvailable, err := s.IsPhotographerAvailable(ctx, photographerId, model.StartTime, model.EndTime)
 	if err != nil {
 		return nil, err
@@ -70,7 +74,7 @@ func (s *BusyTimeService) CreateBySubpackage(ctx context.Context, request *dto.B
 	if !isAvailable {
 		return nil, apperrors.ErrTimeOverlapped
 	}
-	return model, s.Repository.Create(ctx, *model)
+	return model, s.Repository.Create(ctx, model)
 }
 
 func (s *BusyTimeService) Delete(ctx context.Context, id string) error {

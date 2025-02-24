@@ -6,6 +6,7 @@ var (
 	ErrBadRequest     = errors.New("Invalid request data")
 	ErrInternalServer = errors.New("Internal server error")
 	ErrUnauthorized   = errors.New("Unauthorized")
+	ErrForbidden      = errors.New("Permission Denied")
 )
 
 // Appointment

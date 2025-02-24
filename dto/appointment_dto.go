@@ -14,7 +14,7 @@ type AppointmentRequest struct { // cannot patch subpackage
 }
 
 type AppointmentUpdateStatusRequest struct {
-	Status *models.AppointmentStatus `bson:"status,omitempty" json:"status" example:"pending"` // "pending", "accepted", "rejected", "completed"
+	Status models.AppointmentStatus `bson:"status,omitempty" json:"status" example:"pending"` // "pending", "accepted", "rejected", "completed"
 }
 
 type AppointmenStrictRequest struct {

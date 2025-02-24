@@ -13,6 +13,8 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
+// TODO: Change some error raising to forbidden (instead of Unauthorized)
+
 type AppointmentController struct {
 	AppointmentService *services.AppointmentService
 	BusyTimeService    *services.BusyTimeService
@@ -139,18 +141,14 @@ func (a *AppointmentController) CreateAppointment(c *gin.Context) {
 	}
 
 	busyTimeType := models.TypePhotographer
+	isValid := false
 	busyTimeReq := &dto.BusyTimeRequest{
 		Type:      &busyTimeType,
 		StartTime: &req.StartTime,
-		EndTime:   &req.StartTime,
+		IsValid:   &isValid,
 	}
-	// type BusyTimeRequest struct {
-	// 	Type           *models.BusyTimeType `bson:"type" json:"type" binding:"required" example:"PHOTOGRAPHER"`
-	// 	StartTime      *time.Time           `bson:"start_time" json:"startTime" binding:"required" example:"2025-02-23T10:00:00Z"`
-	// 	EndTime        *time.Time           `bson:"end_time" json:"endTime" binding:"required" example:"2025-02-23T12:00:00Z"`
-	// }
 
-	busyTime, err := a.BusyTimeService.CreateBySubpackage(c.Request.Context(), busyTimeReq, subpackageId)
+	busyTime, err := a.BusyTimeService.CreateFromSubpackage(c.Request.Context(), busyTimeReq, subpackageId)
 	if err != nil {
 		apperrors.HandleError(c, err, "Cannot create BusyTime")
 	}
@@ -175,6 +173,7 @@ func (a *AppointmentController) CreateAppointment(c *gin.Context) {
 // @Failure 500 {object} string "Internal Server Error"
 // @Router /appointment/{id} [put]
 func (a *AppointmentController) UpdateAppointment(c *gin.Context) {
+	// FIXME: I Forgot but something(s) must be fixed
 	// user
 	user := middleware.GetUserFromContext(c)
 	role := middleware.GetUserRoleFromContext(c)
@@ -189,7 +188,7 @@ func (a *AppointmentController) UpdateAppointment(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Only customer can update appointment properties"})
 		return
 	}
-	appointment, _ := a.AppointmentService.GetAppointmentById(c.Request.Context(), user, appointmentId)
+	appointment, err := a.AppointmentService.GetAppointmentById(c.Request.Context(), user, appointmentId)
 	if err != nil {
 		apperrors.HandleError(c, err, "Cannot get the appointment from this id")
 		return
@@ -227,10 +226,15 @@ func (a *AppointmentController) UpdateAppointment(c *gin.Context) {
 // @Router /appointment/status/{id} [put]
 func (a *AppointmentController) UpdateAppointmentStatus(c *gin.Context) {
 	user := middleware.GetUserFromContext(c)
-
+	role := middleware.GetUserRoleFromContext(c)
 	appointmentId, err := getIDFromParam(c)
+
 	if err != nil {
 		apperrors.HandleError(c, err, "Cannot get appointmentId from param.")
+		return
+	}
+	if role == models.Guest {
+		apperrors.HandleError(c, apperrors.ErrUnauthorized, "Guest cannot update any appointment")
 		return
 	}
 
@@ -240,12 +244,81 @@ func (a *AppointmentController) UpdateAppointmentStatus(c *gin.Context) {
 		return
 	}
 
-	if req.Status == nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Status is required"})
+	// cannot update any status to complete, it is done via AutoUpdate
+	if req.Status == models.AppointmentCompleted {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Cannot update status to Completed directly"})
 		return
 	}
 
-	updatedAppointment, err := a.AppointmentService.UpdateAppointmentStatus(c.Request.Context(), user, appointmentId, &req)
+	appointment, err := a.AppointmentService.GetAppointmentById(c.Request.Context(), user, appointmentId)
+	if err != nil {
+		apperrors.HandleError(c, err, "Cannot get the appointment from this appointmentId")
+	}
+
+	busyTime, err := a.BusyTimeService.GetById(c.Request.Context(), appointment.BusyTimeID.Hex())
+	if err != nil {
+		apperrors.HandleError(c, err, "Cannot get the busyTime from this busyTimeId")
+		return
+	}
+
+	// cannot change if it an terminal status
+	if appointment.Status == models.AppointmentCanceled || appointment.Status == models.AppointmentCompleted || appointment.Status == models.AppointmentRejected {
+		apperrors.HandleError(c, apperrors.ErrAppointmentStatusInvalid, "Cannot change terminated status")
+		return
+	}
+
+	if appointment.Status == models.AppointmentAccepted && req.Status == models.AppointmentCanceled { // cannot canceled when appointment has begun
+		// If change from accepted to canceled => must change isValid of busy time to false
+
+		// TODO: Change this to function later { <--- all maybe create a **BusyTimeService.Update**
+		// Note this just update only isValid
+		if err := a.BusyTimeService.Delete(c, busyTime.ID.Hex()); err != nil {
+			apperrors.HandleError(c, err, "(Update Status) Could not delete appointment before update")
+		}
+
+		busyTimeIsValid := false
+		busyTimeReq := &dto.BusyTimeRequest{
+			Type:      &busyTime.Type,
+			StartTime: &busyTime.StartTime,
+			IsValid:   &busyTimeIsValid,
+		}
+
+		if err := a.BusyTimeService.Create(c, busyTimeReq, appointment.PhotographerID); err != nil {
+			apperrors.HandleError(c, err, "(Update Status) Could not re-create appointment")
+			return
+		}
+		// } ENDTODO:
+
+	}
+
+	// TODO: if change from "pending" -> "accepted" (only phtoographer) => must change isValid of busy time to true
+	if appointment.Status == models.AppointmentPending && req.Status == models.AppointmentAccepted {
+		// check availability
+		if role != models.Photographer {
+			apperrors.HandleError(c, apperrors.ErrForbidden, "customer cannot change ")
+		}
+		// TODO: Change this to function later { <--- all maybe create a **BusyTimeService.Update**
+		// Note this just update only isValid
+		if err := a.BusyTimeService.Delete(c, busyTime.ID.Hex()); err != nil {
+			apperrors.HandleError(c, err, "(Update Status) Could not delete appointment before update")
+		}
+
+		busyTimeIsValid := true
+		busyTimeReq := &dto.BusyTimeRequest{
+			Type:      &busyTime.Type,
+			StartTime: &busyTime.StartTime,
+			IsValid:   &busyTimeIsValid,
+		}
+
+		if err := a.BusyTimeService.Create(c, busyTimeReq, appointment.PhotographerID); err != nil {
+			apperrors.HandleError(c, err, "(Update Status) Could not re-create appointment")
+			return
+		}
+		// } ENDTODO:
+
+	}
+
+	updatedAppointment, err := a.AppointmentService.UpdateAppointmentStatus(c.Request.Context(), user, appointment, &req)
 	if err != nil {
 		apperrors.HandleError(c, err, "Cannot update this appointment status")
 		return

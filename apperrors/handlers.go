@@ -17,6 +17,8 @@ func HandleError(c *gin.Context, err error, message string) {
 		statusCode = http.StatusBadRequest
 	case ErrUnauthorized:
 		statusCode = http.StatusUnauthorized
+	case ErrForbidden:
+		statusCode = http.StatusForbidden
 	default:
 		statusCode = http.StatusInternalServerError
 	}

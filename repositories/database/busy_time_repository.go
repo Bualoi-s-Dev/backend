@@ -107,7 +107,7 @@ func (r *BusyTimeRepository) GetByPhotographerIdValid(ctx context.Context, photo
 	return items, nil
 }
 
-func (r *BusyTimeRepository) Create(ctx context.Context, item models.BusyTime) error {
+func (r *BusyTimeRepository) Create(ctx context.Context, item *models.BusyTime) error {
 	_, err := r.Collection.InsertOne(ctx, item)
 	return err
 }

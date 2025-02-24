@@ -112,8 +112,8 @@ func (repo *AppointmentRepository) CreateAppointment(ctx context.Context, appoin
 	return appointment, err
 }
 
-func (repo *AppointmentRepository) ReplaceAppointment(ctx context.Context, id primitive.ObjectID, appointment *models.Appointment) (*models.Appointment, error) {
-	_, err := repo.AppointmentCollection.ReplaceOne(ctx, bson.M{"_id": id}, appointment)
+func (repo *AppointmentRepository) ReplaceAppointment(ctx context.Context, appointment *models.Appointment) (*models.Appointment, error) {
+	_, err := repo.AppointmentCollection.ReplaceOne(ctx, bson.M{"_id": appointment.ID}, appointment)
 	return appointment, err
 }
 
