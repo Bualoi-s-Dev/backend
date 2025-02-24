@@ -11,12 +11,13 @@ import (
 )
 
 type UserController struct {
-	Service   *services.UserService
-	S3Service *services.S3Service
+	Service  		*services.UserService
+	S3Service 		*services.S3Service
+	BusyTimeService *services.BusyTimeService
 }
 
-func NewUserController(service *services.UserService, s3Service *services.S3Service) *UserController {
-	return &UserController{Service: service, S3Service: s3Service}
+func NewUserController(service *services.UserService, s3Service *services.S3Service, busyTimeService *services.BusyTimeService) *UserController {
+	return &UserController{Service: service, S3Service: s3Service, BusyTimeService: busyTimeService}
 }
 
 // GetUserJWT godoc
@@ -130,4 +131,35 @@ func (uc *UserController) UpdateUserProfile(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, newUser)
+}
+
+// CreateUserBusyTime godoc
+// @Summary Create a busy time for the authenticated user
+// @Description Create a busy time entry using user ID from the JWT
+// @Tags User
+// @Param request body dto.BusyTimeRequest true "Create BusyTime Request"
+// @Success 201 {object} dto.BusyTimeRequest
+// @Failure 400 {object} string "Bad Request"
+// @Router /user/busytime [post]
+func (uc *UserController) CreateUserBusyTime(c *gin.Context) {
+	var busyTimeRequest dto.BusyTimeRequest
+	if err := c.ShouldBindJSON(&busyTimeRequest); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request, " + err.Error()})
+		return
+	}
+
+	// Extract user from context using existing middleware function
+	user := middleware.GetUserFromContext(c)
+	if user == nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized: user not found"})
+		return
+	}
+
+	// Call BusyTimeService with extracted user ID
+	if err := uc.BusyTimeService.Create(c.Request.Context(), &busyTimeRequest, user.ID); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create busy time, " + err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusCreated, busyTimeRequest)
 }

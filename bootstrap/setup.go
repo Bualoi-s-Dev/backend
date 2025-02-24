@@ -56,6 +56,7 @@ func SetupServer(client *mongo.Database) (*gin.Engine, *ServerRepositories, *Ser
 	subpackageRepo := database.NewSubpackageRepository(client.Collection("Subpackage"))
 	userRepo := database.NewUserRepository(client.Collection("User"))
 	appointmentRepo := database.NewAppointmentRepository(client.Collection("Appointment"), client.Collection("Package"))
+	busyTimeRepo := database.NewBusyTimeRepository(client.Collection("BusyTime"))
 	s3Repo := s3.NewS3Repository()
 	firebaseRepo := firebase.NewFirebaseRepository(authClient)
 
@@ -65,11 +66,14 @@ func SetupServer(client *mongo.Database) (*gin.Engine, *ServerRepositories, *Ser
 	subpackageService := services.NewSubpackageService(subpackageRepo)
 	packageService := services.NewPackageService(packageRepo, s3Service, subpackageService)
 	userService := services.NewUserService(userRepo, s3Service, packageService, authClient)
+	busyTimeService := services.NewBusyTimeService(busyTimeRepo, subpackageRepo, packageRepo)
 
 	packageController := controllers.NewPackageController(packageService, s3Service, userService)
 	subPackageController := controllers.NewSubpackageController(subpackageService, packageService)
-	userController := controllers.NewUserController(userService, s3Service)
+
 	appointmentController := controllers.NewAppointmentController(appointmentService)
+	userController := controllers.NewUserController(userService, s3Service, busyTimeService)
+	BusyTimeController := controllers.NewBusyTimeController(busyTimeService)
 	internalController := controllers.NewInternalController(firebaseService, s3Service)
 
 	serverRepositories := &ServerRepositories{
@@ -99,6 +103,7 @@ func SetupServer(client *mongo.Database) (*gin.Engine, *ServerRepositories, *Ser
 	routes.SubpackageRoutes(r, subPackageController)
 	routes.UserRoutes(r, userController)
 	routes.AppointmentRoutes(r, appointmentController)
+	routes.BusyTimeRoutes(r, BusyTimeController)
 
 	return r, serverRepositories, serverServices
 }
