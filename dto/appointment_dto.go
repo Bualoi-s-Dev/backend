@@ -37,15 +37,14 @@ type AppointmentResponse struct {
 	// Payment       Payment   `bson:"payment,omitempty" json:"payment,omitempty" example:"{...}"`
 }
 
-func (req *AppointmenStrictRequest) ToModel(user *models.User, pkg *models.Package, subpackage *models.Subpackage) *models.Appointment {
+func (req *AppointmenStrictRequest) ToModel(user *models.User, pkg *models.Package, subpackage *models.Subpackage, busyTime *models.BusyTime) *models.Appointment {
 	return &models.Appointment{
 		ID:             primitive.NewObjectID(),
 		CustomerID:     user.ID,
 		PhotographerID: pkg.OwnerID,
 		PackageID:      pkg.ID,
 		SubPackageID:   subpackage.ID,
-		StartTime:      req.StartTime,
-		EndTime:        req.StartTime.Add(time.Duration(subpackage.Duration) * time.Minute),
+		BusyTimeID:     busyTime.ID,
 		Status:         "Pending",
 		Location:       req.Location,
 	}
