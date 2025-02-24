@@ -14,13 +14,13 @@ import (
 
 type AppointmentRepository struct {
 	AppointmentCollection *mongo.Collection
-	BusyTimeCollectoin    *mongo.Collection
+	BusyTimeCollection    *mongo.Collection
 }
 
 func NewAppointmentRepository(appointmentCollection, busyTimeCollection *mongo.Collection) *AppointmentRepository {
 	return &AppointmentRepository{
 		AppointmentCollection: appointmentCollection,
-		BusyTimeCollectoin:    busyTimeCollection,
+		BusyTimeCollection:    busyTimeCollection,
 	}
 }
 
@@ -39,60 +39,136 @@ func (repo *AppointmentRepository) AutoUpdateAppointmentStatus(ctx context.Conte
 	)
 
 	// fmt.Println("Querytime = ", currentTime)
-	// FIXME: Change this to match with BusyTime model
-	// TODO: Testing
 	go func() {
 		pipeline := mongo.Pipeline{
 			bson.D{
 				{Key: "$lookup", Value: bson.D{
-					{Key: "from", Value: repo.BusyTimeCollectoin},
-					{Key: "localField", Value: "BusyTimeID"},
+					{Key: "from", Value: repo.BusyTimeCollection.Name()}, // Ensure this is a string
+					{Key: "localField", Value: "busy_time_id"},
 					{Key: "foreignField", Value: "_id"},
-					{Key: "as", Value: "busyTimeDetails"},
+					{Key: "as", Value: "busy_time"},
 				}},
 			},
 			bson.D{
-				{Key: "$unwind", Value: "$busyTimeDetails"},
+				{Key: "$unwind", Value: "$busy_time"},
 			},
 			bson.D{
 				{Key: "$match", Value: bson.D{
 					{Key: "status", Value: "Pending"},
-					{Key: "busyTimeDetails.start_time", Value: bson.D{{Key: "$lt", Value: currentTime}}},
-				}},
-			},
-			bson.D{
-				{Key: "$set", Value: bson.D{
-					{Key: "status", Value: "Canceled"},
+					{Key: "busy_time.start_time", Value: bson.D{{Key: "$lt", Value: currentTime}}},
 				}},
 			},
 		}
 
-		_, err := repo.AppointmentCollection.Aggregate(ctx, pipeline)
+		cursor, err := repo.AppointmentCollection.Aggregate(ctx, pipeline)
 		if err != nil {
-			log.Println(err)
+			log.Println("Aggregation error:", err)
+			return
 		}
-		fmt.Println("====AutoUpdate Pending to Canceled====")
+		defer cursor.Close(ctx)
 
+		var ids []interface{}
+		var count int
+		for cursor.Next(ctx) {
+			var result bson.M
+			if err := cursor.Decode(&result); err != nil {
+				log.Println("Error decoding document:", err)
+				continue
+			}
+			count++
+			if id, ok := result["_id"]; ok {
+				ids = append(ids, id)
+			}
+		}
+
+		if err := cursor.Err(); err != nil {
+			log.Println("Cursor error:", err)
+			return
+		}
+
+		if count == 0 {
+			fmt.Println("====No documents found to update from Pending to Canceled.====")
+			return
+		}
+
+		filter := bson.D{{Key: "_id", Value: bson.D{{Key: "$in", Value: ids}}}}
+		update := bson.D{{Key: "$set", Value: bson.D{{Key: "status", Value: "Canceled"}}}}
+		result, err := repo.AppointmentCollection.UpdateMany(ctx, filter, update)
+		if err != nil {
+			log.Println("Update error:", err)
+			return
+		}
+
+		fmt.Printf("====AutoUpdate Pending to Canceled: %d documents updated====\n", result.ModifiedCount)
 	}()
 
 	// filter only end_time is less than current time and status is "Accepted"
-	// TODO: Change after test
+	// TODO: Maybe Mapped this two go routine into loop or function call
 	go func() {
-		filter := bson.M{
-			"end_time": bson.M{"$lt": currentTime},
-			"status":   "Accepted",
+		pipeline := mongo.Pipeline{
+			bson.D{
+				{Key: "$lookup", Value: bson.D{
+					{Key: "from", Value: repo.BusyTimeCollection.Name()}, // Ensure this is a string
+					{Key: "localField", Value: "busy_time_id"},
+					{Key: "foreignField", Value: "_id"},
+					{Key: "as", Value: "busy_time"},
+				}},
+			},
+			bson.D{
+				{Key: "$unwind", Value: "$busy_time"},
+			},
+			bson.D{
+				{Key: "$match", Value: bson.D{
+					{Key: "status", Value: "Accepted"},
+					{Key: "busy_time.end_time", Value: bson.D{{Key: "$lt", Value: currentTime}}},
+				}},
+			},
 		}
-		update := bson.M{"$set": bson.M{"status": "Completed"}}
+
+		cursor, err := repo.AppointmentCollection.Aggregate(ctx, pipeline)
+		if err != nil {
+			log.Println("Aggregation error:", err)
+			return
+		}
+		defer cursor.Close(ctx)
+
+		var ids []interface{}
+		var count int
+		for cursor.Next(ctx) {
+			var result bson.M
+			if err := cursor.Decode(&result); err != nil {
+				log.Println("Error decoding document:", err)
+				continue
+			}
+			count++
+			if id, ok := result["_id"]; ok {
+				ids = append(ids, id)
+			}
+		}
+
+		if err := cursor.Err(); err != nil {
+			log.Println("Cursor error:", err)
+			return
+		}
+
+		if count == 0 {
+			fmt.Println("====No documents found to update from Accepted to Completed.====")
+			return
+		}
+
+		filter := bson.D{{Key: "_id", Value: bson.D{{Key: "$in", Value: ids}}}}
+		update := bson.D{{Key: "$set", Value: bson.D{{Key: "status", Value: "Completed"}}}}
 		result, err := repo.AppointmentCollection.UpdateMany(ctx, filter, update)
 		if err != nil {
-			log.Println("Error updating documents:", err)
-		} else {
-			fmt.Printf("Autoupdated Accepted to Completed: %d documents\n", result.ModifiedCount)
+			log.Println("Update error:", err)
+			return
 		}
+
+		fmt.Printf("====AutoUpdate Accepted to Completed: %d documents updated====\n", result.ModifiedCount)
 	}()
 
 	return nil
-}
+} //
 
 func (repo *AppointmentRepository) GetAll(ctx context.Context, userID primitive.ObjectID, userRole models.UserRole) ([]models.Appointment, error) {
 	var items []models.Appointment
