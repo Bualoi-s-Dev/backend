@@ -37,14 +37,14 @@ func (s *BusyTimeService) GetByPhotographerId(ctx context.Context, photographerI
 	return s.Repository.GetByPhotographerId(ctx, photographerId)
 }
 
-func (s *BusyTimeService) Create(ctx context.Context, request *dto.BusyTimeRequest, photographerID primitive.ObjectID) error {
+func (s *BusyTimeService) Create(ctx context.Context, request *dto.BusyTimeRequest, photographerID primitive.ObjectID) (primitive.ObjectID, error) {
 	model := request.ToModel(photographerID)
 	isAvailable, err := s.IsPhotographerAvailable(ctx, photographerID, model.StartTime, model.EndTime)
 	if err != nil {
-		return err
+		return primitive.NilObjectID, err
 	}
 	if !isAvailable {
-		return apperrors.ErrTimeOverlapped
+		return primitive.NilObjectID, apperrors.ErrTimeOverlapped
 	}
 	return s.Repository.Create(ctx, *model)
 }

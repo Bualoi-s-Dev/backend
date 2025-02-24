@@ -66,9 +66,12 @@ func (r *BusyTimeRepository) GetByPhotographerId(ctx context.Context, photograph
 	return items, nil
 }
 
-func (r *BusyTimeRepository) Create(ctx context.Context, item models.BusyTime) error {
+func (r *BusyTimeRepository) Create(ctx context.Context, item models.BusyTime) (primitive.ObjectID, error) {
 	_, err := r.Collection.InsertOne(ctx, item)
-	return err
+	if err != nil {
+		return primitive.NilObjectID, err
+	}
+	return item.ID, nil
 }
 
 func (r *BusyTimeRepository) DeleteOne(ctx context.Context, id string) error {
