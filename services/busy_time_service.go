@@ -37,38 +37,48 @@ func (s *BusyTimeService) GetByPhotographerId(ctx context.Context, photographerI
 	return s.Repository.GetByPhotographerId(ctx, photographerId)
 }
 
-func (s *BusyTimeService) Create(ctx context.Context, request *dto.BusyTimeRequest, photographerID primitive.ObjectID) (primitive.ObjectID, error) {
-	model := request.ToModel(photographerID)
-	isAvailable, err := s.IsPhotographerAvailable(ctx, photographerID, model.StartTime, model.EndTime)
+func (s *BusyTimeService) Create(ctx context.Context, request *dto.BusyTimeRequest, photographerId primitive.ObjectID) error {
+
+	model := request.ToModel(photographerId)
+	isAvailable, err := s.IsPhotographerAvailable(ctx, photographerId, model.StartTime, model.EndTime)
 	if err != nil {
-		return primitive.NilObjectID, err
+		return err
 	}
 	if !isAvailable {
-		return primitive.NilObjectID, apperrors.ErrTimeOverlapped
+		return apperrors.ErrTimeOverlapped
 	}
 	return s.Repository.Create(ctx, *model)
+}
+
+func (s *BusyTimeService) CreateBySubpackage(ctx context.Context, request *dto.BusyTimeRequest, subpackageId primitive.ObjectID) (*models.BusyTime, error) {
+	subpackage, err := s.SubpackageRepo.GetById(ctx, subpackageId.Hex())
+	if err != nil {
+		return nil, err
+	}
+
+	pkg, err := s.PackageRepo.GetById(ctx, subpackage.PackageID.Hex())
+	if err != nil {
+		return nil, err
+	}
+
+	photographerId := pkg.OwnerID
+	model := request.ToModel(photographerId)
+	isAvailable, err := s.IsPhotographerAvailable(ctx, photographerId, model.StartTime, model.EndTime)
+	if err != nil {
+		return nil, err
+	}
+	if !isAvailable {
+		return nil, apperrors.ErrTimeOverlapped
+	}
+	return model, s.Repository.Create(ctx, *model)
 }
 
 func (s *BusyTimeService) Delete(ctx context.Context, id string) error {
 	return s.Repository.DeleteOne(ctx, id)
 }
 
-func (s *BusyTimeService) IsSubpackageAvailable(ctx context.Context, subpackageID primitive.ObjectID, startTime, endTime time.Time) (bool, error) {
-	subpackage, err := s.SubpackageRepo.GetById(ctx, subpackageID.Hex())
-	if err != nil {
-		return false, err
-	}
-
-	pkg, err := s.PackageRepo.GetById(ctx, subpackage.PackageID.Hex())
-	if err != nil {
-		return false, err
-	}
-
-	return s.IsPhotographerAvailable(ctx, pkg.OwnerID, startTime, endTime)
-}
-
-func (s *BusyTimeService) IsPhotographerAvailable(ctx context.Context, photographerID primitive.ObjectID, startTime, endTime time.Time) (bool, error) {
-	busyTimes, err := s.Repository.GetByPhotographerId(ctx, photographerID)
+func (s *BusyTimeService) IsPhotographerAvailable(ctx context.Context, photographerId primitive.ObjectID, startTime, endTime time.Time) (bool, error) {
+	busyTimes, err := s.Repository.GetByPhotographerIdValid(ctx, photographerId)
 	if err != nil {
 		return false, err
 	}
@@ -83,3 +93,9 @@ func (s *BusyTimeService) IsPhotographerAvailable(ctx context.Context, photograp
 
 	return true, nil
 }
+
+// TODO: AutoUpdate on overlapped appointment case
+// e.g. 1,2 has overlapped appointment
+// photogrpaher accepted 1 (so photographer can't accept 2)
+// then 1 canceled (after photographer accepted)
+// then photogrpaher can accept 2

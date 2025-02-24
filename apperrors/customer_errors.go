@@ -10,7 +10,7 @@ var (
 
 // Appointment
 var (
-	ErrAppointmentStatusInvalid = errors.New("Invalid appointment status to update")
+	ErrAppointmentStatusInvalid = errors.New("Invalid appointment status to update, Cannot Update Canceled or Completed")
 	ErrAppointmentStatusTime    = errors.New("Invalid status time to update")
 )
 

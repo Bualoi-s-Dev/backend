@@ -45,20 +45,18 @@ func (s *AppointmentService) GetAppointmentById(ctx context.Context, user *model
 	return appointment, nil
 }
 
-func (s *AppointmentService) CreateOneAppointment(ctx context.Context, user *models.User, subpackageId primitive.ObjectID, req *dto.AppointmenStrictRequest) (*models.Appointment, error) {
+func (s *AppointmentService) CreateOneAppointment(ctx context.Context, user *models.User, subpackageId primitive.ObjectID, busyTime *models.BusyTime, req *dto.AppointmenStrictRequest) (*models.Appointment, error) {
 	subpackage, err := s.PackageRepo.GetSubpackageById(ctx, subpackageId.Hex())
 	if err != nil {
-		return nil, apperrors.ErrInternalServer
+		return nil, err
 	}
 
 	pkg, err := s.PackageRepo.GetById(ctx, subpackage.PackageID.Hex())
 	if err != nil {
-		return nil, apperrors.ErrInternalServer
+		return nil, err
 	}
+	appointment := req.ToModel(user, pkg, subpackage, busyTime)
 
-	appointment := req.ToModel(user, pkg, subpackage)
-
-	// TODO: Check Schedule before create
 	return s.AppointmentRepo.CreateAppointment(ctx, appointment)
 }
 
@@ -69,15 +67,19 @@ func (s *AppointmentService) UpdateAppointment(ctx context.Context, user *models
 		return nil, err
 	}
 
-	// if canceled or complete it can't be edited
-	if appointment.Status == "Canceled" || appointment.Status == "Completed" {
+	// Can edit only pending status
+	if appointment.Status != models.AppointmentPending {
 		return nil, apperrors.ErrAppointmentStatusInvalid
 	}
 
 	if req.StartTime != nil {
 		loc, _ := time.LoadLocation("Asia/Bangkok")
 		if req.StartTime.Before(time.Now().In(loc)) {
-			return nil, apperrors.ErrBadRequest
+			return nil, apperrors.ErrAppointmentStatusTime
+		}
+		busyTime, err := s.BusyTimeRepo.GetById(ctx, appointment.BusyTimeID.Hex())
+		if err != nil {
+			return nil, err
 		}
 		// calculate duration Endtime - StartTime (from appointment)
 		duration := busyTime.EndTime.Sub(busyTime.StartTime)
@@ -86,7 +88,7 @@ func (s *AppointmentService) UpdateAppointment(ctx context.Context, user *models
 	}
 
 	if err := copier.Copy(appointment, req); err != nil {
-		return nil, apperrors.ErrBadRequest
+		return nil, err
 	}
 
 	return s.AppointmentRepo.ReplaceAppointment(ctx, appointmentId, appointment)
@@ -98,10 +100,21 @@ func (s *AppointmentService) UpdateAppointmentStatus(ctx context.Context, user *
 		return nil, err
 	}
 
-	if appointment.Status == "Canceled" || appointment.Status == "Completed" {
+	busyTime, err := s.BusyTimeRepo.GetById(ctx, appointment.BusyTimeID.Hex())
+	if err != nil {
+		return nil, err
+	}
+
+	// cannot update any to complete, it done via AutoUpdate
+	if *req.Status == models.AppointmentCompleted {
 		return nil, apperrors.ErrAppointmentStatusInvalid
 	}
-	if appointment.Status == "Accepted" && *req.Status == "Canceled" && time.Now().After(appointment.StartTime) {
+
+	// cannot change if it an terminal status
+	if appointment.Status == models.AppointmentCanceled || appointment.Status == models.AppointmentCompleted || appointment.Status == models.AppointmentRejected {
+		return nil, apperrors.ErrAppointmentStatusInvalid
+	}
+	if appointment.Status == models.AppointmentAccepted && *req.Status == models.AppointmentCanceled && time.Now().After(busyTime.StartTime) { // cannot canceled when appointment has begun
 		return nil, apperrors.ErrAppointmentStatusTime
 	}
 

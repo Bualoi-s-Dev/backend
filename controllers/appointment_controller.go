@@ -7,6 +7,7 @@ import (
 	"github.com/Bualoi-s-Dev/backend/apperrors"
 	"github.com/Bualoi-s-Dev/backend/dto"
 	"github.com/Bualoi-s-Dev/backend/middleware"
+	"github.com/Bualoi-s-Dev/backend/models"
 	"github.com/Bualoi-s-Dev/backend/services"
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -14,10 +15,14 @@ import (
 
 type AppointmentController struct {
 	AppointmentService *services.AppointmentService
+	BusyTimeService    *services.BusyTimeService
 }
 
-func NewAppointmentController(appointmentService *services.AppointmentService) *AppointmentController {
-	return &AppointmentController{AppointmentService: appointmentService}
+func NewAppointmentController(appointmentService *services.AppointmentService, busyTimeService *services.BusyTimeService) *AppointmentController {
+	return &AppointmentController{
+		AppointmentService: appointmentService,
+		BusyTimeService:    busyTimeService,
+	}
 }
 
 func getIDFromParam(c *gin.Context) (primitive.ObjectID, error) {
@@ -47,8 +52,9 @@ func getSubpackageIDFromParam(c *gin.Context) (primitive.ObjectID, error) {
 // @Router /appointment [get]
 func (a *AppointmentController) GetAllAppointment(c *gin.Context) {
 	user := middleware.GetUserFromContext(c)
+	role := middleware.GetUserRoleFromContext(c)
 
-	if user.Role == "Guest" {
+	if role == "Guest" {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Guest cannot access this endpoint"})
 		return
 	}
@@ -73,8 +79,9 @@ func (a *AppointmentController) GetAllAppointment(c *gin.Context) {
 // @Router /appointment/{id} [get]
 func (a *AppointmentController) GetAppointmentById(c *gin.Context) {
 	user := middleware.GetUserFromContext(c)
+	role := middleware.GetUserRoleFromContext(c)
 
-	if user.Role == "Guest" {
+	if role == "Guest" {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Guest cannot access this endpoint"})
 		return
 	}
@@ -87,7 +94,7 @@ func (a *AppointmentController) GetAppointmentById(c *gin.Context) {
 
 	appointment, err := a.AppointmentService.GetAppointmentById(c.Request.Context(), user, appointmentId)
 	if err != nil {
-		apperrors.HandleError(c, err, "Cannot get Appointment from this id.")
+		apperrors.HandleError(c, err, "Cannot get the appointment from this id")
 		return
 	}
 
@@ -107,8 +114,9 @@ func (a *AppointmentController) GetAppointmentById(c *gin.Context) {
 func (a *AppointmentController) CreateAppointment(c *gin.Context) {
 	// user
 	user := middleware.GetUserFromContext(c)
+	role := middleware.GetUserRoleFromContext(c)
 
-	if user.Role != "Customer" {
+	if role != "Customer" {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Only customer can create appointment"})
 		return
 	}
@@ -129,9 +137,25 @@ func (a *AppointmentController) CreateAppointment(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "start time must be in the future"})
 		return
 	}
-	//
 
-	appointment, err := a.AppointmentService.CreateOneAppointment(c.Request.Context(), user, subpackageId, &req)
+	busyTimeType := models.TypePhotographer
+	busyTimeReq := &dto.BusyTimeRequest{
+		Type:      &busyTimeType,
+		StartTime: &req.StartTime,
+		EndTime:   &req.StartTime,
+	}
+	// type BusyTimeRequest struct {
+	// 	Type           *models.BusyTimeType `bson:"type" json:"type" binding:"required" example:"PHOTOGRAPHER"`
+	// 	StartTime      *time.Time           `bson:"start_time" json:"startTime" binding:"required" example:"2025-02-23T10:00:00Z"`
+	// 	EndTime        *time.Time           `bson:"end_time" json:"endTime" binding:"required" example:"2025-02-23T12:00:00Z"`
+	// }
+
+	busyTime, err := a.BusyTimeService.CreateBySubpackage(c.Request.Context(), busyTimeReq, subpackageId)
+	if err != nil {
+		apperrors.HandleError(c, err, "Cannot create BusyTime")
+	}
+
+	appointment, err := a.AppointmentService.CreateOneAppointment(c.Request.Context(), user, subpackageId, busyTime, &req)
 	if err != nil {
 		apperrors.HandleError(c, err, "Cannot create this appointment")
 		return
@@ -153,18 +177,27 @@ func (a *AppointmentController) CreateAppointment(c *gin.Context) {
 func (a *AppointmentController) UpdateAppointment(c *gin.Context) {
 	// user
 	user := middleware.GetUserFromContext(c)
+	role := middleware.GetUserRoleFromContext(c)
 
 	appointmentId, err := getIDFromParam(c)
 	if err != nil {
-		apperrors.HandleError(c, err, "Cannot get appointmentId from param.")
+		apperrors.HandleError(c, err, "Cannot get appointmentId from param")
 		return
 	}
 
-	if user.Role != "Customer" {
+	if role != "Customer" {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Only customer can update appointment properties"})
 		return
 	}
-	// TODO: can be editted only while status is "Pending"
+	appointment, _ := a.AppointmentService.GetAppointmentById(c.Request.Context(), user, appointmentId)
+	if err != nil {
+		apperrors.HandleError(c, err, "Cannot get the appointment from this id")
+		return
+	}
+	if appointment.Status != "Pending" {
+		apperrors.HandleError(c, apperrors.ErrBadRequest, "Cannot update an appointment if its status is not Pending")
+		return
+	}
 
 	// req
 	var req dto.AppointmentRequest
