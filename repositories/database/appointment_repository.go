@@ -14,10 +14,14 @@ import (
 
 type AppointmentRepository struct {
 	AppointmentCollection *mongo.Collection
+	BusyTimeCollectoin    *mongo.Collection
 }
 
-func NewAppointmentRepository(appointmentCollection, packageCollection *mongo.Collection) *AppointmentRepository {
-	return &AppointmentRepository{AppointmentCollection: appointmentCollection}
+func NewAppointmentRepository(appointmentCollection, busyTimeCollection *mongo.Collection) *AppointmentRepository {
+	return &AppointmentRepository{
+		AppointmentCollection: appointmentCollection,
+		BusyTimeCollectoin:    busyTimeCollection,
+	}
 }
 
 func (repo *AppointmentRepository) AutoUpdateAppointmentStatus(ctx context.Context) error {
@@ -36,22 +40,43 @@ func (repo *AppointmentRepository) AutoUpdateAppointmentStatus(ctx context.Conte
 
 	// fmt.Println("Querytime = ", currentTime)
 	// FIXME: Change this to match with BusyTime model
+	// TODO: Testing
 	go func() {
-		filter := bson.M{
-			"start_time": bson.M{"$lt": currentTime},
-			"status":     "Pending",
+		pipeline := mongo.Pipeline{
+			bson.D{
+				{Key: "$lookup", Value: bson.D{
+					{Key: "from", Value: repo.BusyTimeCollectoin},
+					{Key: "localField", Value: "BusyTimeID"},
+					{Key: "foreignField", Value: "_id"},
+					{Key: "as", Value: "busyTimeDetails"},
+				}},
+			},
+			bson.D{
+				{Key: "$unwind", Value: "$busyTimeDetails"},
+			},
+			bson.D{
+				{Key: "$match", Value: bson.D{
+					{Key: "status", Value: "Pending"},
+					{Key: "busyTimeDetails.start_time", Value: bson.D{{Key: "$lt", Value: currentTime}}},
+				}},
+			},
+			bson.D{
+				{Key: "$set", Value: bson.D{
+					{Key: "status", Value: "Canceled"},
+				}},
+			},
 		}
 
-		update := bson.M{"$set": bson.M{"status": "Canceled"}}
-		result, err := repo.AppointmentCollection.UpdateMany(ctx, filter, update)
+		_, err := repo.AppointmentCollection.Aggregate(ctx, pipeline)
 		if err != nil {
-			log.Println("Error updating documents:", err)
-		} else {
-			fmt.Printf("Autoupdated Pending to Canceled: %d documents\n", result.ModifiedCount)
+			log.Println(err)
 		}
+		fmt.Println("====AutoUpdate Pending to Canceled====")
+
 	}()
 
 	// filter only end_time is less than current time and status is "Accepted"
+	// TODO: Change after test
 	go func() {
 		filter := bson.M{
 			"end_time": bson.M{"$lt": currentTime},

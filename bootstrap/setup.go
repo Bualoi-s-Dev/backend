@@ -51,12 +51,17 @@ func SetupServer(client *mongo.Database) (*gin.Engine, *ServerRepositories, *Ser
 	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
 		models.RegisterCustomValidators(v)
 	}
+	packageCollection := client.Collection("Package")
+	subpackageCollection := client.Collection("Subpackage")
+	userCollection := client.Collection("User")
+	appointmentCollection := client.Collection("Appointment")
+	busyTimeCollection := client.Collection("BusyTime")
 
-	packageRepo := database.NewPackageRepository(client.Collection("Package"))
-	subpackageRepo := database.NewSubpackageRepository(client.Collection("Subpackage"))
-	userRepo := database.NewUserRepository(client.Collection("User"))
-	appointmentRepo := database.NewAppointmentRepository(client.Collection("Appointment"), client.Collection("Package"))
-	busyTimeRepo := database.NewBusyTimeRepository(client.Collection("BusyTime"))
+	packageRepo := database.NewPackageRepository(packageCollection)
+	subpackageRepo := database.NewSubpackageRepository(subpackageCollection)
+	userRepo := database.NewUserRepository(userCollection)
+	appointmentRepo := database.NewAppointmentRepository(appointmentCollection, busyTimeCollection)
+	busyTimeRepo := database.NewBusyTimeRepository(busyTimeCollection)
 	s3Repo := s3.NewS3Repository()
 	firebaseRepo := firebase.NewFirebaseRepository(authClient)
 
