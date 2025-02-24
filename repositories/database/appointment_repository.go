@@ -35,6 +35,7 @@ func (repo *AppointmentRepository) AutoUpdateAppointmentStatus(ctx context.Conte
 	)
 
 	// fmt.Println("Querytime = ", currentTime)
+	// FIXME: Change this to match with BusyTime model
 	go func() {
 		filter := bson.M{
 			"start_time": bson.M{"$lt": currentTime},
