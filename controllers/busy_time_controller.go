@@ -2,7 +2,7 @@ package controllers
 
 import (
 	"net/http"
-	
+
 	"github.com/Bualoi-s-Dev/backend/services"
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson/primitive"
