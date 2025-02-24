@@ -4,8 +4,7 @@ import (
 	"context"
 	"time"
 
-	"errors"
-	// "time"
+	"github.com/Bualoi-s-Dev/backend/apperrors"
 
 	"github.com/Bualoi-s-Dev/backend/dto"
 	"github.com/Bualoi-s-Dev/backend/models"
@@ -14,26 +13,19 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-var (
-	ErrBadRequest     = errors.New("Invalid request data")
-	ErrInternalServer = errors.New("Internal server error")
-	ErrUnauthorized   = errors.New("Unauthorized")
-
-	ErrStatusInvalid = errors.New("Invalid status")
-	ErrStatusTime    = errors.New("Invalid status time")
-)
-
 type AppointmentService struct {
 	AppointmentRepo *repositories.AppointmentRepository
 	PackageRepo     *repositories.PackageRepository
+	BusyTimeRepo    *repositories.BusyTimeRepository
 }
 
 // literally just getbyID and check if the user is authorized
 
-func NewAppointmentService(appointmentRepo *repositories.AppointmentRepository, packageRepo *repositories.PackageRepository) *AppointmentService {
+func NewAppointmentService(appointmentRepo *repositories.AppointmentRepository, packageRepo *repositories.PackageRepository, busyTimeRepo *repositories.BusyTimeRepository) *AppointmentService {
 	return &AppointmentService{
 		AppointmentRepo: appointmentRepo,
 		PackageRepo:     packageRepo,
+		BusyTimeRepo:    busyTimeRepo,
 	}
 }
 
@@ -44,11 +36,11 @@ func (s *AppointmentService) GetAllAppointment(ctx context.Context, user *models
 func (s *AppointmentService) GetAppointmentById(ctx context.Context, user *models.User, appointmentId primitive.ObjectID) (*models.Appointment, error) {
 	appointment, err := s.AppointmentRepo.GetById(ctx, appointmentId, user.ID, user.Role)
 	if err != nil {
-		return nil, ErrBadRequest
+		return nil, apperrors.ErrBadRequest
 	}
 
 	if appointment.CustomerID != user.ID && appointment.PhotographerID != user.ID {
-		return nil, ErrUnauthorized
+		return nil, apperrors.ErrUnauthorized
 	}
 	return appointment, nil
 }
@@ -56,12 +48,12 @@ func (s *AppointmentService) GetAppointmentById(ctx context.Context, user *model
 func (s *AppointmentService) CreateOneAppointment(ctx context.Context, user *models.User, subpackageId primitive.ObjectID, req *dto.AppointmenStrictRequest) (*models.Appointment, error) {
 	subpackage, err := s.PackageRepo.GetSubpackageById(ctx, subpackageId.Hex())
 	if err != nil {
-		return nil, ErrInternalServer
+		return nil, apperrors.ErrInternalServer
 	}
 
 	pkg, err := s.PackageRepo.GetById(ctx, subpackage.PackageID.Hex())
 	if err != nil {
-		return nil, ErrInternalServer
+		return nil, apperrors.ErrInternalServer
 	}
 
 	appointment := req.ToModel(user, pkg, subpackage)
@@ -79,22 +71,22 @@ func (s *AppointmentService) UpdateAppointment(ctx context.Context, user *models
 
 	// if canceled or complete it can't be edited
 	if appointment.Status == "Canceled" || appointment.Status == "Completed" {
-		return nil, ErrStatusInvalid
+		return nil, apperrors.ErrAppointmentStatusInvalid
 	}
 
 	if req.StartTime != nil {
 		loc, _ := time.LoadLocation("Asia/Bangkok")
 		if req.StartTime.Before(time.Now().In(loc)) {
-			return nil, ErrBadRequest
+			return nil, apperrors.ErrBadRequest
 		}
 		// calculate duration Endtime - StartTime (from appointment)
-		duration := appointment.EndTime.Sub(appointment.StartTime)
+		duration := busyTime.EndTime.Sub(busyTime.StartTime)
 		endTime := req.StartTime.Add(duration)
 		req.EndTime = &endTime
 	}
 
 	if err := copier.Copy(appointment, req); err != nil {
-		return nil, ErrBadRequest
+		return nil, apperrors.ErrBadRequest
 	}
 
 	return s.AppointmentRepo.ReplaceAppointment(ctx, appointmentId, appointment)
@@ -107,10 +99,10 @@ func (s *AppointmentService) UpdateAppointmentStatus(ctx context.Context, user *
 	}
 
 	if appointment.Status == "Canceled" || appointment.Status == "Completed" {
-		return nil, ErrStatusInvalid
+		return nil, apperrors.ErrAppointmentStatusInvalid
 	}
 	if appointment.Status == "Accepted" && *req.Status == "Canceled" && time.Now().After(appointment.StartTime) {
-		return nil, ErrStatusTime
+		return nil, apperrors.ErrAppointmentStatusTime
 	}
 
 	appointment.Status = *req.Status

@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/Bualoi-s-Dev/backend/apperrors"
 	"github.com/Bualoi-s-Dev/backend/dto"
 	"github.com/Bualoi-s-Dev/backend/middleware"
 	"github.com/Bualoi-s-Dev/backend/services"
@@ -19,31 +20,11 @@ func NewAppointmentController(appointmentService *services.AppointmentService) *
 	return &AppointmentController{AppointmentService: appointmentService}
 }
 
-func HandleError(c *gin.Context, err error) {
-	if err == services.ErrBadRequest {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid appointment id"})
-		return
-	}
-	if err == services.ErrUnauthorized {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "User is not authorized to access this appointment"})
-		return
-	}
-	if err == services.ErrStatusInvalid {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid status"})
-		return
-	}
-	if err == services.ErrStatusTime {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Cannot update status because the appointment has been started"})
-		return
-	}
-	c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-}
-
 func getIDFromParam(c *gin.Context) (primitive.ObjectID, error) {
 	appointmentId_ := c.Param("id")
 	appointmentId, err := primitive.ObjectIDFromHex(appointmentId_)
 	if err != nil {
-		return primitive.NilObjectID, services.ErrBadRequest
+		return primitive.NilObjectID, apperrors.ErrBadRequest
 	}
 	return appointmentId, nil
 }
@@ -52,7 +33,7 @@ func getSubpackageIDFromParam(c *gin.Context) (primitive.ObjectID, error) {
 	subpackageId_ := c.Param("subpackageId")
 	subpackageId, err := primitive.ObjectIDFromHex(subpackageId_)
 	if err != nil {
-		return primitive.NilObjectID, services.ErrBadRequest
+		return primitive.NilObjectID, apperrors.ErrBadRequest
 	}
 	return subpackageId, nil
 }
@@ -100,13 +81,13 @@ func (a *AppointmentController) GetAppointmentById(c *gin.Context) {
 
 	appointmentId, err := getIDFromParam(c)
 	if err != nil {
-		HandleError(c, err)
+		apperrors.HandleError(c, err, "Cannot get appointmentId from param.")
 		return
 	}
 
 	appointment, err := a.AppointmentService.GetAppointmentById(c.Request.Context(), user, appointmentId)
 	if err != nil {
-		HandleError(c, err)
+		apperrors.HandleError(c, err, "Cannot get Appointment from this id.")
 		return
 	}
 
@@ -136,7 +117,7 @@ func (a *AppointmentController) CreateAppointment(c *gin.Context) {
 
 	subpackageId, err := getSubpackageIDFromParam(c)
 	if err != nil {
-		HandleError(c, err)
+		apperrors.HandleError(c, err, "Cannot get subpackageId from param")
 	}
 	var req dto.AppointmenStrictRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -152,7 +133,7 @@ func (a *AppointmentController) CreateAppointment(c *gin.Context) {
 
 	appointment, err := a.AppointmentService.CreateOneAppointment(c.Request.Context(), user, subpackageId, &req)
 	if err != nil {
-		HandleError(c, err)
+		apperrors.HandleError(c, err, "Cannot create this appointment")
 		return
 	}
 
@@ -175,12 +156,12 @@ func (a *AppointmentController) UpdateAppointment(c *gin.Context) {
 
 	appointmentId, err := getIDFromParam(c)
 	if err != nil {
-		HandleError(c, err)
+		apperrors.HandleError(c, err, "Cannot get appointmentId from param.")
 		return
 	}
 
 	if user.Role != "Customer" {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Only customer can update appointment"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Only customer can update appointment properties"})
 		return
 	}
 	// TODO: can be editted only while status is "Pending"
@@ -194,7 +175,7 @@ func (a *AppointmentController) UpdateAppointment(c *gin.Context) {
 
 	updatedAppointment, err := a.AppointmentService.UpdateAppointment(c.Request.Context(), user, appointmentId, &req)
 	if err != nil {
-		HandleError(c, err)
+		apperrors.HandleError(c, err, "Cannot update this appointment")
 		return
 	}
 
@@ -216,7 +197,7 @@ func (a *AppointmentController) UpdateAppointmentStatus(c *gin.Context) {
 
 	appointmentId, err := getIDFromParam(c)
 	if err != nil {
-		HandleError(c, err)
+		apperrors.HandleError(c, err, "Cannot get appointmentId from param.")
 		return
 	}
 
@@ -233,7 +214,7 @@ func (a *AppointmentController) UpdateAppointmentStatus(c *gin.Context) {
 
 	updatedAppointment, err := a.AppointmentService.UpdateAppointmentStatus(c.Request.Context(), user, appointmentId, &req)
 	if err != nil {
-		HandleError(c, err)
+		apperrors.HandleError(c, err, "Cannot update this appointment status")
 		return
 	}
 
@@ -255,12 +236,12 @@ func (a *AppointmentController) DeleteAppointment(c *gin.Context) { // only admi
 
 	appointmentId, err := getIDFromParam(c)
 	if err != nil {
-		HandleError(c, err)
+		apperrors.HandleError(c, err, "Cannot get appointmentId from param.")
 		return
 	}
 
 	if err := a.AppointmentService.DeleteAppointment(c.Request.Context(), appointmentId, user); err != nil {
-		HandleError(c, err)
+		apperrors.HandleError(c, err, "Cannot delete this appointment.")
 		return
 	}
 
