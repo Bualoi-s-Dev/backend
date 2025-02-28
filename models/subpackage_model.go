@@ -11,7 +11,7 @@ type Subpackage struct {
 	Price       int                `bson:"price,omitempty" json:"price" example:"10000"`
 
 	IsInf              bool      `bson:"is_inf,omitempty" json:"isInf" example:"false"`
-	RepeatedDay        []DayName `bson:"repeated_day,omitempty" json:"repeatedDay" binding:"day_names" example:"MON,TUE,WED"`
+	RepeatedDay        []DayName `bson:"repeated_day,omitempty" json:"repeatedDay" binding:"day_names" ts_type:"DayName[]" example:"MON,TUE,WED"`
 	AvaliableStartTime string    `bson:"avaliable_start_time,omitempty" json:"avaliableStartTime" binding:"time_format" example:"15:04"`
 	AvaliableEndTime   string    `bson:"avaliable_end_time,omitempty" json:"avaliableEndTime" binding:"time_format" example:"16:27"`
 
