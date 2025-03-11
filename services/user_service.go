@@ -136,10 +136,26 @@ func (s *UserService) mappedToUserResponse(ctx context.Context, user *models.Use
 	if err != nil {
 		return nil, err
 	}
+	packageResponse := []dto.PackageResponse{}
+	for _, pkg := range packages {
+		packageRes, err := s.PackageService.MappedToPackageResponse(ctx, &pkg)
+		if err != nil {
+			return nil, err
+		}
+		packageResponse = append(packageResponse, *packageRes)
+	}
 
 	showcasePackages, err := s.PackageService.GetByList(ctx, user.ShowcasePackages)
 	if err != nil {
 		return nil, err
+	}
+	showcasePackageResponse := []dto.PackageResponse{}
+	for _, pkg := range showcasePackages {
+		packageRes, err := s.PackageService.MappedToPackageResponse(ctx, &pkg)
+		if err != nil {
+			return nil, err
+		}
+		showcasePackageResponse = append(showcasePackageResponse, *packageRes)
 	}
 
 	return &dto.UserResponse{
@@ -157,7 +173,7 @@ func (s *UserService) mappedToUserResponse(ctx context.Context, user *models.Use
 		LineID:           user.LineID,
 		Facebook:         user.Facebook,
 		Instagram:        user.Instagram,
-		ShowcasePackages: showcasePackages,
-		Packages:         packages,
+		ShowcasePackages: showcasePackageResponse,
+		Packages:         packageResponse,
 	}, nil
 }
