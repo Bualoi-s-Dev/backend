@@ -96,6 +96,9 @@ func SetupServer(client *mongo.Database) (*gin.Engine, *ServerRepositories, *Ser
 		firebaseService:    firebaseService,
 	}
 
+	rateLimiter := middleware.NewRateLimiter(20, 5)
+	r.Use(rateLimiter.RateLimitMiddleware())
+
 	// Swagger
 	routes.SwaggerRoutes(r)
 

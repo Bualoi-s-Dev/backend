@@ -1,4 +1,4 @@
-package configs
+package middleware
 
 import (
 	"net/http"
@@ -45,10 +45,17 @@ func (rl *RateLimiter) RateLimitMiddleware() gin.HandlerFunc {
 		ip := c.ClientIP()
 		limiter := rl.GetLimiter(ip)
 
+		// Use this to prevent the exceeding of the rate limit
 		if !limiter.Allow() {
 			c.AbortWithStatusJSON(http.StatusTooManyRequests, gin.H{"error": "Too many requests"})
 			return
 		}
+
+		// Use this to wait for the rate limit to be available
+		// if err := limiter.Wait(c.Request.Context()); err != nil {
+		// 	c.AbortWithStatusJSON(http.StatusTooManyRequests, gin.H{"error": "Too many requests"})
+		// 	return
+		// }
 
 		c.Next()
 	}
