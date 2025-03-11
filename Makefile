@@ -33,3 +33,8 @@ testing:
 tsgen:
 	@echo "Generating TypeScript types..."
 	go run ./cmd/tsgen/main.go
+
+vegeta:
+	@echo "Running vegeta..."
+	@echo GET http://localhost:8080/internal/health > targets.txt
+	vegeta attack -targets=targets.txt -rate=100 -duration=5s | vegeta report

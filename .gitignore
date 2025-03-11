@@ -44,3 +44,6 @@ gen/
 docs/
 
 demo/*
+
+# Vegeta load testing
+targets.txt

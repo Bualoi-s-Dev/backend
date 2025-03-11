@@ -28,11 +28,16 @@ func main() {
 	if configs.GetEnv("APP_MODE") == "development" {
 		databaseName = "PhotoMatch_Dev"
 	}
+	// Connect to MongoDB
 	client := configs.ConnectMongoDB().Database(databaseName)
 
+	// Setup server
 	r, serverRepositories, _ := bootstrap.SetupServer(client)
+
+	// Auto update go routine
 	go bootstrap.AutoUpdate(context.TODO(), serverRepositories)
-  
+
+	// Run server
 	port := configs.GetEnv("PORT")
 	if port == "" {
 		fmt.Println("PORT is not set")
