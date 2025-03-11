@@ -48,6 +48,19 @@ func ValidateUserRole(fl validator.FieldLevel) bool {
 	return false
 }
 
+// ValidateAppointmentStatus check if AppointmentStatus is valid
+func ValidateAppointmentStatus(fl validator.FieldLevel) bool {
+	value := fl.Field().Interface().(AppointmentStatus)
+
+	// Check if the value exists in the validBankNames slice
+	for _, validStatus := range ValidAppointmentStatus {
+		if value == validStatus.Value {
+			return true
+		}
+	}
+	return false
+}
+
 func ValidateDayNames(fl validator.FieldLevel) bool {
 	field := fl.Field().Interface().([]DayName)
 
@@ -100,6 +113,7 @@ func RegisterCustomValidators(v *validator.Validate) {
 	v.RegisterValidation("package_type", ValidatePackageType)
 	v.RegisterValidation("bank_name", ValidateBankName)
 	v.RegisterValidation("user_role", ValidateUserRole)
+	v.RegisterValidation("appointment_status", ValidateAppointmentStatus)
 	v.RegisterValidation("day_names", ValidateDayNames)
 	v.RegisterValidation("time_format", ValidateTime)
 	v.RegisterValidation("date_format", ValidateDate)

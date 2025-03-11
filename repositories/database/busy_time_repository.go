@@ -35,6 +35,26 @@ func (r *BusyTimeRepository) GetAll(ctx context.Context) ([]models.BusyTime, err
 	return items, nil
 }
 
+func (r *BusyTimeRepository) GetAllValid(ctx context.Context) ([]models.BusyTime, error) {
+	var items []models.BusyTime
+	cursor, err := r.Collection.Find(ctx, bson.M{
+		"is_valid": true,
+	})
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+
+	if err := cursor.All(ctx, &items); err != nil {
+		return nil, err
+	}
+
+	if items == nil {
+		items = []models.BusyTime{}
+	}
+	return items, nil
+}
+
 func (r *BusyTimeRepository) GetById(ctx context.Context, id string) (*models.BusyTime, error) {
 	var item models.BusyTime
 	oid, err := primitive.ObjectIDFromHex(id)
@@ -66,7 +86,28 @@ func (r *BusyTimeRepository) GetByPhotographerId(ctx context.Context, photograph
 	return items, nil
 }
 
-func (r *BusyTimeRepository) Create(ctx context.Context, item models.BusyTime) error {
+func (r *BusyTimeRepository) GetByPhotographerIdValid(ctx context.Context, photographerId primitive.ObjectID) ([]models.BusyTime, error) {
+	var items []models.BusyTime
+	cursor, err := r.Collection.Find(ctx, bson.M{
+		"photographer_id": photographerId,
+		"is_valid":        true,
+	})
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+
+	if err := cursor.All(ctx, &items); err != nil {
+		return nil, err
+	}
+
+	if items == nil {
+		items = []models.BusyTime{}
+	}
+	return items, nil
+}
+
+func (r *BusyTimeRepository) Create(ctx context.Context, item *models.BusyTime) error {
 	_, err := r.Collection.InsertOne(ctx, item)
 	return err
 }

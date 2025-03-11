@@ -35,6 +35,14 @@ func main() {
 		Add(dto.BusyTimeRequest{}).
 		AddEnum(models.ValidBusyTimeTypes)
 
+	converter.
+		Add(models.Appointment{}).
+		Add(dto.AppointmentRequest{}).
+		Add(dto.AppointmenStrictRequest{}).
+		Add(dto.AppointmentUpdateStatusRequest{}).
+		Add(dto.AppointmentResponse{}).
+		AddEnum(models.ValidAppointmentStatus)
+
 	// Change to interface
 	converter.CreateInterface = true
 

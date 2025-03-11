@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/Bualoi-s-Dev/backend/apperrors"
 	"github.com/Bualoi-s-Dev/backend/dto"
 	"github.com/Bualoi-s-Dev/backend/models"
 	repositories "github.com/Bualoi-s-Dev/backend/repositories/database"
@@ -11,9 +12,9 @@ import (
 )
 
 type BusyTimeService struct {
-	Repository         *repositories.BusyTimeRepository
-	SubpackageRepo     *repositories.SubpackageRepository
-	PackageRepo        *repositories.PackageRepository
+	Repository     *repositories.BusyTimeRepository
+	SubpackageRepo *repositories.SubpackageRepository
+	PackageRepo    *repositories.PackageRepository
 }
 
 func NewBusyTimeService(repository *repositories.BusyTimeRepository, subpackageRepo *repositories.SubpackageRepository, packageRepo *repositories.PackageRepository) *BusyTimeService {
@@ -36,33 +37,58 @@ func (s *BusyTimeService) GetByPhotographerId(ctx context.Context, photographerI
 	return s.Repository.GetByPhotographerId(ctx, photographerId)
 }
 
-func (s *BusyTimeService) Create(ctx context.Context, request *dto.BusyTimeRequest, photographerID primitive.ObjectID) error {
-	model := request.ToModel(photographerID)
-	return s.Repository.Create(ctx, *model)
+func (s *BusyTimeService) Create(ctx context.Context, request *dto.BusyTimeRequest, photographerId primitive.ObjectID) error {
+	model := request.ToModel(photographerId)
+	isAvailable, err := s.IsPhotographerAvailable(ctx, photographerId, model.StartTime, model.EndTime)
+	if err != nil {
+		return err
+	}
+	if !isAvailable {
+		return apperrors.ErrTimeOverlapped
+	}
+	return s.Repository.Create(ctx, model)
+}
+
+func (s *BusyTimeService) CreateFromSubpackage(ctx context.Context, request *dto.BusyTimeRequest, subpackageId primitive.ObjectID) (*models.BusyTime, error) {
+	subpackage, err := s.SubpackageRepo.GetById(ctx, subpackageId.Hex())
+	if err != nil {
+		return nil, err
+	}
+
+	// subpackage.Duration // minute
+	// set end time = start time + duration(in minute)
+	EndTime := request.StartTime.Add(time.Duration(subpackage.Duration) * time.Minute)
+	request.EndTime = &EndTime
+
+	pkg, err := s.PackageRepo.GetById(ctx, subpackage.PackageID.Hex())
+	if err != nil {
+		return nil, err
+	}
+
+	photographerId := pkg.OwnerID
+	model := request.ToModel(photographerId) // when customer create first time
+	isAvailable, err := s.IsPhotographerAvailable(ctx, photographerId, model.StartTime, model.EndTime)
+	if err != nil {
+		return nil, err
+	}
+	if !isAvailable {
+		return nil, apperrors.ErrTimeOverlapped
+	}
+	return model, s.Repository.Create(ctx, model)
 }
 
 func (s *BusyTimeService) Delete(ctx context.Context, id string) error {
 	return s.Repository.DeleteOne(ctx, id)
 }
 
-func (s *BusyTimeService) IsSubpackageAvailable(ctx context.Context, subpackageID primitive.ObjectID, startTime, endTime time.Time) (bool, error) {
-	subpackage, err := s.SubpackageRepo.GetById(ctx, subpackageID.Hex())
-	if err != nil {
-		return false, err
-	}
-
-	pkg, err := s.PackageRepo.GetById(ctx, subpackage.PackageID.Hex())
-	if err != nil {
-		return false, err
-	}
-
-	busyTimes, err := s.Repository.GetByPhotographerId(ctx, pkg.OwnerID)
+func (s *BusyTimeService) IsPhotographerAvailable(ctx context.Context, photographerId primitive.ObjectID, startTime, endTime time.Time) (bool, error) {
+	busyTimes, err := s.Repository.GetByPhotographerIdValid(ctx, photographerId)
 	if err != nil {
 		return false, err
 	}
 
 	for _, busy := range busyTimes {
-		//check overlap
+		// Check overlap
 		if (startTime.Before(busy.EndTime) && endTime.After(busy.StartTime)) ||
 			(startTime.Equal(busy.StartTime) || endTime.Equal(busy.EndTime)) {
 			return false, nil
@@ -71,3 +97,9 @@ func (s *BusyTimeService) IsSubpackageAvailable(ctx context.Context, subpackageI
 
 	return true, nil
 }
+
+// TODO: AutoUpdate on overlapped appointment case
+// e.g. 1,2 has overlapped appointment
+// photogrpaher accepted 1 (so photographer can't accept 2)
+// then 1 canceled (after photographer accepted)
+// then photogrpaher can accept 2

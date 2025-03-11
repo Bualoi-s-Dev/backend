@@ -11,8 +11,8 @@ import (
 )
 
 type UserController struct {
-	Service  		*services.UserService
-	S3Service 		*services.S3Service
+	Service         *services.UserService
+	S3Service       *services.S3Service
 	BusyTimeService *services.BusyTimeService
 }
 

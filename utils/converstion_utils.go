@@ -83,3 +83,10 @@ func isZeroValue(v reflect.Value) bool {
 		return v.IsZero()
 	}
 }
+
+func SafeString(str *string) string {
+	if str == nil {
+		return ""
+	}
+	return *str
+}

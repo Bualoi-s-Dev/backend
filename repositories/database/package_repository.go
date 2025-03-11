@@ -48,6 +48,17 @@ func (repo *PackageRepository) GetById(ctx context.Context, id string) (*models.
 	}
 	return &item, nil
 }
+func (repo *PackageRepository) GetSubpackageById(ctx context.Context, id string) (*models.Subpackage, error) {
+	var item models.Subpackage
+	objectId, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return nil, err
+	}
+	if err := repo.Collection.FindOne(ctx, bson.M{"_id": objectId}).Decode(&item); err != nil {
+		return nil, err
+	}
+	return &item, nil
+}
 
 func (repo *PackageRepository) GetManyId(ctx context.Context, packageIds []primitive.ObjectID) ([]models.Package, error) {
 	cursor, err := repo.Collection.Find(ctx, bson.M{"_id": bson.M{"$in": packageIds}})

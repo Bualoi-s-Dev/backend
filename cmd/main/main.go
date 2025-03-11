@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/Bualoi-s-Dev/backend/bootstrap"
@@ -28,7 +29,10 @@ func main() {
 		databaseName = "PhotoMatch_Dev"
 	}
 	client := configs.ConnectMongoDB().Database(databaseName)
-	r := bootstrap.SetupServer(client)
+
+	r, serverRepositories, _ := bootstrap.SetupServer(client)
+	go bootstrap.AutoUpdate(context.TODO(), serverRepositories)
+  
 	port := configs.GetEnv("PORT")
 	if port == "" {
 		fmt.Println("PORT is not set")
