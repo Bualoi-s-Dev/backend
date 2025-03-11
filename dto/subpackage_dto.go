@@ -1,6 +1,9 @@
 package dto
 
-import "github.com/Bualoi-s-Dev/backend/models"
+import (
+	"github.com/Bualoi-s-Dev/backend/models"
+	"github.com/Bualoi-s-Dev/backend/utils"
+)
 
 type SubpackageRequest struct {
 	Title       *string `bson:"title" json:"title" binding:"omitempty" example:"Wedding Bliss Package"`
@@ -26,7 +29,7 @@ func (item *SubpackageRequest) ToModel() *models.Subpackage {
 		RepeatedDay:        *item.RepeatedDay,
 		AvaliableStartTime: *item.AvaliableStartTime,
 		AvaliableEndTime:   *item.AvaliableEndTime,
-		AvaliableStartDay:  *item.AvaliableStartDay,
-		AvaliableEndDay:    *item.AvaliableEndDay,
+		AvaliableStartDay:  utils.SafeString(item.AvaliableStartDay),
+		AvaliableEndDay:    utils.SafeString(item.AvaliableEndDay),
 	}
 }
