@@ -31,8 +31,11 @@ func main() {
 	client := configs.ConnectMongoDB().Database(databaseName)
 
 	r, serverRepositories, _ := bootstrap.SetupServer(client)
+
+	rateLimiter := configs.NewRateLimiter(10, 20)
+	r.Use(rateLimiter.RateLimitMiddleware())
 	go bootstrap.AutoUpdate(context.TODO(), serverRepositories)
-  
+
 	port := configs.GetEnv("PORT")
 	if port == "" {
 		fmt.Println("PORT is not set")
