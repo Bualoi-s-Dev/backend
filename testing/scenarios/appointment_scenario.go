@@ -1,4 +1,4 @@
-package testing_features
+package testing_scenarios
 
 // import (
 // 	"net/http/httptest"
