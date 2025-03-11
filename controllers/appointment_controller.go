@@ -93,14 +93,15 @@ func (a *AppointmentController) GetAppointmentById(c *gin.Context) {
 
 // GetAppointmentById godoc
 // @Tags Appointment
-// @Summary Get appointment by ID
-// @Description Retrieve a specific appointment by its ID
-// @Param id path string true "Appointment ID"
+// @Summary Create appointment
+// @Description Create a new appointment from a specific subpackage
+// @Param subpackageId path string true "Subpackage ID"
+// @Body {AppointmenStrictRequest} request body "Create Appointment Request"
 // @Success 200 {object} dto.AppointmentResponse
 // @Failure 400 {object} string "Invalid appointment id"
 // @Failure 401 {object} string "Unauthorized"
 // @Failure 500 {object} string "Internal Server Error"
-// @Router /appointment/{id} [post]
+// @Router /appointment/{subpackageId} [post]
 func (a *AppointmentController) CreateAppointment(c *gin.Context) {
 	// user
 	user := middleware.GetUserFromContext(c)

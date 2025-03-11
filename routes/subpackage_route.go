@@ -12,12 +12,13 @@ func SubpackageRoutes(router *gin.Engine, ctrl *controllers.SubpackageController
 	commonRoutes := subpackageRoutes.Group("", middleware.AllowRoles(models.Photographer, models.Customer))
 	{
 		commonRoutes.GET("", ctrl.GetAllSubpackages)
+		commonRoutes.GET("/:id", ctrl.GetByIdSubpackages)
 	}
 	photographerRoutes := subpackageRoutes.Group("", middleware.AllowRoles(models.Photographer))
 	{
 
 		photographerRoutes.POST("/:packageId", ctrl.CreateSubpackage)
-		photographerRoutes.PATCH("/:subpackageId", ctrl.UpdateSubpackage)
-		photographerRoutes.DELETE("/:subpackageId", ctrl.DeleteSubpackage)
+		photographerRoutes.PATCH("/:id", ctrl.UpdateSubpackage)
+		photographerRoutes.DELETE("/:id", ctrl.DeleteSubpackage)
 	}
 }
