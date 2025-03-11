@@ -74,11 +74,9 @@ func (s *SubpackageService) VerifyStrictRequest(ctx context.Context, subpackage 
 	if subpackage.AvaliableEndTime == nil {
 		return errors.New("avaliable_end_time is required")
 	}
-	if subpackage.AvaliableStartDay == nil {
-		return errors.New("avaliable_start_day is required")
-	}
-	if subpackage.AvaliableEndDay == nil {
-		return errors.New("avaliable_end_day is required")
+
+	if (subpackage.IsInf != nil && !*subpackage.IsInf) && (subpackage.AvaliableStartDay == nil || subpackage.AvaliableEndDay == nil) {
+		return errors.New("avaliable_start_day and avaliable_end_day are required")
 	}
 	return nil
 }
