@@ -2,6 +2,8 @@ package routes
 
 import (
 	"github.com/Bualoi-s-Dev/backend/controllers"
+	"github.com/Bualoi-s-Dev/backend/middleware"
+	"github.com/Bualoi-s-Dev/backend/models"
 	"github.com/gin-gonic/gin"
 )
 
@@ -13,9 +15,7 @@ func UserRoutes(router *gin.Engine, userController *controllers.UserController) 
 		userRoutes.GET("/profile", userController.GetUserProfile)
 		userRoutes.GET("/profile/:id", userController.GetUserProfileByID)
 		userRoutes.PATCH("/profile", userController.UpdateUserProfile)
-		
-		userRoutes.POST("/busytime", userController.CreateUserBusyTime)
 
-		// userRoutes.PUT("/profile/showcase", userController.UpdateUserShowcasePackage)
+		userRoutes.POST("/busytime", middleware.AllowRoles(models.Photographer), userController.CreateUserBusyTime)
 	}
 }
