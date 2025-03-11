@@ -54,12 +54,6 @@ func getSubpackageIDFromParam(c *gin.Context) (primitive.ObjectID, error) {
 // @Router /appointment [get]
 func (a *AppointmentController) GetAllAppointment(c *gin.Context) {
 	user := middleware.GetUserFromContext(c)
-	role := middleware.GetUserRoleFromContext(c)
-
-	if role == "Guest" {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Guest cannot access this endpoint"})
-		return
-	}
 
 	appointments, err := a.AppointmentService.GetAllAppointment(c.Request.Context(), user)
 	if err != nil {
@@ -81,12 +75,6 @@ func (a *AppointmentController) GetAllAppointment(c *gin.Context) {
 // @Router /appointment/{id} [get]
 func (a *AppointmentController) GetAppointmentById(c *gin.Context) {
 	user := middleware.GetUserFromContext(c)
-	role := middleware.GetUserRoleFromContext(c)
-
-	if role == "Guest" {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Guest cannot access this endpoint"})
-		return
-	}
 
 	appointmentId, err := getIDFromParam(c)
 	if err != nil {
@@ -105,23 +93,19 @@ func (a *AppointmentController) GetAppointmentById(c *gin.Context) {
 
 // GetAppointmentById godoc
 // @Tags Appointment
-// @Summary Get appointment by ID
-// @Description Retrieve a specific appointment by its ID
-// @Param id path string true "Appointment ID"
+// @Summary Create appointment
+// @Description Create a new appointment from a specific subpackage
+// @Param subpackageId path string true "Subpackage ID"
+// @Body {AppointmenStrictRequest} request body "Create Appointment Request"
 // @Success 200 {object} dto.AppointmentResponse
 // @Failure 400 {object} string "Invalid appointment id"
 // @Failure 401 {object} string "Unauthorized"
 // @Failure 500 {object} string "Internal Server Error"
-// @Router /appointment/{id} [get]
+// @Router /appointment/{subpackageId} [post]
 func (a *AppointmentController) CreateAppointment(c *gin.Context) {
 	// user
 	user := middleware.GetUserFromContext(c)
-	role := middleware.GetUserRoleFromContext(c)
 
-	if role != "Customer" {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Only customer can create appointment"})
-		return
-	}
 	loc, _ := time.LoadLocation("Asia/Bangkok")
 	// request
 
@@ -171,11 +155,10 @@ func (a *AppointmentController) CreateAppointment(c *gin.Context) {
 // @Failure 400 {object} string "Invalid appointment id"
 // @Failure 401 {object} string "Unauthorized"
 // @Failure 500 {object} string "Internal Server Error"
-// @Router /appointment/{id} [put]
+// @Router /appointment/{id} [patch]
 func (a *AppointmentController) UpdateAppointment(c *gin.Context) {
 	// user
 	user := middleware.GetUserFromContext(c)
-	role := middleware.GetUserRoleFromContext(c)
 
 	appointmentId, err := getIDFromParam(c)
 	if err != nil {
@@ -183,10 +166,6 @@ func (a *AppointmentController) UpdateAppointment(c *gin.Context) {
 		return
 	}
 
-	if role != "Customer" {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Only customer can update appointment properties"})
-		return
-	}
 	appointment, err := a.AppointmentService.GetAppointmentById(c.Request.Context(), user, appointmentId)
 	if err != nil {
 		apperrors.HandleError(c, err, "Cannot get the appointment from this id")
@@ -272,18 +251,13 @@ func (a *AppointmentController) UpdateAppointment(c *gin.Context) {
 // @Failure 400 {object} string "Invalid appointment id"
 // @Failure 401 {object} string "Unauthorized"
 // @Failure 500 {object} string "Internal Server Error"
-// @Router /appointment/status/{id} [put]
+// @Router /appointment/status/{id} [patch]
 func (a *AppointmentController) UpdateAppointmentStatus(c *gin.Context) {
 	user := middleware.GetUserFromContext(c)
-	role := middleware.GetUserRoleFromContext(c)
 	appointmentId, err := getIDFromParam(c)
 
 	if err != nil {
 		apperrors.HandleError(c, err, "Cannot get appointmentId from param.")
-		return
-	}
-	if role == models.Guest {
-		apperrors.HandleError(c, apperrors.ErrUnauthorized, "Guest cannot update any appointment")
 		return
 	}
 
@@ -342,10 +316,7 @@ func (a *AppointmentController) UpdateAppointmentStatus(c *gin.Context) {
 
 	// TODO: if change from "pending" -> "accepted" (only phtoographer) => must change isValid of busy time to true
 	if appointment.Status == models.AppointmentPending && req.Status == models.AppointmentAccepted {
-		// check availability
-		if role != models.Photographer {
-			apperrors.HandleError(c, apperrors.ErrForbidden, "customer cannot change ")
-		}
+
 		// TODO: Change this to function later { <--- all maybe create a **BusyTimeService.Update**
 		// Note this just update only isValid
 		if err := a.BusyTimeService.Delete(c, busyTime.ID.Hex()); err != nil {

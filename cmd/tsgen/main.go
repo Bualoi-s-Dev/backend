@@ -16,12 +16,10 @@ func main() {
 
 	// Add models
 	converter.
-		Add(models.Package{}).
 		Add(dto.PackageRequest{}).
 		Add(dto.PackageResponse{}).
 		AddEnum(models.ValidPackageTypes)
 	converter.
-		Add(models.User{}).
 		Add(dto.UserRequest{}).
 		Add(dto.UserResponse{}).
 		AddEnum(models.ValidUserRoles).
@@ -36,7 +34,6 @@ func main() {
 		AddEnum(models.ValidBusyTimeTypes)
 
 	converter.
-		Add(models.Appointment{}).
 		Add(dto.AppointmentRequest{}).
 		Add(dto.AppointmenStrictRequest{}).
 		Add(dto.AppointmentUpdateStatusRequest{}).

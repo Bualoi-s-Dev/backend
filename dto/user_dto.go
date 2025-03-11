@@ -31,15 +31,15 @@ type UserResponse struct {
 	Phone    string             `bson:"phone,omitempty" json:"phone" example:"0812345678"`
 	Location string             `bson:"location,omitempty" json:"location" example:"Bangkok, Thailand"`
 
-	Role             models.UserRole  `bson:"role,omitempty" json:"role" binding:"omitempty,user_role" example:"Photographer"`
-	Description      string           `bson:"description,omitempty" json:"description" example:"I'm a photographer"`
-	BankName         models.BankName  `bson:"bank_name,omitempty" json:"bankName" example:"KRUNG_THAI_BANK"`
-	BankAccount      string           `bson:"bank_account,omitempty" json:"bankAccount" example:"1234567890"`
-	LineID           string           `bson:"line_id,omitempty" json:"lineID" example:"@meen"`
-	Facebook         string           `bson:"facebook,omitempty" json:"facebook" example:"Meen"`
-	Instagram        string           `bson:"instagram,omitempty" json:"instagram" example:"Meen"`
-	ShowcasePackages []models.Package `bson:"showcase_packages,omitempty" json:"showcasePackages" ts_type:"Package[]"`
-	Packages         []models.Package `bson:"photographer_packages,omitempty" json:"photographerPackages" ts_type:"Package[]"`
+	Role             models.UserRole   `bson:"role,omitempty" json:"role" binding:"omitempty,user_role" example:"Photographer"`
+	Description      string            `bson:"description,omitempty" json:"description" example:"I'm a photographer"`
+	BankName         models.BankName   `bson:"bank_name,omitempty" json:"bankName" example:"KRUNG_THAI_BANK"`
+	BankAccount      string            `bson:"bank_account,omitempty" json:"bankAccount" example:"1234567890"`
+	LineID           string            `bson:"line_id,omitempty" json:"lineID" example:"@meen"`
+	Facebook         string            `bson:"facebook,omitempty" json:"facebook" example:"Meen"`
+	Instagram        string            `bson:"instagram,omitempty" json:"instagram" example:"Meen"`
+	ShowcasePackages []PackageResponse `bson:"showcase_packages,omitempty" json:"showcasePackages" ts_type:"PackageResponse[]"`
+	Packages         []PackageResponse `bson:"photographer_packages,omitempty" json:"photographerPackages" ts_type:"PackageResponse[]"`
 }
 
 type AuthUserCredentials struct {

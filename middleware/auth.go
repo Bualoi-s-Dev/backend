@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"strings"
@@ -104,4 +105,18 @@ func GetUserRoleFromContext(c *gin.Context) models.UserRole {
 		return models.Guest
 	}
 	return user.Role
+}
+
+func AllowRoles(allowRoles ...models.UserRole) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		role := GetUserRoleFromContext(c)
+		for _, allowRole := range allowRoles {
+			if role == allowRole {
+				c.Next()
+				return
+			}
+		}
+		c.JSON(http.StatusUnauthorized, gin.H{"error": fmt.Sprintf("%s cannot access this endpoint", role)})
+		c.Abort()
+	}
 }
