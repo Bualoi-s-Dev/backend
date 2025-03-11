@@ -17,7 +17,6 @@ import (
 
 func FirebaseAuthMiddleware(authClient *auth.Client, userCollection *mongo.Collection, userService *services.UserService) gin.HandlerFunc {
 	return func(c *gin.Context) {
-
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
 			log.Println("[ERROR] Missing Authorization header")
