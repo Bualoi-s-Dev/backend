@@ -5,6 +5,7 @@ import (
 
 	"github.com/Bualoi-s-Dev/backend/dto"
 	"github.com/Bualoi-s-Dev/backend/middleware"
+	"github.com/Bualoi-s-Dev/backend/models"
 	"github.com/Bualoi-s-Dev/backend/services"
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -162,4 +163,24 @@ func (uc *UserController) CreateUserBusyTime(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, busyTimeRequest)
+}
+
+func (uc *UserController) DeleteUserBusyTime(c *gin.Context) {
+	id := c.Param("busyTimeId")
+	busyTime, err := uc.BusyTimeService.GetById(c.Request.Context(), id)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Not found busy time ID, " + err.Error()})
+		return
+	}
+	if busyTime.Type == models.TypeAppointment {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Cannot delete appointment type BusyTime"})
+		return
+	}
+
+	if err := uc.BusyTimeService.Delete(c.Request.Context(), id); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete busy time, " + err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Busy time deleted"})
 }
