@@ -64,6 +64,16 @@ func (a *AppointmentController) GetAllAppointment(c *gin.Context) {
 	c.JSON(http.StatusOK, appointments)
 }
 
+func (a *AppointmentController) GetAllAppointmentDetail(c *gin.Context) {
+	user := middleware.GetUserFromContext(c)
+	appointmentDetails, err := a.AppointmentService.GetAllAppointmentDetail(c, user)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, appointmentDetails)
+}
+
 // GetAppointmentById godoc
 // @Tags Appointment
 // @Summary Get appointment by ID
