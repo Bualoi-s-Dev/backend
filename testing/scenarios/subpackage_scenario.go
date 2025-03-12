@@ -29,10 +29,16 @@ func (s *SubpackageScenario) InitializeScenario(ctx *godog.ScenarioContext) {
 	ctx.When(`^the photographer creates a subpackage$`, s.thePhotographerCreatesASubpackage)
 	ctx.When(`^the photographer updates a subpackage$`, s.thePhotographerUpdatesASubpackage)
 	ctx.When(`^the photographer deletes a subpackage$`, s.thePhotographerDeletesASubpackage)
+	ctx.When(`^the photographer creates a subpackage with wrong format$`, s.thePhotographerCreatesASubpackageWithWrongFormat)
+	ctx.When(`^the photographer updates a subpackage with wrong format$`, s.thePhotographerUpdatesASubpackageWithWrongFormat)
+	ctx.When(`^the photographer deletes a non-existent subpackage$`, s.thePhotographerDeletesANonExistentSubpackage)
 
 	ctx.Then(`^the subpackage is created and added to the package$`, s.theSubpackageIsCreated)
 	ctx.Then(`^the subpackage is updated$`, s.theSubpackageIsUpdated)
 	ctx.Then(`^the subpackage is deleted$`, s.theSubpackageIsDeleted)
+	ctx.Then(`^the subpackage is not created and not added to the package$`, s.theSubpackageIsNotCreated)
+	ctx.Then(`^the subpackage is not updated$`, s.theSubpackageIsNotUpdated)
+	ctx.Then(`^the subpackage is not deleted$`, s.theSubpackageIsNotDeleted)
 }
 
 func (s *SubpackageScenario) thePhotographerIsLoggedIn() error {
@@ -94,7 +100,7 @@ func (s *SubpackageScenario) thePhotographerCreatesASubpackage() error {
 		"price":       123,
 		"duration":    23,
 
-		"isInf":              false,
+		"isInf":              true,
 		"repeatedDay":        []string{"SUN", "WED"},
 		"avaliableStartTime": "15:11",
 		"avaliableEndTime":   "16:00",
@@ -171,6 +177,87 @@ func (s *SubpackageScenario) thePhotographerDeletesASubpackage() error {
 	return nil
 }
 
+func (s *SubpackageScenario) thePhotographerCreatesASubpackageWithWrongFormat() error {
+	reqBody, _ := json.Marshal(map[string]interface{}{
+		"title":              "",
+		"description":        "1234556",
+		"price":              -10,     // Invalid negative price
+		"duration":           "23",    // Invalid non-numeric duration
+		"avaliableStartTime": "25:00", // Invalid time format
+		"avaliableEndTime":   "16:00",
+	})
+
+	req, err := http.NewRequest("POST", s.Server.URL+"/subpackage/"+s.Package.ID.Hex(), bytes.NewBuffer(reqBody))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Authorization", "Bearer "+s.Token)
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{}
+	res, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+
+	if res.StatusCode != http.StatusBadRequest {
+		return fmt.Errorf("expected status 400 Bad Request, got: %d", res.StatusCode)
+	}
+
+	var errorResponse map[string]interface{}
+	if err := json.NewDecoder(res.Body).Decode(&errorResponse); err != nil {
+		return err
+	}
+
+	fmt.Println("Error Response:", errorResponse)
+	return nil
+}
+
+func (s *SubpackageScenario) thePhotographerUpdatesASubpackageWithWrongFormat() error {
+	reqBody, _ := json.Marshal(map[string]interface{}{
+		"price": "-10",
+	})
+
+	req, err := http.NewRequest("PATCH", s.Server.URL+"/subpackage/"+s.Package.ID.Hex(), bytes.NewBuffer(reqBody))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Authorization", "Bearer "+s.Token)
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{}
+	res, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+
+	if res.StatusCode != http.StatusBadRequest {
+		return fmt.Errorf("expected status 400 Bad Request, got: %d", res.StatusCode)
+	}
+
+	return nil
+}
+
+func (s *SubpackageScenario) thePhotographerDeletesANonExistentSubpackage() error {
+	req, err := http.NewRequest("DELETE", s.Server.URL+"/subpackage/nonexistentid", nil)
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Authorization", "Bearer "+s.Token)
+
+	client := &http.Client{}
+	res, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+
+	if res.StatusCode != http.StatusNotFound {
+		return fmt.Errorf("expected status 404 Not Found, got: %d", res.StatusCode)
+	}
+
+	return nil
+}
+
 func (s *SubpackageScenario) theSubpackageIsCreated() error {
 	expect := models.Subpackage{
 		PackageID:          s.Package.ID,
@@ -178,7 +265,7 @@ func (s *SubpackageScenario) theSubpackageIsCreated() error {
 		Description:        "1234556",
 		Price:              123,
 		Duration:           23,
-		IsInf:              false,
+		IsInf:              true,
 		RepeatedDay:        []models.DayName{models.Sunday, models.Wednesday},
 		AvaliableStartTime: "15:11",
 		AvaliableEndTime:   "16:00",
@@ -198,7 +285,7 @@ func (s *SubpackageScenario) theSubpackageIsUpdated() error {
 		Description:        "1234556",
 		Price:              123,
 		Duration:           23,
-		IsInf:              false,
+		IsInf:              true,
 		RepeatedDay:        []models.DayName{models.Sunday, models.Wednesday},
 		AvaliableStartTime: "15:11",
 		AvaliableEndTime:   "16:00",
@@ -236,5 +323,86 @@ func (s *SubpackageScenario) theSubpackageIsDeleted() error {
 			return fmt.Errorf("subpackage still exists")
 		}
 	}
+	return nil
+}
+
+func (s *SubpackageScenario) theSubpackageIsNotCreated() error {
+	req, err := http.NewRequest("GET", s.Server.URL+"/subpackage/"+s.Package.ID.Hex(), nil)
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Authorization", "Bearer "+s.Token)
+
+	client := &http.Client{}
+	res, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+
+	if res.StatusCode == http.StatusOK {
+		var subPackages []models.Subpackage
+		if err := json.NewDecoder(res.Body).Decode(&subPackages); err != nil {
+			return err
+		}
+		for _, subPackage := range subPackages {
+			if subPackage.ID.Hex() == s.Package.ID.Hex() {
+				return fmt.Errorf("subpackage was unexpectedly created")
+			}
+		}
+	}
+
+	return nil
+}
+
+func (s *SubpackageScenario) theSubpackageIsNotUpdated() error {
+	req, err := http.NewRequest("GET", s.Server.URL+"/subpackage/"+s.Subpackage.ID.Hex(), nil)
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Authorization", "Bearer "+s.Token)
+
+	client := &http.Client{}
+	res, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+
+	if res.StatusCode == http.StatusOK {
+		var subpackage models.Subpackage
+		if err := json.NewDecoder(res.Body).Decode(&subpackage); err != nil {
+			return err
+		}
+		if subpackage.Price >= 0 {
+			return nil
+		}
+		return fmt.Errorf("subpackage was unexpectedly updated")
+	}
+
+	return nil
+}
+
+func (s *SubpackageScenario) theSubpackageIsNotDeleted() error {
+	req, err := http.NewRequest("GET", s.Server.URL+"/subpackage/"+s.Subpackage.ID.Hex(), nil)
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Authorization", "Bearer "+s.Token)
+
+	client := &http.Client{}
+	res, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+
+	if res.StatusCode == http.StatusOK {
+		var subpackage models.Subpackage
+		if err := json.NewDecoder(res.Body).Decode(&subpackage); err != nil {
+			return err
+		}
+		if subpackage.ID.Hex() == s.Subpackage.ID.Hex() {
+			return fmt.Errorf("subpackage still exists")
+		}
+	}
+
 	return nil
 }

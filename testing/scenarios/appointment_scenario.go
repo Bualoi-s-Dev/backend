@@ -1,53 +1,211 @@
 package testing_scenarios
 
-// import (
-// 	"net/http/httptest"
+import (
+	"bytes"
+	"encoding/json"
+	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"os"
 
-// 	"github.com/cucumber/godog"
-// )
+	"github.com/Bualoi-s-Dev/backend/dto"
+	"github.com/Bualoi-s-Dev/backend/models"
+	"github.com/Bualoi-s-Dev/backend/utils"
+	"github.com/cucumber/godog"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+)
 
-// type AppointmentScenario struct {
-// 	Server                      *httptest.Server
-// 	CustomerLoggedIn            bool
-// 	SubPackageSelected          bool
-// 	TimeSlotSelected            bool
-// 	AppointmentCreated          bool
-// 	CustomerScheduleUpdated     bool
-// 	PhotographerLoggedIn        bool
-// 	AppointmentScheduled        bool
-// 	AppointmentCompleted        bool
-// 	PhotographerScheduleUpdated bool
-// 	AppointmentCanceled         bool
-// }
+type AppointmentScenario struct {
+	Server      *httptest.Server
+	Token       string
+	Package     *dto.PackageResponse
+	Subpackage  *models.Subpackage
+	Appointment *models.Appointment
+}
 
-// func (s *AppointmentScenario) InitializeScenario(ctx *godog.ScenarioContext) {
-// 	ctx.Step(`^the server is running$`, theServerIsRunning(s.Server))
+func (s *AppointmentScenario) InitializeScenario(ctx *godog.ScenarioContext) {
+	ctx.Given(`^the server is running$`, theServerIsRunning(s.Server))
+	ctx.Given(`^a photographer has a package and sub package$`, s.thePhotographerHasPackageAndSubpackage)
+	ctx.Given(`^a customer is logged in$`, s.theCustomerIsLoggedIn)
 
-// 	ctx.Step(`^a customer is logged in$`)
+	ctx.When(`^a customer creates an appointment$`, s.theCustomerCreatesAnAppointment)
 
-// 	ctx.Step(`^a sub package is selected$`)
+	ctx.Then(`^the appointment is created$`, s.theAppointmentIsCreated)
+}
 
-// 	ctx.Step(`^a time slot is selected$`)
+func (s *AppointmentScenario) thePhotographerHasPackageAndSubpackage() error {
+	token, err := getLoginToken(s.Server, os.Getenv("TEST_PHOTOGRAPHER_EMAIL"), os.Getenv("TEST_PHOTOGRAPHER_PASSWORD"))
+	if err != nil {
+		return err
+	}
+	s.Token = token
 
-// 	ctx.Step(`^the customer submits the appointment request$`)
+	reqBody, _ := json.Marshal(map[string]interface{}{
+		"title":  "Photography Package",
+		"type":   "OTHER",
+		"photos": []string{},
+	})
+	req, err := http.NewRequest("POST", s.Server.URL+"/package", bytes.NewBuffer(reqBody))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Authorization", "Bearer "+s.Token)
+	req.Header.Set("Content-Type", "application/json")
 
-// 	ctx.Step(`^the appointment is created$`)
+	client := &http.Client{}
+	res, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	if res.StatusCode != http.StatusCreated {
+		return fmt.Errorf("failed to create package, status code: %d", res.StatusCode)
+	}
 
-// 	ctx.Step(`^the customer’s schedule is updated$`)
+	var packageResponse dto.PackageResponse
+	if err := json.NewDecoder(res.Body).Decode(&packageResponse); err != nil {
+		return err
+	}
+	s.Package = &packageResponse
 
-// 	ctx.Step(`^a photographer is logged in$`)
+	reqBody, _ = json.Marshal(map[string]interface{}{
+		"title":              "dev",
+		"description":        "1234556",
+		"price":              123,
+		"duration":           23,
+		"isInf":              true,
+		"repeatedDay":        []string{"SUN", "WED"},
+		"avaliableStartTime": "15:11",
+		"avaliableEndTime":   "16:00",
+		"avaliableStartDay":  "2022-12-22",
+		"avaliableEndDay":    "2023-01-22",
+	})
+	req, err = http.NewRequest("POST", s.Server.URL+"/subpackage/"+s.Package.ID.Hex(), bytes.NewBuffer(reqBody))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Authorization", "Bearer "+s.Token)
+	req.Header.Set("Content-Type", "application/json")
 
-// 	ctx.Step(`^an appointment is scheduled$`)
+	res, err = client.Do(req)
+	if err != nil {
+		return err
+	}
+	if res.StatusCode != http.StatusCreated {
+		return fmt.Errorf("failed to create subpackage, status code: %d", res.StatusCode)
+	}
 
-// 	ctx.Step(`^the photographer marks the appointment as completed$`)
+	var subpackage models.Subpackage
+	if err := json.NewDecoder(res.Body).Decode(&subpackage); err != nil {
+		return err
+	}
+	s.Subpackage = &subpackage
+	return nil
+}
 
-// 	ctx.Step(`^the appointment status is updated to completed$`)
+func (s *AppointmentScenario) theCustomerIsLoggedIn() error {
+	//Login and get the token
+	token, err := getLoginToken(s.Server, os.Getenv("TEST_USER_EMAIL"), os.Getenv("TEST_USER_PASSWORD"))
+	if err != nil {
+		return err
+	}
+	s.Token = token // Store token separately
 
-// 	ctx.Step(`^the photographer’s schedule is updated$`)
+	//Update role to Customer
+	reqBody, _ := json.Marshal(map[string]interface{}{
+		"role": "Customer",
+	})
+	req, err := http.NewRequest("PATCH", s.Server.URL+"/user/profile", bytes.NewBuffer(reqBody))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Authorization", "Bearer "+s.Token)
+	req.Header.Set("Content-Type", "application/json")
 
-// 	ctx.Step(`^the photographer cancels the appointment$`)
+	client := &http.Client{}
+	res, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	if res.StatusCode != http.StatusOK {
+		return fmt.Errorf("failed to update user role, status code: %d", res.StatusCode)
+	}
 
-// 	ctx.Step(`^the appointment is canceled$`)
+	// Fetch the user profile to get the Customer ID
+	req, err = http.NewRequest("GET", s.Server.URL+"/user/profile", nil)
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Authorization", "Bearer "+s.Token)
 
-// 	ctx.Step(`^the customer cancels the appointment$`)
-// }
+	res, err = client.Do(req)
+	if err != nil {
+		return err
+	}
+	if res.StatusCode != http.StatusOK {
+		return fmt.Errorf("failed to fetch user profile, status code: %d", res.StatusCode)
+	}
+
+	// Decode response to extract Customer ID
+	var userProfile struct {
+		ID string `json:"id"`
+	}
+	if err := json.NewDecoder(res.Body).Decode(&userProfile); err != nil {
+		return err
+	}
+
+	// Store Customer ID in Scenario struct
+	customerID, err := primitive.ObjectIDFromHex(userProfile.ID)
+	if err != nil {
+		return fmt.Errorf("invalid customer ID format: %v", err)
+	}
+
+	s.Appointment = &models.Appointment{CustomerID: customerID}
+
+	fmt.Println("Logged in Customer ID:", customerID) // Debugging log
+	return nil
+}
+
+func (s *AppointmentScenario) theCustomerCreatesAnAppointment() error {
+	reqBody, _ := json.Marshal(map[string]interface{}{
+		"start_time": "2025-02-18T10:00:00Z",
+		"location":   "Bangkok, Thailand",
+	})
+	req, err := http.NewRequest("POST", s.Server.URL+"/appointment"+"/"+s.Subpackage.ID.Hex(), bytes.NewBuffer(reqBody))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Authorization", "Bearer "+s.Token)
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{}
+	res, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	if res.StatusCode != http.StatusCreated {
+		return fmt.Errorf("failed to create appointment, status code: %d", res.StatusCode)
+	}
+
+	var appointment models.Appointment
+	if err := json.NewDecoder(res.Body).Decode(&appointment); err != nil {
+		return err
+	}
+	s.Appointment = &appointment
+	return nil
+}
+
+func (s *AppointmentScenario) theAppointmentIsCreated() error {
+	expect := models.Appointment{
+		CustomerID:     s.Appointment.CustomerID,
+		PhotographerID: s.Appointment.PhotographerID,
+		PackageID:      s.Package.ID,
+		SubpackageID:   s.Subpackage.ID,
+		BusyTimeID:     s.Appointment.BusyTimeID,
+		Status:         "Pending",
+		Location:       "Bangkok, Thailand",
+	}
+	if err := utils.CompareStructsExcept(expect, *s.Appointment, []string{"ID"}); err != nil {
+		return err
+	}
+	return nil
+}
