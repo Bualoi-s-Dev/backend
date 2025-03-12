@@ -157,12 +157,13 @@ func (uc *UserController) CreateUserBusyTime(c *gin.Context) {
 	}
 
 	// Call BusyTimeService with extracted user ID
-	if err := uc.BusyTimeService.CreateFromUser(c.Request.Context(), &busyTimeRequest, user.ID); err != nil {
+	res, err := uc.BusyTimeService.CreateFromUser(c.Request.Context(), &busyTimeRequest, user.ID)
+	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create busy time, " + err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusCreated, busyTimeRequest)
+	c.JSON(http.StatusCreated, res)
 }
 
 // DeleteUserBusyTime godoc
