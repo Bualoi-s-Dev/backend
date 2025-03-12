@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 )
@@ -107,4 +108,12 @@ func SafeString(str *string) string {
 		return ""
 	}
 	return *str
+}
+
+func TimeToMinutes(t string) int {
+	if t == "" {
+		return 0
+	}
+	time, _ := time.Parse("15:04", t)
+	return time.Hour()*60 + time.Minute()
 }

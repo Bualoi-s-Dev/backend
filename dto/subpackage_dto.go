@@ -19,6 +19,22 @@ type SubpackageRequest struct {
 	AvaliableEndDay    *string           `bson:"avaliable_end_day" json:"avaliableEndDay" binding:"omitempty,date_format" example:"2021-12-31"`
 }
 
+type SubpackageResponse struct {
+	Title       string `bson:"title" json:"title" binding:"omitempty" example:"Wedding Bliss Package"`
+	Description string `bson:"description" json:"description" binding:"omitempty" example:"This is a package for wedding"`
+	Price       int    `bson:"price" json:"price" binding:"omitempty" example:"10000"`
+	Duration    int    `bson:"duration" json:"duration" binding:"omitempty" example:"60" description:"Duration in minutes"`
+
+	IsInf              bool             `bson:"is_inf" json:"isInf" binding:"omitempty,isInf_rule" example:"false"`
+	RepeatedDay        []models.DayName `bson:"repeated_day" json:"repeatedDay" binding:"omitempty,day_names" example:"MON,TUE,WED"`
+	AvaliableStartTime string           `bson:"avaliable_start_time" json:"avaliableStartTime" binding:"omitempty,time_format" example:"15:04"`
+	AvaliableEndTime   string           `bson:"avaliable_end_time" json:"avaliableEndTime" binding:"omitempty,time_format" example:"16:27"`
+	AvaliableStartDay  string           `bson:"avaliable_start_day" json:"avaliableStartDay" binding:"omitempty,date_format" example:"2021-01-01"`
+	AvaliableEndDay    string           `bson:"avaliable_end_day" json:"avaliableEndDay" binding:"omitempty,date_format" example:"2021-12-31"`
+
+	BusyTimes []models.BusyTime `bson:"busy_times" json:"busyTimes" binding:"omitempty"`
+}
+
 func (item *SubpackageRequest) ToModel() *models.Subpackage {
 	var avaliableStartDay *string
 	var avaliableEndDay *string

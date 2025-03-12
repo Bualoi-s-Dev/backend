@@ -32,7 +32,17 @@ func (ctrl *SubpackageController) GetAllSubpackages(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch items, " + err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, items)
+
+	var responses []dto.SubpackageResponse
+	for _, item := range items {
+		res, err := ctrl.Service.MappedToSubpackageResponse(c, &item)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to map items, " + err.Error()})
+			return
+		}
+		responses = append(responses, *res)
+	}
+	c.JSON(http.StatusOK, responses)
 }
 
 // GetByIdSubpackages godoc
@@ -45,12 +55,18 @@ func (ctrl *SubpackageController) GetAllSubpackages(c *gin.Context) {
 // @Router /subpackage/{id} [GET]
 func (ctrl *SubpackageController) GetByIdSubpackages(c *gin.Context) {
 	id := c.Param("id")
-	items, err := ctrl.Service.GetById(c.Request.Context(), id)
+	item, err := ctrl.Service.GetById(c.Request.Context(), id)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch items, " + err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, items)
+
+	response, err := ctrl.Service.MappedToSubpackageResponse(c, item)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to map items, " + err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, response)
 }
 
 // CreateSubpackage godoc
@@ -89,7 +105,13 @@ func (ctrl *SubpackageController) CreateSubpackage(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create item, " + err.Error()})
 		return
 	}
-	c.JSON(http.StatusCreated, item)
+
+	response, err := ctrl.Service.MappedToSubpackageResponse(c, item)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to map items, " + err.Error()})
+		return
+	}
+	c.JSON(http.StatusCreated, response)
 }
 
 // UpdateSubpackage godoc
@@ -119,7 +141,13 @@ func (ctrl *SubpackageController) UpdateSubpackage(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch item after updated, " + err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, item)
+
+	response, err := ctrl.Service.MappedToSubpackageResponse(c, item)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to map items, " + err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, response)
 }
 
 // DeleteSubpackage godoc

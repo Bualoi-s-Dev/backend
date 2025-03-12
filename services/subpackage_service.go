@@ -3,6 +3,9 @@ package services
 import (
 	"context"
 	"errors"
+	"slices"
+	"strings"
+	"time"
 
 	"github.com/Bualoi-s-Dev/backend/dto"
 	"github.com/Bualoi-s-Dev/backend/models"
@@ -12,11 +15,13 @@ import (
 )
 
 type SubpackageService struct {
-	Repository *repositories.SubpackageRepository
+	Repository         *repositories.SubpackageRepository
+	PackageRepository  *repositories.PackageRepository
+	BusyTimeRepository *repositories.BusyTimeRepository
 }
 
-func NewSubpackageService(repository *repositories.SubpackageRepository) *SubpackageService {
-	return &SubpackageService{Repository: repository}
+func NewSubpackageService(repository *repositories.SubpackageRepository, packageRepository *repositories.PackageRepository, busyTimeRepository *repositories.BusyTimeRepository) *SubpackageService {
+	return &SubpackageService{Repository: repository, PackageRepository: packageRepository, BusyTimeRepository: busyTimeRepository}
 }
 
 func (s *SubpackageService) GetAll(ctx context.Context) ([]models.Subpackage, error) {
@@ -79,4 +84,65 @@ func (s *SubpackageService) VerifyStrictRequest(ctx context.Context, subpackage 
 		return errors.New("avaliable_start_day and avaliable_end_day are required")
 	}
 	return nil
+}
+
+func (s *SubpackageService) FindIntersectBusyTime(ctx context.Context, subpackage *models.Subpackage) ([]models.BusyTime, error) {
+	parentPackage, err := s.PackageRepository.GetById(ctx, subpackage.PackageID.Hex())
+	if err != nil {
+		return nil, err
+	}
+	ownerId := parentPackage.OwnerID
+	busyTimes, err := s.BusyTimeRepository.GetByPhotographerId(ctx, ownerId)
+	if err != nil {
+		return nil, err
+	}
+
+	intersectBusyTime := []models.BusyTime{}
+	for _, busyTime := range busyTimes {
+		// Check weekday
+		dayBusyTime := strings.ToUpper(busyTime.StartTime.Weekday().String()[0:3])
+		if !slices.Contains(subpackage.RepeatedDay, models.DayName(dayBusyTime)) {
+			continue
+		}
+
+		// Check date
+		avaliableStartDay, _ := time.Parse("2006-01-02", subpackage.AvaliableStartDay)
+		avaliableEndDay, _ := time.Parse("2006-01-02", subpackage.AvaliableEndDay)
+		if !subpackage.IsInf && (busyTime.StartTime.Before(avaliableStartDay) || busyTime.EndTime.After(avaliableEndDay)) {
+			continue
+		}
+
+		// Check time
+		avaliableStartMinute := utils.TimeToMinutes(subpackage.AvaliableStartTime)
+		avaliableEndMinute := utils.TimeToMinutes(subpackage.AvaliableEndTime)
+
+		busyStartMinute := utils.TimeToMinutes(busyTime.StartTime.Format("15:04"))
+		busyEndMinute := utils.TimeToMinutes(busyTime.EndTime.Format("15:04"))
+		if (busyStartMinute < avaliableStartMinute) || (busyEndMinute > avaliableEndMinute) {
+			continue
+		}
+		intersectBusyTime = append(intersectBusyTime, busyTime)
+	}
+
+	return intersectBusyTime, nil
+}
+
+func (s *SubpackageService) MappedToSubpackageResponse(ctx context.Context, subpackage *models.Subpackage) (*dto.SubpackageResponse, error) {
+	busyTime, err := s.FindIntersectBusyTime(ctx, subpackage)
+	if err != nil {
+		return nil, err
+	}
+	return &dto.SubpackageResponse{
+		Title:              subpackage.Title,
+		Description:        subpackage.Description,
+		Price:              subpackage.Price,
+		Duration:           subpackage.Duration,
+		IsInf:              subpackage.IsInf,
+		RepeatedDay:        subpackage.RepeatedDay,
+		AvaliableStartTime: subpackage.AvaliableStartTime,
+		AvaliableEndTime:   subpackage.AvaliableEndTime,
+		AvaliableStartDay:  subpackage.AvaliableStartDay,
+		AvaliableEndDay:    subpackage.AvaliableEndDay,
+		BusyTimes:          busyTime,
+	}, nil
 }
