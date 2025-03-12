@@ -112,29 +112,51 @@ func (s *SubpackageService) FindIntersectBusyTime(ctx context.Context, subpackag
 }
 
 func (s *SubpackageService) IsIntersect(subpackage *models.Subpackage, busyTime *models.BusyTime) (bool, error) {
-	// TODO: Implement this method
-	// // Check date
-	// avaliableStartDay, _ := time.Parse("2006-01-02", subpackage.AvaliableStartDay)
-	// avaliableEndDay, _ := time.Parse("2006-01-02", subpackage.AvaliableEndDay)
-	// if !subpackage.IsInf && (busyTime.StartTime.Before(avaliableStartDay) || busyTime.EndTime.After(avaliableEndDay)) {
-	// 	continue
-	// }
+	if subpackage == nil || busyTime == nil {
+		return false, errors.New("invalid input: subpackage or busyTime is nil")
+	}
 
-	// // Check weekday
-	// dayBusyTime := strings.ToUpper(busyTime.StartTime.Weekday().String()[0:3])
-	// if !slices.Contains(subpackage.RepeatedDay, models.DayName(dayBusyTime)) {
-	// 	continue
-	// }
+	// Parse subpackage available start and end time
+	layout := "15:04"
+	subStartTime, err := time.Parse(layout, subpackage.AvaliableStartTime)
+	if err != nil {
+		return false, fmt.Errorf("invalid available start time format: %v", err)
+	}
+	subEndTime, err := time.Parse(layout, subpackage.AvaliableEndTime)
+	if err != nil {
+		return false, fmt.Errorf("invalid available end time format: %v", err)
+	}
 
-	// // Check time
-	// avaliableStartMinute := utils.TimeToMinutes(subpackage.AvaliableStartTime)
-	// avaliableEndMinute := utils.TimeToMinutes(subpackage.AvaliableEndTime)
+	// If IsInf is false, validate start and end dates
+	if !subpackage.IsInf {
+		subStartDate, err := time.Parse("2006-01-02", subpackage.AvaliableStartDay)
+		if err != nil {
+			return false, fmt.Errorf("invalid available start date format: %v", err)
+		}
+		subEndDate, err := time.Parse("2006-01-02", subpackage.AvaliableEndDay)
+		if err != nil {
+			return false, fmt.Errorf("invalid available end date format: %v", err)
+		}
 
-	// busyStartMinute := utils.TimeToMinutes(busyTime.StartTime.Format("15:04"))
-	// busyEndMinute := utils.TimeToMinutes(busyTime.EndTime.Format("15:04"))
-	// if (busyStartMinute < avaliableStartMinute) || (busyEndMinute > avaliableEndMinute) {
-	// 	continue
-	// }
+		// Check if BusyTime falls within the available date range
+		if busyTime.StartTime.Before(subStartDate) || busyTime.StartTime.After(subEndDate) {
+			return false, nil
+		}
+	}
+
+	// Check if BusyTime falls on a valid repeated day and time range
+	for _, day := range subpackage.RepeatedDay {
+		if strings.EqualFold(day.String(), busyTime.StartTime.Weekday().String()) {
+			// Extract the time portion of busyTime
+			busyStartTime := busyTime.StartTime.Format("15:04")
+			busyEndTime := busyTime.EndTime.Format("15:04")
+
+			// Check if busy time range overlaps with subpackage available time
+			if busyStartTime < subpackage.AvaliableEndTime && busyEndTime > subpackage.AvaliableStartTime {
+				return true, nil
+			}
+		}
+	}
 	return false, nil
 }
 
