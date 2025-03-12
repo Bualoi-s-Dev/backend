@@ -17,11 +17,15 @@ import (
 )
 
 type AppointmentScenario struct {
-	Server         *httptest.Server
-	Token          string
-	Package        *dto.PackageResponse
-	Subpackage     *dto.SubpackageResponse
-	Appointment    *models.Appointment
+	Server     *httptest.Server
+	Token      string
+	Package    *dto.PackageResponse
+	Subpackage *dto.SubpackageResponse
+	// TODO: change to new dto
+	Appointment struct {
+		Appointment models.Appointment `json:"appointment"`
+		BusyTime    models.BusyTime    `json:"busyTime"`
+	}
 	PhotographerID primitive.ObjectID
 	CustomerID     primitive.ObjectID
 }
@@ -206,31 +210,30 @@ func (s *AppointmentScenario) theCustomerCreatesAnAppointment() error {
 		return fmt.Errorf("failed to create appointment, status code: %d, response: %s", res.StatusCode, string(body))
 	}
 
-	var appointment models.Appointment
+	// TODO: change to new dto
+	var appointment struct {
+		Appointment models.Appointment `json:"appointment"`
+		BusyTime    models.BusyTime    `json:"busyTime"`
+	}
 	if err := json.NewDecoder(res.Body).Decode(&appointment); err != nil {
 		return err
 	}
-	fmt.Println("Created Appointment:", appointment) // Debugging log
-	s.Appointment = &appointment
+	s.Appointment = appointment
 	return nil
 }
 
 func (s *AppointmentScenario) theAppointmentIsCreated() error {
-	expect := models.Appointment{
+	expectAppointment := models.Appointment{
 		CustomerID:     s.CustomerID,
 		PhotographerID: s.PhotographerID,
 		PackageID:      s.Package.ID,
 		SubpackageID:   s.Subpackage.ID,
+		Price:          s.Subpackage.Price,
 		Status:         "Pending",
 		Location:       "Bangkok, Thailand",
 	}
-	fmt.Println("Expect:", expect) // Debugging log
-	fmt.Println("Actual Appointment:", *s.Appointment)
-	fmt.Println("Actual Package:", *s.Package)
-	fmt.Println("Actual Subpackage:", *s.Subpackage)
-	fmt.Println("Actual Photographer ID:", s.PhotographerID)
-	fmt.Println("Actual Customer ID:", s.CustomerID)
-	if err := utils.CompareStructsExcept(expect, *s.Appointment, []string{"ID", "BusyTimeID"}); err != nil {
+
+	if err := utils.CompareStructsExcept(expectAppointment, s.Appointment.Appointment, []string{"ID", "BusyTimeID"}); err != nil {
 		return err
 	}
 	return nil

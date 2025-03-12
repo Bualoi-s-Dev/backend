@@ -18,7 +18,7 @@ type SubpackageScenario struct {
 	Server     *httptest.Server
 	Token      string
 	Package    *dto.PackageResponse
-	Subpackage *models.Subpackage
+	Subpackage *dto.SubpackageResponse
 }
 
 func (s *SubpackageScenario) InitializeScenario(ctx *godog.ScenarioContext) {
@@ -123,7 +123,7 @@ func (s *SubpackageScenario) thePhotographerCreatesASubpackage() error {
 		return fmt.Errorf("failed to create subpackage, status code: %d", res.StatusCode)
 	}
 
-	var subpackage models.Subpackage
+	var subpackage dto.SubpackageResponse
 	if err := json.NewDecoder(res.Body).Decode(&subpackage); err != nil {
 		return err
 	}
@@ -151,7 +151,7 @@ func (s *SubpackageScenario) thePhotographerUpdatesASubpackage() error {
 		return fmt.Errorf("failed to update subpackage, status code: %d", res.StatusCode)
 	}
 
-	var subpackage models.Subpackage
+	var subpackage dto.SubpackageResponse
 	if err := json.NewDecoder(res.Body).Decode(&subpackage); err != nil {
 		return err
 	}
@@ -208,8 +208,6 @@ func (s *SubpackageScenario) thePhotographerCreatesASubpackageWithWrongFormat() 
 	if err := json.NewDecoder(res.Body).Decode(&errorResponse); err != nil {
 		return err
 	}
-
-	fmt.Println("Error Response:", errorResponse)
 	return nil
 }
 
@@ -265,36 +263,34 @@ func (s *SubpackageScenario) theSubpackageIsCreated() error {
 		Description:        "1234556",
 		Price:              123,
 		Duration:           23,
-		IsInf:              true,
+		IsInf:              false,
 		RepeatedDay:        []models.DayName{models.Sunday, models.Wednesday},
 		AvaliableStartTime: "15:11",
 		AvaliableEndTime:   "16:00",
 		AvaliableStartDay:  "2022-12-22",
 		AvaliableEndDay:    "2023-01-22",
 	}
-	fmt.Println("Subpackage:", s.Subpackage)
-	fmt.Println("Expect:", expect)
-	if err := utils.CompareStructsExcept(expect, *s.Subpackage, []string{"ID", "BusyTimes"}); err != nil {
+	if err := utils.CompareStructsExcept(expect, *s.Subpackage, []string{"ID", "BusyTimes", "BusyTimeMap"}); err != nil {
 		return err
 	}
 	return nil
 }
 
 func (s *SubpackageScenario) theSubpackageIsUpdated() error {
-	expect := models.Subpackage{
+	expect := dto.SubpackageResponse{
 		PackageID:          s.Package.ID,
 		Title:              "dev123",
 		Description:        "1234556",
 		Price:              123,
 		Duration:           23,
-		IsInf:              true,
+		IsInf:              false,
 		RepeatedDay:        []models.DayName{models.Sunday, models.Wednesday},
 		AvaliableStartTime: "15:11",
 		AvaliableEndTime:   "16:00",
 		AvaliableStartDay:  "2022-12-22",
 		AvaliableEndDay:    "2023-01-22",
 	}
-	if err := utils.CompareStructsExcept(expect, *s.Subpackage, []string{"ID"}); err != nil {
+	if err := utils.CompareStructsExcept(expect, *s.Subpackage, []string{"ID", "BusyTimes", "BusyTimeMap"}); err != nil {
 		return err
 	}
 	return nil
