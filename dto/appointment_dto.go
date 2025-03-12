@@ -16,7 +16,7 @@ type AppointmentUpdateStatusRequest struct {
 	Status models.AppointmentStatus `bson:"status,omitempty" json:"status" binding:"appointment_status" example:"pending"` // "pending", "accepted", "rejected", "completed"
 }
 
-type AppointmenStrictRequest struct {
+type AppointmentStrictRequest struct {
 	StartTime time.Time `bson:"start_time" json:"start_time" ts_type:"string" example:"2025-02-18T10:00:00Z"`
 	// Status    models.AppointmentStatus `bson:"status" json:"status" example:"Pending" binding:"appointment_status"` // "pending", "accepted", "rejected", "completed"
 	Location string `bson:"location" json:"location" example:"Bangkok, Thailand"`
@@ -36,7 +36,7 @@ type AppointmentResponse struct {
 	// Payment       Payment   `bson:"payment,omitempty" json:"payment,omitempty" example:"{...}"`
 }
 
-func (req *AppointmenStrictRequest) ToModel(user *models.User, pkg *models.Package, subpackage *models.Subpackage, busyTime *models.BusyTime) *models.Appointment {
+func (req *AppointmentStrictRequest) ToModel(user *models.User, pkg *models.Package, subpackage *models.Subpackage, busyTime *models.BusyTime) *models.Appointment {
 	return &models.Appointment{
 		ID:             primitive.NewObjectID(),
 		CustomerID:     user.ID,

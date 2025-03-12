@@ -124,7 +124,7 @@ func (a *AppointmentController) CreateAppointment(c *gin.Context) {
 	if err != nil {
 		apperrors.HandleError(c, err, "Cannot get subpackageId from param")
 	}
-	var req dto.AppointmenStrictRequest
+	var req dto.AppointmentStrictRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Bad request, " + err.Error()})
 		return
