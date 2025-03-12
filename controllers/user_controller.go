@@ -165,6 +165,14 @@ func (uc *UserController) CreateUserBusyTime(c *gin.Context) {
 	c.JSON(http.StatusCreated, busyTimeRequest)
 }
 
+// DeleteUserBusyTime godoc
+// @Summary Delete a photographer busy time
+// @Description Delele a busy time entry using busy time ID, require to be the owner of the busy time
+// @Tags User
+// @Param busyTimeId path string true "BusyTime ID"
+// @Success 200 {object} string "Success"
+// @Failure 400 {object} string "Bad Request"
+// @Router /user/busytime/{busyTimeId} [delete]
 func (uc *UserController) DeleteUserBusyTime(c *gin.Context) {
 	id := c.Param("busyTimeId")
 	busyTime, err := uc.BusyTimeService.GetById(c.Request.Context(), id)
