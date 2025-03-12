@@ -4,9 +4,9 @@ import (
 	"github.com/Bualoi-s-Dev/backend/configs"
 	"github.com/Bualoi-s-Dev/backend/controllers"
 	"github.com/Bualoi-s-Dev/backend/middleware"
-	"github.com/Bualoi-s-Dev/backend/models"
 	"github.com/Bualoi-s-Dev/backend/routes"
 	"github.com/Bualoi-s-Dev/backend/services"
+	validators "github.com/Bualoi-s-Dev/backend/validator"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
@@ -49,7 +49,7 @@ func SetupServer(client *mongo.Database) (*gin.Engine, *ServerRepositories, *Ser
 
 	// Validator
 	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
-		models.RegisterCustomValidators(v)
+		validators.RegisterCustomValidators(v)
 	}
 	packageCollection := client.Collection("Package")
 	subpackageCollection := client.Collection("Subpackage")
