@@ -7,6 +7,13 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
+type BusyTimeStrictRequest struct {
+	Type      models.BusyTimeType `bson:"type" json:"type" binding:"omitempty,required" example:"PHOTOGRAPHER"`
+	StartTime time.Time           `bson:"start_time" json:"startTime" binding:"omitempty,required" ts_type:"string" example:"2025-02-23T10:00:00Z"`
+	EndTime   time.Time           `bson:"end_time" json:"endTime" binding:"omitempty,required" ts_type:"string" example:"2025-02-23T12:00:00Z"`
+	IsValid   bool                `bson:"is_valid" json:"isValid" example:"true"`
+}
+
 type BusyTimeRequest struct {
 	Type      *models.BusyTimeType `bson:"type" json:"type" binding:"omitempty,required" example:"PHOTOGRAPHER"`
 	StartTime *time.Time           `bson:"start_time" json:"startTime" binding:"omitempty,required" ts_type:"string" example:"2025-02-23T10:00:00Z"`
@@ -16,11 +23,32 @@ type BusyTimeRequest struct {
 
 func (item *BusyTimeRequest) ToModel(photographerID primitive.ObjectID) *models.BusyTime {
 	return &models.BusyTime{
-		ID:             primitive.NewObjectID(),
 		PhotographerID: photographerID,
 		Type:           *item.Type,
 		StartTime:      *item.StartTime,
 		EndTime:        *item.EndTime,
 		IsValid:        *item.IsValid,
+	}
+}
+
+func (item *BusyTimeStrictRequest) ToModelUpdate(oldID, photographerID primitive.ObjectID) *models.BusyTime {
+	return &models.BusyTime{
+		ID:             oldID,
+		PhotographerID: photographerID,
+		Type:           item.Type,
+		StartTime:      item.StartTime,
+		EndTime:        item.EndTime,
+		IsValid:        item.IsValid,
+	}
+}
+
+func (item *BusyTimeStrictRequest) ToModel(photographerID primitive.ObjectID) *models.BusyTime {
+	return &models.BusyTime{
+		ID:             primitive.NewObjectID(),
+		PhotographerID: photographerID,
+		Type:           item.Type,
+		StartTime:      item.StartTime,
+		EndTime:        item.EndTime,
+		IsValid:        item.IsValid,
 	}
 }
