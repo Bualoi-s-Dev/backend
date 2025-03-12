@@ -111,7 +111,7 @@ func (s *SubpackageService) FindIntersectBusyTime(ctx context.Context, subpackag
 	return busyTimes, nil
 }
 
-func (s *SubpackageService) IsIntersect(subpackage *models.Subpackage, busyTime *models.BusyTime) (bool, error) {
+func (s *BusyTimeService) IsIntersect(ctx context.Context, subpackage *Subpackage, busyTime *BusyTime) (bool, error) {
 	if subpackage == nil || busyTime == nil {
 		return false, errors.New("invalid input: subpackage or busyTime is nil")
 	}
@@ -139,24 +139,45 @@ func (s *SubpackageService) IsIntersect(subpackage *models.Subpackage, busyTime 
 		}
 
 		// Check if BusyTime falls within the available date range
-		if busyTime.StartTime.Before(subStartDate) || busyTime.StartTime.After(subEndDate) {
+		if busyTime.EndTime.Before(subStartDate) || busyTime.StartTime.After(subEndDate) {
 			return false, nil
 		}
 	}
 
-	// Check if BusyTime falls on a valid repeated day and time range
-	for _, day := range subpackage.RepeatedDay {
-		if strings.EqualFold(day.String(), busyTime.StartTime.Weekday().String()) {
-			// Extract the time portion of busyTime
-			busyStartTime := busyTime.StartTime.Format("15:04")
-			busyEndTime := busyTime.EndTime.Format("15:04")
+	// Iterate over each day in the busy period
+	for d := busyTime.StartTime; d.Before(busyTime.EndTime) || d.Equal(busyTime.EndTime); d = d.Add(24 * time.Hour) {
+		for _, day := range subpackage.RepeatedDay {
+			if strings.EqualFold(day.String(), d.Weekday().String()) {
+				// Determine busy time range for this specific day
+				var busyDayStart time.Time
+				var busyDayEnd time.Time
 
-			// Check if busy time range overlaps with subpackage available time
-			if busyStartTime < subpackage.AvaliableEndTime && busyEndTime > subpackage.AvaliableStartTime {
-				return true, nil
+				if d.Format("2006-01-02") == busyTime.StartTime.Format("2006-01-02") {
+					// First day: busy period starts from actual start time
+					busyDayStart = busyTime.StartTime
+					busyDayEnd = time.Date(d.Year(), d.Month(), d.Day(), 23, 59, 59, 0, d.Location())
+				} else if d.Format("2006-01-02") == busyTime.EndTime.Format("2006-01-02") {
+					// Last day: busy period ends at actual end time
+					busyDayStart = time.Date(d.Year(), d.Month(), d.Day(), 0, 0, 0, 0, d.Location())
+					busyDayEnd = busyTime.EndTime
+				} else {
+					// Full day busy
+					busyDayStart = time.Date(d.Year(), d.Month(), d.Day(), 0, 0, 0, 0, d.Location())
+					busyDayEnd = time.Date(d.Year(), d.Month(), d.Day(), 23, 59, 59, 0, d.Location())
+				}
+
+				// Convert busy day times to strings
+				busyStartTime := busyDayStart.Format("15:04")
+				busyEndTime := busyDayEnd.Format("15:04")
+
+				// Check if busy time range overlaps with subpackage available time
+				if busyStartTime < subpackage.AvaliableEndTime && busyEndTime > subpackage.AvaliableStartTime {
+					return true, nil
+				}
 			}
 		}
 	}
+
 	return false, nil
 }
 
