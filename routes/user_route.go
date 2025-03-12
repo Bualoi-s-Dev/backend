@@ -17,5 +17,6 @@ func UserRoutes(router *gin.Engine, userController *controllers.UserController) 
 		userRoutes.PATCH("/profile", userController.UpdateUserProfile)
 
 		userRoutes.POST("/busytime", middleware.AllowRoles(models.Photographer), userController.CreateUserBusyTime)
+		userRoutes.DELETE("/busytime/:busyTimeId", middleware.AllowRoles(models.Photographer), userController.DeleteUserBusyTime)
 	}
 }

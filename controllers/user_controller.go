@@ -177,6 +177,12 @@ func (uc *UserController) DeleteUserBusyTime(c *gin.Context) {
 		return
 	}
 
+	user := middleware.GetUserFromContext(c)
+	if user.ID != busyTime.PhotographerID {
+		c.JSON(http.StatusForbidden, gin.H{"error": "You do not own the busy time"})
+		return
+	}
+
 	if err := uc.BusyTimeService.Delete(c.Request.Context(), id); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete busy time, " + err.Error()})
 		return
