@@ -15,15 +15,17 @@ import (
 type AppointmentService struct {
 	AppointmentRepo *repositories.AppointmentRepository
 	PackageRepo     *repositories.PackageRepository
+	SubpackageRepo  *repositories.SubpackageRepository
 	BusyTimeRepo    *repositories.BusyTimeRepository
 }
 
 // literally just getbyID and check if the user is authorized
 
-func NewAppointmentService(appointmentRepo *repositories.AppointmentRepository, packageRepo *repositories.PackageRepository, busyTimeRepo *repositories.BusyTimeRepository) *AppointmentService {
+func NewAppointmentService(appointmentRepo *repositories.AppointmentRepository, packageRepo *repositories.PackageRepository, subpackageRepo *repositories.SubpackageRepository, busyTimeRepo *repositories.BusyTimeRepository) *AppointmentService {
 	return &AppointmentService{
 		AppointmentRepo: appointmentRepo,
 		PackageRepo:     packageRepo,
+		SubpackageRepo:  subpackageRepo,
 		BusyTimeRepo:    busyTimeRepo,
 	}
 }
@@ -45,7 +47,7 @@ func (s *AppointmentService) GetAppointmentById(ctx context.Context, user *model
 }
 
 func (s *AppointmentService) CreateOneAppointment(ctx context.Context, user *models.User, subpackageId primitive.ObjectID, busyTime *models.BusyTime, req *dto.AppointmenStrictRequest) (*models.Appointment, error) {
-	subpackage, err := s.PackageRepo.GetSubpackageById(ctx, subpackageId.Hex())
+	subpackage, err := s.SubpackageRepo.GetById(ctx, subpackageId.Hex())
 	if err != nil {
 		return nil, err
 	}
