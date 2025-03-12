@@ -9,7 +9,7 @@ import (
 	utils "github.com/Bualoi-s-Dev/backend/testing/utils"
 )
 
-func TestAppointmentFeatures(t testing.T) {
+func TestAppointmentFeatures(t *testing.T) {
 	defer cleanUpAppointmentFeature()
 	server := GetTestServer()
 

@@ -100,7 +100,7 @@ func (s *SubpackageScenario) thePhotographerCreatesASubpackage() error {
 		"price":       123,
 		"duration":    23,
 
-		"isInf":              true,
+		"isInf":              false,
 		"repeatedDay":        []string{"SUN", "WED"},
 		"avaliableStartTime": "15:11",
 		"avaliableEndTime":   "16:00",
@@ -259,7 +259,7 @@ func (s *SubpackageScenario) thePhotographerDeletesANonExistentSubpackage() erro
 }
 
 func (s *SubpackageScenario) theSubpackageIsCreated() error {
-	expect := models.Subpackage{
+	expect := dto.SubpackageResponse{
 		PackageID:          s.Package.ID,
 		Title:              "dev",
 		Description:        "1234556",
@@ -272,7 +272,9 @@ func (s *SubpackageScenario) theSubpackageIsCreated() error {
 		AvaliableStartDay:  "2022-12-22",
 		AvaliableEndDay:    "2023-01-22",
 	}
-	if err := utils.CompareStructsExcept(expect, *s.Subpackage, []string{"ID"}); err != nil {
+	fmt.Println("Subpackage:", s.Subpackage)
+	fmt.Println("Expect:", expect)
+	if err := utils.CompareStructsExcept(expect, *s.Subpackage, []string{"ID", "BusyTimes"}); err != nil {
 		return err
 	}
 	return nil

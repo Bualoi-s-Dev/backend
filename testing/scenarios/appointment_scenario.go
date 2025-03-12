@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -16,11 +17,13 @@ import (
 )
 
 type AppointmentScenario struct {
-	Server      *httptest.Server
-	Token       string
-	Package     *dto.PackageResponse
-	Subpackage  *models.Subpackage
-	Appointment *models.Appointment
+	Server         *httptest.Server
+	Token          string
+	Package        *dto.PackageResponse
+	Subpackage     *dto.SubpackageResponse
+	Appointment    *models.Appointment
+	PhotographerID primitive.ObjectID
+	CustomerID     primitive.ObjectID
 }
 
 func (s *AppointmentScenario) InitializeScenario(ctx *godog.ScenarioContext) {
@@ -72,7 +75,7 @@ func (s *AppointmentScenario) thePhotographerHasPackageAndSubpackage() error {
 		"description":        "1234556",
 		"price":              123,
 		"duration":           23,
-		"isInf":              true,
+		"isInf":              false,
 		"repeatedDay":        []string{"SUN", "WED"},
 		"avaliableStartTime": "15:11",
 		"avaliableEndTime":   "16:00",
@@ -94,11 +97,36 @@ func (s *AppointmentScenario) thePhotographerHasPackageAndSubpackage() error {
 		return fmt.Errorf("failed to create subpackage, status code: %d", res.StatusCode)
 	}
 
-	var subpackage models.Subpackage
+	var subpackage dto.SubpackageResponse
 	if err := json.NewDecoder(res.Body).Decode(&subpackage); err != nil {
 		return err
 	}
 	s.Subpackage = &subpackage
+
+	// Fetch the user profile to get the Photographer ID
+	req, err = http.NewRequest("GET", s.Server.URL+"/user/profile", nil)
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Authorization", "Bearer "+s.Token)
+
+	res, err = client.Do(req)
+	if err != nil {
+		return err
+	}
+	if res.StatusCode != http.StatusOK {
+		return fmt.Errorf("failed to fetch user profile, status code: %d", res.StatusCode)
+	}
+
+	// Decode response to extract Photographer ID
+	var userProfile struct {
+		ID primitive.ObjectID `json:"id"`
+	}
+	if err := json.NewDecoder(res.Body).Decode(&userProfile); err != nil {
+		return err
+	}
+	s.PhotographerID = userProfile.ID
+
 	return nil
 }
 
@@ -147,27 +175,18 @@ func (s *AppointmentScenario) theCustomerIsLoggedIn() error {
 
 	// Decode response to extract Customer ID
 	var userProfile struct {
-		ID string `json:"id"`
+		ID primitive.ObjectID `json:"id"`
 	}
 	if err := json.NewDecoder(res.Body).Decode(&userProfile); err != nil {
 		return err
 	}
-
-	// Store Customer ID in Scenario struct
-	customerID, err := primitive.ObjectIDFromHex(userProfile.ID)
-	if err != nil {
-		return fmt.Errorf("invalid customer ID format: %v", err)
-	}
-
-	s.Appointment = &models.Appointment{CustomerID: customerID}
-
-	fmt.Println("Logged in Customer ID:", customerID) // Debugging log
+	s.CustomerID = userProfile.ID
 	return nil
 }
 
 func (s *AppointmentScenario) theCustomerCreatesAnAppointment() error {
 	reqBody, _ := json.Marshal(map[string]interface{}{
-		"start_time": "2025-02-18T10:00:00Z",
+		"start_time": "2030-02-21T10:30:00.000+00:00",
 		"location":   "Bangkok, Thailand",
 	})
 	req, err := http.NewRequest("POST", s.Server.URL+"/appointment"+"/"+s.Subpackage.ID.Hex(), bytes.NewBuffer(reqBody))
@@ -183,28 +202,35 @@ func (s *AppointmentScenario) theCustomerCreatesAnAppointment() error {
 		return err
 	}
 	if res.StatusCode != http.StatusCreated {
-		return fmt.Errorf("failed to create appointment, status code: %d", res.StatusCode)
+		body, _ := io.ReadAll(res.Body)
+		return fmt.Errorf("failed to create appointment, status code: %d, response: %s", res.StatusCode, string(body))
 	}
 
 	var appointment models.Appointment
 	if err := json.NewDecoder(res.Body).Decode(&appointment); err != nil {
 		return err
 	}
+	fmt.Println("Created Appointment:", appointment) // Debugging log
 	s.Appointment = &appointment
 	return nil
 }
 
 func (s *AppointmentScenario) theAppointmentIsCreated() error {
 	expect := models.Appointment{
-		CustomerID:     s.Appointment.CustomerID,
-		PhotographerID: s.Appointment.PhotographerID,
+		CustomerID:     s.CustomerID,
+		PhotographerID: s.PhotographerID,
 		PackageID:      s.Package.ID,
 		SubpackageID:   s.Subpackage.ID,
-		BusyTimeID:     s.Appointment.BusyTimeID,
 		Status:         "Pending",
 		Location:       "Bangkok, Thailand",
 	}
-	if err := utils.CompareStructsExcept(expect, *s.Appointment, []string{"ID"}); err != nil {
+	fmt.Println("Expect:", expect) // Debugging log
+	fmt.Println("Actual Appointment:", *s.Appointment)
+	fmt.Println("Actual Package:", *s.Package)
+	fmt.Println("Actual Subpackage:", *s.Subpackage)
+	fmt.Println("Actual Photographer ID:", s.PhotographerID)
+	fmt.Println("Actual Customer ID:", s.CustomerID)
+	if err := utils.CompareStructsExcept(expect, *s.Appointment, []string{"ID", "BusyTimeID"}); err != nil {
 		return err
 	}
 	return nil
