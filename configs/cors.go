@@ -1,6 +1,7 @@
 package configs
 
 import (
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -11,9 +12,11 @@ import (
 func EnableCORS() gin.HandlerFunc {
 	// Parse allowed origins from environment variable
 	allowedOrigins := strings.Split(GetEnv("FRONTEND_URLS"), ",")
+	fmt.Println("Allowed origins: ", allowedOrigins)
 
 	return func(c *gin.Context) {
 		origin := c.Request.Header.Get("Origin")
+		fmt.Println("Request origin: ", origin)
 
 		// Check if the origin is in the allowed list
 		allowed := false
@@ -27,7 +30,7 @@ func EnableCORS() gin.HandlerFunc {
 		// Set CORS headers if the origin is allowed
 		if allowed {
 			c.Writer.Header().Set("Access-Control-Allow-Origin", origin)
-			c.Writer.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+			c.Writer.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
 			c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 			c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
 		}
