@@ -36,9 +36,22 @@ func (s *BusyTimeService) GetById(ctx context.Context, id string) (*models.BusyT
 func (s *BusyTimeService) GetByPhotographerId(ctx context.Context, photographerId primitive.ObjectID) ([]models.BusyTime, error) {
 	return s.Repository.GetByPhotographerId(ctx, photographerId)
 }
-
-func (s *BusyTimeService) Create(ctx context.Context, request *dto.BusyTimeRequest, photographerId primitive.ObjectID) error {
+func (s *BusyTimeService) CreateFromUser(ctx context.Context, request *dto.BusyTimeRequest, photographerId primitive.ObjectID) error {
 	model := request.ToModel(photographerId)
+	return s.CreateFromModel(ctx, photographerId, model)
+}
+
+// func (s *BusyTimeService) CreateFromAppointment(ctx context.Context, request *dto.BusyTimeStrictRequest, photographerId primitive.ObjectID) error {
+// 	model := request.ToModel(photographerId)
+// 	return s.CreateFromModel(ctx, photographerId, model)
+// }
+
+func (s *BusyTimeService) CreateForUpdate(ctx context.Context, request *dto.BusyTimeStrictRequest, oldID, photographerId primitive.ObjectID) error {
+	model := request.ToModelUpdate(oldID, photographerId)
+	return s.CreateFromModel(ctx, photographerId, model)
+}
+
+func (s *BusyTimeService) CreateFromModel(ctx context.Context, photographerId primitive.ObjectID, model *models.BusyTime) error {
 	isAvailable, err := s.IsPhotographerAvailable(ctx, photographerId, model.StartTime, model.EndTime)
 	if err != nil {
 		return err
@@ -49,7 +62,7 @@ func (s *BusyTimeService) Create(ctx context.Context, request *dto.BusyTimeReque
 	return s.Repository.Create(ctx, model)
 }
 
-func (s *BusyTimeService) CreateFromSubpackage(ctx context.Context, request *dto.BusyTimeRequest, subpackageId primitive.ObjectID) (*models.BusyTime, error) {
+func (s *BusyTimeService) CreateFromSubpackage(ctx context.Context, request *dto.BusyTimeStrictRequest, subpackageId primitive.ObjectID) (*models.BusyTime, error) {
 	subpackage, err := s.SubpackageRepo.GetById(ctx, subpackageId.Hex())
 	if err != nil {
 		return nil, err
@@ -58,7 +71,7 @@ func (s *BusyTimeService) CreateFromSubpackage(ctx context.Context, request *dto
 	// subpackage.Duration // minute
 	// set end time = start time + duration(in minute)
 	EndTime := request.StartTime.Add(time.Duration(subpackage.Duration) * time.Minute)
-	request.EndTime = &EndTime
+	request.EndTime = EndTime
 
 	pkg, err := s.PackageRepo.GetById(ctx, subpackage.PackageID.Hex())
 	if err != nil {

@@ -17,7 +17,7 @@ func AppointmentRoutes(router *gin.Engine, ctrl *controllers.AppointmentControll
 	customerRoutes := appointmentGroup.Group("", middleware.AllowRoles(models.Customer))
 	{
 		customerRoutes.POST("/:subpackageId", ctrl.CreateAppointment)
-		customerRoutes.PATCH("/:id", ctrl.UpdateAppointment)
+		// customerRoutes.PATCH("/:id", ctrl.UpdateAppointment)
 		customerRoutes.PATCH("/status/:id", ctrl.UpdateAppointmentStatus)
 	}
 
