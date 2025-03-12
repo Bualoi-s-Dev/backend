@@ -7,7 +7,6 @@ import (
 	"github.com/Bualoi-s-Dev/backend/routes"
 	"github.com/Bualoi-s-Dev/backend/services"
 	validators "github.com/Bualoi-s-Dev/backend/validator"
-	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 	"github.com/go-playground/validator/v10"
@@ -38,12 +37,13 @@ func SetupServer(client *mongo.Database) (*gin.Engine, *ServerRepositories, *Ser
 	r := gin.Default()
 	r.RemoveExtraSlash = true
 
-	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost:3000", "https://frontend-2gn.pages.dev/"},
-		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
-		AllowHeaders:     []string{"Origin", "Authorization", "Content-Type"},
-		AllowCredentials: true,
-	}))
+	// r.Use(cors.New(cors.Config{
+	// 	AllowOrigins:     []string{"http://localhost:3000", "https://frontend-2gn.pages.dev"},
+	// 	AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
+	// 	AllowHeaders:     []string{"Origin", "Authorization", "Content-Type"},
+	// 	AllowCredentials: true,
+	// }))
+	r.Use(configs.EnableCORS())
 
 	authClient := configs.InitializeFirebaseAuth()
 
