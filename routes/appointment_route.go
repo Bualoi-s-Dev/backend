@@ -13,11 +13,12 @@ func AppointmentRoutes(router *gin.Engine, ctrl *controllers.AppointmentControll
 	{
 		commonRoutes.GET("", ctrl.GetAllAppointment)
 		commonRoutes.GET("/:id", ctrl.GetAppointmentById)
+		commonRoutes.GET("/detail", ctrl.GetAllAppointmentDetail)
 	}
 	customerRoutes := appointmentGroup.Group("", middleware.AllowRoles(models.Customer))
 	{
 		customerRoutes.POST("/:subpackageId", ctrl.CreateAppointment)
-		customerRoutes.PATCH("/:id", ctrl.UpdateAppointment)
+		// customerRoutes.PATCH("/:id", ctrl.UpdateAppointment)
 		customerRoutes.PATCH("/status/:id", ctrl.UpdateAppointmentStatus)
 	}
 

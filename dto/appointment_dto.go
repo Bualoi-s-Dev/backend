@@ -42,9 +42,10 @@ func (req *AppointmenStrictRequest) ToModel(user *models.User, pkg *models.Packa
 		CustomerID:     user.ID,
 		PhotographerID: pkg.OwnerID,
 		PackageID:      pkg.ID,
-		SubPackageID:   subpackage.ID,
+		SubpackageID:   subpackage.ID,
 		BusyTimeID:     busyTime.ID,
 		Status:         "Pending",
 		Location:       req.Location,
+		Price:          subpackage.Price,
 	}
 }

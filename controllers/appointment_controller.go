@@ -10,6 +10,7 @@ import (
 	"github.com/Bualoi-s-Dev/backend/models"
 	"github.com/Bualoi-s-Dev/backend/services"
 	"github.com/gin-gonic/gin"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -61,6 +62,16 @@ func (a *AppointmentController) GetAllAppointment(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, appointments)
+}
+
+func (a *AppointmentController) GetAllAppointmentDetail(c *gin.Context) {
+	user := middleware.GetUserFromContext(c)
+	appointmentDetails, err := a.AppointmentService.GetAllAppointmentDetail(c, user)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, appointmentDetails)
 }
 
 // GetAppointmentById godoc
@@ -125,11 +136,10 @@ func (a *AppointmentController) CreateAppointment(c *gin.Context) {
 	}
 
 	busyTimeType := models.TypePhotographer
-	isValid := false
-	busyTimeReq := &dto.BusyTimeRequest{
-		Type:      &busyTimeType,
-		StartTime: &req.StartTime,
-		IsValid:   &isValid,
+	busyTimeReq := &dto.BusyTimeStrictRequest{
+		Type:      busyTimeType,
+		StartTime: req.StartTime,
+		IsValid:   false,
 	}
 
 	busyTime, err := a.BusyTimeService.CreateFromSubpackage(c.Request.Context(), busyTimeReq, subpackageId)
@@ -143,9 +153,10 @@ func (a *AppointmentController) CreateAppointment(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, appointment)
+	c.JSON(http.StatusCreated, bson.M{"appointment": appointment, "busyTime": busyTime})
 }
 
+/*
 // UpdateAppointment godoc
 // @Tags Appointment
 // @Summary Update appointment
@@ -241,6 +252,7 @@ func (a *AppointmentController) UpdateAppointment(c *gin.Context) {
 
 	c.JSON(http.StatusOK, updatedAppointment)
 }
+*/
 
 // UpdateAppointmentStatus godoc
 // @Tags Appointment
@@ -290,52 +302,27 @@ func (a *AppointmentController) UpdateAppointmentStatus(c *gin.Context) {
 		return
 	}
 
-	if appointment.Status == models.AppointmentAccepted && req.Status == models.AppointmentCanceled { // cannot canceled when appointment has begun
-		// If change from accepted to canceled => must change isValid of busy time to false
-
-		// TODO: Change this to function later { <--- all maybe create a **BusyTimeService.Update**
-		// Note this just update only isValid
-		if err := a.BusyTimeService.Delete(c, busyTime.ID.Hex()); err != nil {
-			apperrors.HandleError(c, err, "(Update Status) Could not delete appointment before update")
-		}
-
-		busyTimeIsValid := false
-		busyTimeReq := &dto.BusyTimeRequest{
-			Type:      &busyTime.Type,
-			StartTime: &busyTime.StartTime,
-			IsValid:   &busyTimeIsValid,
-		}
-
-		if err := a.BusyTimeService.Create(c, busyTimeReq, appointment.PhotographerID); err != nil {
-			apperrors.HandleError(c, err, "(Update Status) Could not re-create appointment")
-			return
-		}
-		// } ENDTODO:
-
+	var validStatus bool
+	if appointment.Status == models.AppointmentAccepted && req.Status == models.AppointmentCanceled {
+		validStatus = false
+	} else if appointment.Status == models.AppointmentPending && req.Status == models.AppointmentAccepted {
+		validStatus = true // from "Pending" to "Accepted" => isValid = true (reserve a photographer busyTime)
 	}
 
-	// TODO: if change from "pending" -> "accepted" (only phtoographer) => must change isValid of busy time to true
-	if appointment.Status == models.AppointmentPending && req.Status == models.AppointmentAccepted {
+	oldID := busyTime.ID
+	if err := a.BusyTimeService.Delete(c, oldID.Hex()); err != nil {
+		apperrors.HandleError(c, err, "(Update Status) Could not delete appointment before update")
+	}
 
-		// TODO: Change this to function later { <--- all maybe create a **BusyTimeService.Update**
-		// Note this just update only isValid
-		if err := a.BusyTimeService.Delete(c, busyTime.ID.Hex()); err != nil {
-			apperrors.HandleError(c, err, "(Update Status) Could not delete appointment before update")
-		}
+	busyTimeReq := &dto.BusyTimeStrictRequest{
+		Type:      busyTime.Type,
+		StartTime: busyTime.StartTime,
+		IsValid:   validStatus,
+	}
 
-		busyTimeIsValid := true
-		busyTimeReq := &dto.BusyTimeRequest{
-			Type:      &busyTime.Type,
-			StartTime: &busyTime.StartTime,
-			IsValid:   &busyTimeIsValid,
-		}
-
-		if err := a.BusyTimeService.Create(c, busyTimeReq, appointment.PhotographerID); err != nil {
-			apperrors.HandleError(c, err, "(Update Status) Could not re-create appointment")
-			return
-		}
-		// } ENDTODO:
-
+	if err := a.BusyTimeService.CreateForUpdate(c, busyTimeReq, oldID, appointment.PhotographerID); err != nil {
+		apperrors.HandleError(c, err, "(Update Status) Could not re-create appointment")
+		return
 	}
 
 	updatedAppointment, err := a.AppointmentService.UpdateAppointmentStatus(c.Request.Context(), user, appointment, &req)
