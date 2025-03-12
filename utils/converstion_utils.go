@@ -46,7 +46,12 @@ func StructToBsonMap(req interface{}) (bson.M, error) {
 		}
 
 		// Check for zero values (nil, empty strings, empty slices, empty maps)
-		if isZeroValue(fieldVal) {
+		// if isZeroValue(fieldVal) {
+		// 	continue
+		// }
+
+		// Check for nil values
+		if isNil(fieldVal) {
 			continue
 		}
 
@@ -67,21 +72,34 @@ func parseBsonTag(tag string) string {
 }
 
 // isZeroValue checks if a field is a zero value (nil, empty string, empty slice, empty map)
-func isZeroValue(v reflect.Value) bool {
+// func isZeroValue(v reflect.Value) bool {
+// 	if !v.IsValid() {
+// 		return true
+// 	}
+
+// 	switch v.Kind() {
+// 	case reflect.String:
+// 		return v.Len() == 0
+// 	case reflect.Slice, reflect.Map:
+// 		return v.IsNil() || v.Len() == 0
+// 	case reflect.Ptr, reflect.Interface:
+// 		return v.IsNil() // Ensure we handle nil pointers properly
+// 	case reflect.Bool:
+// 		return false
+// 	default:
+// 		return v.IsZero()
+// 	}
+// }
+
+func isNil(v reflect.Value) bool {
 	if !v.IsValid() {
 		return true
 	}
 
-	switch v.Kind() {
-	case reflect.String:
-		return v.Len() == 0
-	case reflect.Slice, reflect.Map:
-		return v.IsNil() || v.Len() == 0
-	case reflect.Ptr, reflect.Interface:
-		return v.IsNil() // Ensure we handle nil pointers properly
-	default:
-		return v.IsZero()
+	if v.Kind() == reflect.Ptr {
+		return v.IsNil()
 	}
+	return false
 }
 
 func SafeString(str *string) string {
