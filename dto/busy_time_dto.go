@@ -16,6 +16,7 @@ type BusyTimeRequest struct {
 
 func (item *BusyTimeRequest) ToModel(photographerID primitive.ObjectID) *models.BusyTime {
 	return &models.BusyTime{
+		ID:             primitive.NewObjectID(),
 		PhotographerID: photographerID,
 		Type:           *item.Type,
 		StartTime:      *item.StartTime,
