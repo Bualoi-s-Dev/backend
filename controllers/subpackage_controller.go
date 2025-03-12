@@ -57,7 +57,7 @@ func (ctrl *SubpackageController) GetByIdSubpackages(c *gin.Context) {
 	id := c.Param("id")
 	item, err := ctrl.Service.GetById(c.Request.Context(), id)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch items, " + err.Error()})
+		c.JSON(http.StatusNotFound, gin.H{"error": "Failed to fetch items, " + err.Error()})
 		return
 	}
 
@@ -160,6 +160,11 @@ func (ctrl *SubpackageController) UpdateSubpackage(c *gin.Context) {
 // @Router /subpackage/{id} [DELETE]
 func (ctrl *SubpackageController) DeleteSubpackage(c *gin.Context) {
 	id := c.Param("id")
+	if _, err := ctrl.Service.GetById(c.Request.Context(), id); err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Failed to fetch item, " + err.Error()})
+		return
+	}
+
 	if err := ctrl.Service.Delete(c.Request.Context(), id); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete item, " + err.Error()})
 		return

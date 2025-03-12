@@ -142,7 +142,7 @@ func (uc *UserController) UpdateUserProfile(c *gin.Context) {
 // @Failure 400 {object} string "Bad Request"
 // @Router /user/busytime [post]
 func (uc *UserController) CreateUserBusyTime(c *gin.Context) {
-	var busyTimeRequest dto.BusyTimeRequest
+	var busyTimeRequest dto.BusyTimeStrictRequest
 	if err := c.ShouldBindJSON(&busyTimeRequest); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request, " + err.Error()})
 		return

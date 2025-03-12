@@ -3,7 +3,6 @@ package services
 import (
 	"context"
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/Bualoi-s-Dev/backend/dto"
@@ -180,25 +179,19 @@ func (s *SubpackageService) GetBusyTimeDateMap(ctx context.Context, subpackage m
 		endDate, _ := time.Parse("2006-01-02", subpackage.AvaliableEndDay)
 		dayRange = int(endDate.Sub(startDate).Hours()/24) + 1
 	}
-	fmt.Println("dayRange", dayRange)
-	fmt.Println("startDate", startDate)
-	fmt.Println("busyTimes", busyTimes)
 	for _, busyTime := range busyTimes {
 		for i := 0; i < dayRange; i++ {
 			date := startDate.AddDate(0, 0, i).Format("2006-01-02")
 
 			if !(busyTime.StartTime.Before(startDate) && busyTime.EndTime.After(startDate)) {
-				fmt.Println("skip this time", busyTime.StartTime, busyTime.EndTime, startDate)
 				continue
 			}
 
-			fmt.Println("add this time", busyTime.StartTime, busyTime.EndTime, startDate)
 			if _, ok := mapBusyTime[date]; !ok {
 				mapBusyTime[date] = []models.BusyTime{}
 			}
 			mapBusyTime[date] = append(mapBusyTime[date], busyTime)
 		}
 	}
-	fmt.Println("mapBusyTime", mapBusyTime)
 	return mapBusyTime, nil
 }
