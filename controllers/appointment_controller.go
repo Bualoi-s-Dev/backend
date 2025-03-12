@@ -309,6 +309,12 @@ func (a *AppointmentController) UpdateAppointmentStatus(c *gin.Context) {
 		return
 	}
 
+	// TODO: refactor in route later
+	if user.Role == models.Customer && req.Status == models.AppointmentAccepted {
+		apperrors.HandleError(c, apperrors.ErrUnauthorized, "Customer can't accepted an appointment.")
+		return
+	}
+
 	var validStatus bool
 	if appointment.Status == models.AppointmentAccepted && req.Status == models.AppointmentCanceled {
 		validStatus = false
