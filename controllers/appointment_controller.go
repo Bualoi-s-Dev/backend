@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"fmt"
 	"net/http"
 	"time"
 
@@ -122,7 +123,9 @@ func (a *AppointmentController) CreateAppointment(c *gin.Context) {
 
 	subpackageId, err := getSubpackageIDFromParam(c)
 	if err != nil {
+		fmt.Println("Cannot get Subpackage ID From Param")
 		apperrors.HandleError(c, err, "Cannot get subpackageId from param")
+		return
 	}
 	var req dto.AppointmentStrictRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -144,11 +147,14 @@ func (a *AppointmentController) CreateAppointment(c *gin.Context) {
 
 	busyTime, err := a.BusyTimeService.CreateFromSubpackage(c.Request.Context(), busyTimeReq, subpackageId)
 	if err != nil {
+		fmt.Println("Cannot Create Busy Time from Subpackage!!")
 		apperrors.HandleError(c, err, "Cannot create BusyTime")
+		return
 	}
 
 	appointment, err := a.AppointmentService.CreateOneAppointment(c.Request.Context(), user, subpackageId, busyTime, &req)
 	if err != nil {
+		fmt.Println("Cannot create Appointment!!!")
 		apperrors.HandleError(c, err, "Cannot create this appointment")
 		return
 	}
@@ -288,6 +294,7 @@ func (a *AppointmentController) UpdateAppointmentStatus(c *gin.Context) {
 	appointment, err := a.AppointmentService.GetAppointmentById(c.Request.Context(), user, appointmentId)
 	if err != nil {
 		apperrors.HandleError(c, err, "Cannot get the appointment from this appointmentId")
+		return
 	}
 
 	busyTime, err := a.BusyTimeService.GetById(c.Request.Context(), appointment.BusyTimeID.Hex())
