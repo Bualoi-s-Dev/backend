@@ -178,7 +178,7 @@ func (s *SubpackageScenario) theSubpackageIsCreated() error {
 		Description:        "1234556",
 		Price:              123,
 		Duration:           23,
-		IsInf:              true,
+		IsInf:              false,
 		RepeatedDay:        []models.DayName{models.Sunday, models.Wednesday},
 		AvaliableStartTime: "15:11",
 		AvaliableEndTime:   "16:00",
