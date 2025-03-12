@@ -23,7 +23,7 @@ func NewSubpackageController(service *services.SubpackageService, packageService
 // @Summary Get all subpackages
 // @Description Get all subpackages
 // @Tags Subpackage
-// @Success 200 {object} []models.Subpackage
+// @Success 200 {object} []dto.SubpackageResponse
 // @Failure 400 {object} string "Bad Request"
 // @Router /subpackage [GET]
 func (ctrl *SubpackageController) GetAllSubpackages(c *gin.Context) {
@@ -50,7 +50,7 @@ func (ctrl *SubpackageController) GetAllSubpackages(c *gin.Context) {
 // @Description Get subpackages by ID
 // @Param id path string true "Subpackage ID"
 // @Tags Subpackage
-// @Success 200 {object} models.Subpackage
+// @Success 200 {object} dto.SubpackageResponse
 // @Failure 400 {object} string "Bad Request"
 // @Router /subpackage/{id} [GET]
 func (ctrl *SubpackageController) GetByIdSubpackages(c *gin.Context) {
@@ -75,7 +75,7 @@ func (ctrl *SubpackageController) GetByIdSubpackages(c *gin.Context) {
 // @Tags Subpackage
 // @Param packageId path string true "Package ID"
 // @Param request body dto.SubpackageRequest true "Create Subpackage Request"
-// @Success 200 {object} models.Subpackage
+// @Success 200 {object} dto.SubpackageResponse
 // @Failure 400 {object} string "Bad Request"
 // @Router /subpackage/{packageId} [POST]
 func (ctrl *SubpackageController) CreateSubpackage(c *gin.Context) {
@@ -120,7 +120,7 @@ func (ctrl *SubpackageController) CreateSubpackage(c *gin.Context) {
 // @Tags Subpackage
 // @Param id path string true "Subpackage ID"
 // @Param request body dto.SubpackageRequest true "Update Subpackage Request"
-// @Success 200 {object} models.Subpackage
+// @Success 200 {object} dto.SubpackageResponse
 // @Failure 400 {object} string "Bad Request"
 // @Router /subpackage/{id} [PATCH]
 func (ctrl *SubpackageController) UpdateSubpackage(c *gin.Context) {

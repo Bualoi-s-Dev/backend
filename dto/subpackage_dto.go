@@ -3,6 +3,7 @@ package dto
 import (
 	"github.com/Bualoi-s-Dev/backend/models"
 	"github.com/Bualoi-s-Dev/backend/utils"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type SubpackageRequest struct {
@@ -20,10 +21,12 @@ type SubpackageRequest struct {
 }
 
 type SubpackageResponse struct {
-	Title       string `bson:"title" json:"title" binding:"omitempty" example:"Wedding Bliss Package"`
-	Description string `bson:"description" json:"description" binding:"omitempty" example:"This is a package for wedding"`
-	Price       int    `bson:"price" json:"price" binding:"omitempty" example:"10000"`
-	Duration    int    `bson:"duration" json:"duration" binding:"omitempty" example:"60" description:"Duration in minutes"`
+	ID          primitive.ObjectID `bson:"_id,omitempty" json:"id" ts_type:"string" example:"12345678abcd"`
+	PackageID   primitive.ObjectID `bson:"package_id,omitempty" json:"packageId" ts_type:"string" example:"12345678abcd"`
+	Title       string             `bson:"title" json:"title" binding:"omitempty" example:"Wedding Bliss Package"`
+	Description string             `bson:"description" json:"description" binding:"omitempty" example:"This is a package for wedding"`
+	Price       int                `bson:"price" json:"price" binding:"omitempty" example:"10000"`
+	Duration    int                `bson:"duration" json:"duration" binding:"omitempty" example:"60" description:"Duration in minutes"`
 
 	IsInf              bool             `bson:"is_inf" json:"isInf" binding:"omitempty,isInf_rule" example:"false"`
 	RepeatedDay        []models.DayName `bson:"repeated_day" json:"repeatedDay" binding:"omitempty,day_names" example:"MON,TUE,WED"`
@@ -33,6 +36,9 @@ type SubpackageResponse struct {
 	AvaliableEndDay    string           `bson:"avaliable_end_day" json:"avaliableEndDay" binding:"omitempty,date_format" example:"2021-12-31"`
 
 	BusyTimes []models.BusyTime `bson:"busy_times" json:"busyTimes" binding:"omitempty"`
+
+	// TODO: remove this field
+	BusyTimeMap map[string][]models.BusyTime `bson:"busy_time_map" json:"busyTimeMap" binding:"omitempty"`
 }
 
 func (item *SubpackageRequest) ToModel() *models.Subpackage {

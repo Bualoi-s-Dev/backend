@@ -3,8 +3,7 @@ package services
 import (
 	"context"
 	"errors"
-	"slices"
-	"strings"
+	"fmt"
 	"time"
 
 	"github.com/Bualoi-s-Dev/backend/dto"
@@ -97,34 +96,46 @@ func (s *SubpackageService) FindIntersectBusyTime(ctx context.Context, subpackag
 		return nil, err
 	}
 
-	intersectBusyTime := []models.BusyTime{}
-	for _, busyTime := range busyTimes {
-		// Check weekday
-		dayBusyTime := strings.ToUpper(busyTime.StartTime.Weekday().String()[0:3])
-		if !slices.Contains(subpackage.RepeatedDay, models.DayName(dayBusyTime)) {
-			continue
-		}
+	// TODO: Add intersect busy time
+	// intersectBusyTime := []models.BusyTime{}
+	// for _, busyTime := range busyTimes {
+	// 	isIntersect, err := s.IsIntersect(subpackage, &busyTime)
+	// 	if err != nil {
+	// 		return nil, err
+	// 	}
+	// 	if isIntersect {
+	// 		intersectBusyTime = append(intersectBusyTime, busyTime)
+	// 	}
+	// }
 
-		// Check date
-		avaliableStartDay, _ := time.Parse("2006-01-02", subpackage.AvaliableStartDay)
-		avaliableEndDay, _ := time.Parse("2006-01-02", subpackage.AvaliableEndDay)
-		if !subpackage.IsInf && (busyTime.StartTime.Before(avaliableStartDay) || busyTime.EndTime.After(avaliableEndDay)) {
-			continue
-		}
+	return busyTimes, nil
+}
 
-		// Check time
-		avaliableStartMinute := utils.TimeToMinutes(subpackage.AvaliableStartTime)
-		avaliableEndMinute := utils.TimeToMinutes(subpackage.AvaliableEndTime)
+func (s *SubpackageService) IsIntersect(subpackage *models.Subpackage, busyTime *models.BusyTime) (bool, error) {
+	// TODO: Implement this method
+	// // Check date
+	// avaliableStartDay, _ := time.Parse("2006-01-02", subpackage.AvaliableStartDay)
+	// avaliableEndDay, _ := time.Parse("2006-01-02", subpackage.AvaliableEndDay)
+	// if !subpackage.IsInf && (busyTime.StartTime.Before(avaliableStartDay) || busyTime.EndTime.After(avaliableEndDay)) {
+	// 	continue
+	// }
 
-		busyStartMinute := utils.TimeToMinutes(busyTime.StartTime.Format("15:04"))
-		busyEndMinute := utils.TimeToMinutes(busyTime.EndTime.Format("15:04"))
-		if (busyStartMinute < avaliableStartMinute) || (busyEndMinute > avaliableEndMinute) {
-			continue
-		}
-		intersectBusyTime = append(intersectBusyTime, busyTime)
-	}
+	// // Check weekday
+	// dayBusyTime := strings.ToUpper(busyTime.StartTime.Weekday().String()[0:3])
+	// if !slices.Contains(subpackage.RepeatedDay, models.DayName(dayBusyTime)) {
+	// 	continue
+	// }
 
-	return intersectBusyTime, nil
+	// // Check time
+	// avaliableStartMinute := utils.TimeToMinutes(subpackage.AvaliableStartTime)
+	// avaliableEndMinute := utils.TimeToMinutes(subpackage.AvaliableEndTime)
+
+	// busyStartMinute := utils.TimeToMinutes(busyTime.StartTime.Format("15:04"))
+	// busyEndMinute := utils.TimeToMinutes(busyTime.EndTime.Format("15:04"))
+	// if (busyStartMinute < avaliableStartMinute) || (busyEndMinute > avaliableEndMinute) {
+	// 	continue
+	// }
+	return false, nil
 }
 
 func (s *SubpackageService) MappedToSubpackageResponse(ctx context.Context, subpackage *models.Subpackage) (*dto.SubpackageResponse, error) {
@@ -132,7 +143,13 @@ func (s *SubpackageService) MappedToSubpackageResponse(ctx context.Context, subp
 	if err != nil {
 		return nil, err
 	}
+	busyTimeMap, err := s.GetBusyTimeDateMap(ctx, *subpackage, busyTime)
+	if err != nil {
+		return nil, err
+	}
 	return &dto.SubpackageResponse{
+		ID:                 subpackage.ID,
+		PackageID:          subpackage.PackageID,
 		Title:              subpackage.Title,
 		Description:        subpackage.Description,
 		Price:              subpackage.Price,
@@ -143,6 +160,45 @@ func (s *SubpackageService) MappedToSubpackageResponse(ctx context.Context, subp
 		AvaliableEndTime:   subpackage.AvaliableEndTime,
 		AvaliableStartDay:  subpackage.AvaliableStartDay,
 		AvaliableEndDay:    subpackage.AvaliableEndDay,
-		BusyTimes:          busyTime,
+		// TODO: Change this to busyTimes
+		BusyTimes:   []models.BusyTime{},
+		BusyTimeMap: busyTimeMap,
 	}, nil
+}
+
+// TODO: Remove this temp function
+func (s *SubpackageService) GetBusyTimeDateMap(ctx context.Context, subpackage models.Subpackage, busyTimes []models.BusyTime) (map[string][]models.BusyTime, error) {
+	var mapBusyTime = make(map[string][]models.BusyTime)
+
+	var dayRange int
+	var startDate time.Time
+	if subpackage.IsInf {
+		dayRange = 30
+		startDate = time.Now()
+	} else {
+		startDate, _ = time.Parse("2006-01-02", subpackage.AvaliableStartDay)
+		endDate, _ := time.Parse("2006-01-02", subpackage.AvaliableEndDay)
+		dayRange = int(endDate.Sub(startDate).Hours()/24) + 1
+	}
+	fmt.Println("dayRange", dayRange)
+	fmt.Println("startDate", startDate)
+	fmt.Println("busyTimes", busyTimes)
+	for _, busyTime := range busyTimes {
+		for i := 0; i < dayRange; i++ {
+			date := startDate.AddDate(0, 0, i).Format("2006-01-02")
+
+			if !(busyTime.StartTime.Before(startDate) && busyTime.EndTime.After(startDate)) {
+				fmt.Println("skip this time", busyTime.StartTime, busyTime.EndTime, startDate)
+				continue
+			}
+
+			fmt.Println("add this time", busyTime.StartTime, busyTime.EndTime, startDate)
+			if _, ok := mapBusyTime[date]; !ok {
+				mapBusyTime[date] = []models.BusyTime{}
+			}
+			mapBusyTime[date] = append(mapBusyTime[date], busyTime)
+		}
+	}
+	fmt.Println("mapBusyTime", mapBusyTime)
+	return mapBusyTime, nil
 }
