@@ -1,17 +1,19 @@
-package models
+package validators
 
 import (
 	"time"
 
+	"github.com/Bualoi-s-Dev/backend/dto"
+	"github.com/Bualoi-s-Dev/backend/models"
 	"github.com/go-playground/validator/v10"
 )
 
 // ValidatePackageType checks if the PackageType is valid
 func ValidatePackageType(fl validator.FieldLevel) bool {
-	value := fl.Field().Interface().(PackageType)
+	value := fl.Field().Interface().(models.PackageType)
 
 	// Check if the value exists in the validPackageTypes slice
-	for _, validType := range ValidPackageTypes {
+	for _, validType := range models.ValidPackageTypes {
 		if value == validType.Value {
 			return true
 		}
@@ -22,10 +24,10 @@ func ValidatePackageType(fl validator.FieldLevel) bool {
 
 // ValidateBankname checks if the BankName is valid
 func ValidateBankName(fl validator.FieldLevel) bool {
-	value := fl.Field().Interface().(BankName)
+	value := fl.Field().Interface().(models.BankName)
 
 	// Check if the value exists in the validBankNames slice
-	for _, validBank := range ValidBankNames {
+	for _, validBank := range models.ValidBankNames {
 		if value == validBank.Value {
 			return true
 		}
@@ -36,10 +38,10 @@ func ValidateBankName(fl validator.FieldLevel) bool {
 
 // ValidateBankname checks if the UserRole is valid
 func ValidateUserRole(fl validator.FieldLevel) bool {
-	value := fl.Field().Interface().(UserRole)
+	value := fl.Field().Interface().(models.UserRole)
 
 	// Check if the value exists in the validBankNames slice
-	for _, validRole := range ValidUserRoles {
+	for _, validRole := range models.ValidUserRoles {
 		if value == validRole.Value {
 			return true
 		}
@@ -50,10 +52,10 @@ func ValidateUserRole(fl validator.FieldLevel) bool {
 
 // ValidateAppointmentStatus check if AppointmentStatus is valid
 func ValidateAppointmentStatus(fl validator.FieldLevel) bool {
-	value := fl.Field().Interface().(AppointmentStatus)
+	value := fl.Field().Interface().(models.AppointmentStatus)
 
 	// Check if the value exists in the validBankNames slice
-	for _, validStatus := range ValidAppointmentStatus {
+	for _, validStatus := range models.ValidAppointmentStatus {
 		if value == validStatus.Value {
 			return true
 		}
@@ -62,11 +64,11 @@ func ValidateAppointmentStatus(fl validator.FieldLevel) bool {
 }
 
 func ValidateDayNames(fl validator.FieldLevel) bool {
-	field := fl.Field().Interface().([]DayName)
+	field := fl.Field().Interface().([]models.DayName)
 
 	for _, day := range field {
 		isValid := false
-		for _, validDay := range ValidDayNames {
+		for _, validDay := range models.ValidDayNames {
 			if day == validDay.Value {
 				isValid = true
 				break
@@ -88,23 +90,47 @@ func ValidateTime(fl validator.FieldLevel) bool {
 
 // Validate date format
 func ValidateDate(fl validator.FieldLevel) bool {
-	value := fl.Field().Interface().(string)
+	value, ok := fl.Field().Interface().(string)
+	if !ok || value == "" {
+		return true // Allow empty values (handled separately by isInf rule)
+	}
 	_, err := time.Parse("2006-01-02", value)
 	return err == nil
 }
 
 // ValidateBusyTimeType checks if the BusyTimeType is valid
 func ValidateBusyTimeType(fl validator.FieldLevel) bool {
-	value := fl.Field().Interface().(BusyTimeType)
+	value := fl.Field().Interface().(models.BusyTimeType)
 
 	// Check if the value exists in the validBankNames slice
-	for _, validType := range ValidBusyTimeTypes {
+	for _, validType := range models.ValidBusyTimeTypes {
 		if value == validType.Value {
 			return true
 		}
 	}
 
 	return false
+}
+
+// Custom validation function
+func IsInfRule(fl validator.FieldLevel) bool {
+	req, ok := fl.Parent().Interface().(dto.SubpackageRequest)
+	if !ok {
+		return false
+	}
+
+	// If IsInf is true, start & end days can be empty
+	if req.IsInf != nil && *req.IsInf {
+		return true
+	}
+
+	// If IsInf is false, both fields must be non-empty
+	if req.IsInf != nil && !*req.IsInf {
+		return req.AvaliableStartDay != nil && *req.AvaliableStartDay != "" &&
+			req.AvaliableEndDay != nil && *req.AvaliableEndDay != ""
+	}
+
+	return true
 }
 
 // RegisterCustomValidators registers custom validators to the validator
@@ -118,4 +144,5 @@ func RegisterCustomValidators(v *validator.Validate) {
 	v.RegisterValidation("time_format", ValidateTime)
 	v.RegisterValidation("date_format", ValidateDate)
 	v.RegisterValidation("busy_time_type", ValidateBusyTimeType)
+	v.RegisterValidation("isInf_rule", IsInfRule)
 }
