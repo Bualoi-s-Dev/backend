@@ -311,7 +311,7 @@ func (a *AppointmentController) UpdateAppointmentStatus(c *gin.Context) {
 
 	// TODO: refactor in route later
 	if user.Role == models.Customer && req.Status == models.AppointmentAccepted {
-		apperrors.HandleError(c, apperrors.ErrUnauthorized, "Customer can't accepted ")
+		apperrors.HandleError(c, apperrors.ErrUnauthorized, "Customer can't accepted an appointment.")
 		return
 	}
 
