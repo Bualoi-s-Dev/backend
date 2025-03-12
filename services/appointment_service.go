@@ -101,7 +101,7 @@ func (s *AppointmentService) GetAppointmentById(ctx context.Context, user *model
 	return appointment, nil
 }
 
-func (s *AppointmentService) CreateOneAppointment(ctx context.Context, user *models.User, subpackageId primitive.ObjectID, busyTime *models.BusyTime, req *dto.AppointmenStrictRequest) (*models.Appointment, error) {
+func (s *AppointmentService) CreateOneAppointment(ctx context.Context, user *models.User, subpackageId primitive.ObjectID, busyTime *models.BusyTime, req *dto.AppointmentStrictRequest) (*models.Appointment, error) {
 	subpackage, err := s.SubpackageRepo.GetById(ctx, subpackageId.Hex())
 	if err != nil {
 		return nil, err

@@ -31,11 +31,11 @@ func main() {
 	converter.
 		Add(models.BusyTime{}).
 		Add(dto.BusyTimeRequest{}).
+		Add(dto.BusyTimeStrictRequest{}).
 		AddEnum(models.ValidBusyTimeTypes)
-
 	converter.
 		Add(dto.AppointmentRequest{}).
-		Add(dto.AppointmenStrictRequest{}).
+		Add(dto.AppointmentStrictRequest{}).
 		Add(dto.AppointmentUpdateStatusRequest{}).
 		Add(dto.AppointmentResponse{}).
 		AddEnum(models.ValidAppointmentStatus)
