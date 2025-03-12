@@ -17,9 +17,9 @@ type AppointmentUpdateStatusRequest struct {
 }
 
 type AppointmenStrictRequest struct {
-	StartTime time.Time                `bson:"start_time" json:"start_time" ts_type:"string" example:"2025-02-18T10:00:00Z"`
-	Status    models.AppointmentStatus `bson:"status" json:"status" example:"Pending" binding:"appointment_status"` // "pending", "accepted", "rejected", "completed"
-	Location  string                   `bson:"location" json:"location" example:"Bangkok, Thailand"`
+	StartTime time.Time `bson:"start_time" json:"start_time" ts_type:"string" example:"2025-02-18T10:00:00Z"`
+	// Status    models.AppointmentStatus `bson:"status" json:"status" example:"Pending" binding:"appointment_status"` // "pending", "accepted", "rejected", "completed"
+	Location string `bson:"location" json:"location" example:"Bangkok, Thailand"`
 }
 
 type AppointmentResponse struct {
