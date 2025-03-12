@@ -19,6 +19,7 @@ RUN mkdir -p /app/swagger-ui && \
 # Production stage
 FROM alpine:latest
 
+RUN apk add --no-cache tzdata
 # Create a non-root user
 RUN adduser -D -g '' appuser
 

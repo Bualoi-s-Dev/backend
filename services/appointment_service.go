@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"sort"
 
 	"github.com/Bualoi-s-Dev/backend/apperrors"
 
@@ -86,6 +87,19 @@ func (s *AppointmentService) GetAllAppointmentDetail(ctx context.Context, user *
 		}
 		appointmentDetails = append(appointmentDetails, detail)
 	}
+	sort.Slice(appointmentDetails, func(i, j int) bool {
+		statusOrder := map[string]int{
+			"Pending":   1,
+			"Accepted":  2,
+			"Completed": 3,
+			"Rejected":  4,
+			"Canceled":  5,
+		}
+		if statusOrder[string(appointmentDetails[i].Status)] != statusOrder[string(appointmentDetails[j].Status)] {
+			return statusOrder[string(appointmentDetails[i].Status)] < statusOrder[string(appointmentDetails[j].Status)]
+		}
+		return appointmentDetails[i].StartTime.Before(appointmentDetails[j].StartTime)
+	})
 	return appointmentDetails, nil
 }
 
