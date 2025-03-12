@@ -25,8 +25,8 @@ func main() {
 		AddEnum(models.ValidUserRoles).
 		AddEnum(models.ValidBankNames)
 	converter.
-		Add(models.Subpackage{}).
 		Add(dto.SubpackageRequest{}).
+		Add(dto.SubpackageResponse{}).
 		AddEnum(models.ValidDayNames)
 	converter.
 		Add(models.BusyTime{}).

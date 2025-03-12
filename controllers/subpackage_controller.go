@@ -23,7 +23,7 @@ func NewSubpackageController(service *services.SubpackageService, packageService
 // @Summary Get all subpackages
 // @Description Get all subpackages
 // @Tags Subpackage
-// @Success 200 {object} []models.Subpackage
+// @Success 200 {object} []dto.SubpackageResponse
 // @Failure 400 {object} string "Bad Request"
 // @Router /subpackage [GET]
 func (ctrl *SubpackageController) GetAllSubpackages(c *gin.Context) {
@@ -32,7 +32,17 @@ func (ctrl *SubpackageController) GetAllSubpackages(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch items, " + err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, items)
+
+	var responses []dto.SubpackageResponse
+	for _, item := range items {
+		res, err := ctrl.Service.MappedToSubpackageResponse(c, &item)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to map items, " + err.Error()})
+			return
+		}
+		responses = append(responses, *res)
+	}
+	c.JSON(http.StatusOK, responses)
 }
 
 // GetByIdSubpackages godoc
@@ -40,17 +50,23 @@ func (ctrl *SubpackageController) GetAllSubpackages(c *gin.Context) {
 // @Description Get subpackages by ID
 // @Param id path string true "Subpackage ID"
 // @Tags Subpackage
-// @Success 200 {object} models.Subpackage
+// @Success 200 {object} dto.SubpackageResponse
 // @Failure 400 {object} string "Bad Request"
 // @Router /subpackage/{id} [GET]
 func (ctrl *SubpackageController) GetByIdSubpackages(c *gin.Context) {
 	id := c.Param("id")
-	items, err := ctrl.Service.GetById(c.Request.Context(), id)
+	item, err := ctrl.Service.GetById(c.Request.Context(), id)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch items, " + err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, items)
+
+	response, err := ctrl.Service.MappedToSubpackageResponse(c, item)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to map items, " + err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, response)
 }
 
 // CreateSubpackage godoc
@@ -59,7 +75,7 @@ func (ctrl *SubpackageController) GetByIdSubpackages(c *gin.Context) {
 // @Tags Subpackage
 // @Param packageId path string true "Package ID"
 // @Param request body dto.SubpackageRequest true "Create Subpackage Request"
-// @Success 200 {object} models.Subpackage
+// @Success 200 {object} dto.SubpackageResponse
 // @Failure 400 {object} string "Bad Request"
 // @Router /subpackage/{packageId} [POST]
 func (ctrl *SubpackageController) CreateSubpackage(c *gin.Context) {
@@ -89,7 +105,13 @@ func (ctrl *SubpackageController) CreateSubpackage(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create item, " + err.Error()})
 		return
 	}
-	c.JSON(http.StatusCreated, item)
+
+	response, err := ctrl.Service.MappedToSubpackageResponse(c, item)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to map items, " + err.Error()})
+		return
+	}
+	c.JSON(http.StatusCreated, response)
 }
 
 // UpdateSubpackage godoc
@@ -98,7 +120,7 @@ func (ctrl *SubpackageController) CreateSubpackage(c *gin.Context) {
 // @Tags Subpackage
 // @Param id path string true "Subpackage ID"
 // @Param request body dto.SubpackageRequest true "Update Subpackage Request"
-// @Success 200 {object} models.Subpackage
+// @Success 200 {object} dto.SubpackageResponse
 // @Failure 400 {object} string "Bad Request"
 // @Router /subpackage/{id} [PATCH]
 func (ctrl *SubpackageController) UpdateSubpackage(c *gin.Context) {
@@ -119,7 +141,13 @@ func (ctrl *SubpackageController) UpdateSubpackage(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch item after updated, " + err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, item)
+
+	response, err := ctrl.Service.MappedToSubpackageResponse(c, item)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to map items, " + err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, response)
 }
 
 // DeleteSubpackage godoc
