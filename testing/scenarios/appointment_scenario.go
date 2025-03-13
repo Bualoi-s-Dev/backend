@@ -190,8 +190,8 @@ func (s *AppointmentScenario) theCustomerIsLoggedIn() error {
 
 func (s *AppointmentScenario) theCustomerCreatesAnAppointment() error {
 	reqBody, _ := json.Marshal(map[string]interface{}{
-		"start_time": "2030-02-21T10:30:00.000+00:00",
-		"location":   "Bangkok, Thailand",
+		"startTime": "2030-02-21T10:30:00.000+00:00",
+		"location":  "Bangkok, Thailand",
 	})
 	req, err := http.NewRequest("POST", s.Server.URL+"/appointment"+"/"+s.Subpackage.ID.Hex(), bytes.NewBuffer(reqBody))
 	if err != nil {
