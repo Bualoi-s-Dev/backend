@@ -41,11 +41,6 @@ func (s *BusyTimeService) CreateFromUser(ctx context.Context, request *dto.BusyT
 	return model, s.CreateFromModel(ctx, photographerId, model)
 }
 
-// func (s *BusyTimeService) CreateFromAppointment(ctx context.Context, request *dto.BusyTimeStrictRequest, photographerId primitive.ObjectID) error {
-// 	model := request.ToModel(photographerId)
-// 	return s.CreateFromModel(ctx, photographerId, model)
-// }
-
 func (s *BusyTimeService) CreateForUpdate(ctx context.Context, request *dto.BusyTimeStrictRequest, oldID, photographerId primitive.ObjectID) error {
 	model := request.ToModelUpdate(oldID, photographerId)
 	return s.CreateFromModel(ctx, photographerId, model)

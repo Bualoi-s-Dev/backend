@@ -8,7 +8,7 @@ import (
 )
 
 type AppointmentRequest struct { // cannot patch subpackage
-	StartTime *time.Time `bson:"start_time,omitempty" json:"start_time" ts_type:"string" example:"2025-02-18T10:00:00Z"`
+	StartTime *time.Time `bson:"start_time,omitempty" json:"startTime" ts_type:"string" example:"2025-02-18T10:00:00Z"`
 	Location  *string    `bson:"location,omitempty" json:"location" example:"Bangkok, Thailand"`
 }
 
@@ -17,7 +17,7 @@ type AppointmentUpdateStatusRequest struct {
 }
 
 type AppointmentStrictRequest struct {
-	StartTime time.Time `bson:"start_time" json:"start_time" ts_type:"string" example:"2025-02-18T10:00:00Z"`
+	StartTime time.Time `bson:"start_time" json:"startTime" ts_type:"string" example:"2025-02-18T10:00:00Z"`
 	// Status    models.AppointmentStatus `bson:"status" json:"status" example:"Pending" binding:"appointment_status"` // "pending", "accepted", "rejected", "completed"
 	Location string `bson:"location" json:"location" example:"Bangkok, Thailand"`
 }
@@ -29,7 +29,7 @@ type AppointmentResponse struct {
 	PackageID      string `bson:"package_id" json:"package_id" ts_type:"string" example:"656e2b5e3f1a3c4d8b9e6969"`
 	SubPackageID   string `bson:"sub_package_id" json:"sub_package_id" ts_type:"string" example:"656e2b5e3f1a3c4d8b9e4205"`
 
-	StartTime time.Time `bson:"start_time" json:"start_time" ts_type:"string" example:"2025-02-18T10:00:00Z"`
+	StartTime time.Time `bson:"start_time" json:"startTime" ts_type:"string" example:"2025-02-18T10:00:00Z"`
 	EndTime   time.Time `bson:"end_time" json:"end_time" ts_type:"string" example:"2025-02-18T12:00:00Z"`
 	Status    string    `bson:"status" json:"status" example:"Pending"` // "pending", "accepted", "rejected", "completed"
 	Location  string    `bson:"location,omitempty" json:"location" example:"Bangkok, Thailand"`
