@@ -31,17 +31,6 @@ func (item *BusyTimeRequest) ToModel(photographerID primitive.ObjectID) *models.
 	}
 }
 
-func (item *BusyTimeStrictRequest) ToModelUpdate(oldID, photographerID primitive.ObjectID) *models.BusyTime {
-	return &models.BusyTime{
-		ID:             oldID,
-		PhotographerID: photographerID,
-		Type:           item.Type,
-		StartTime:      item.StartTime,
-		EndTime:        item.EndTime,
-		IsValid:        item.IsValid,
-	}
-}
-
 func (item *BusyTimeStrictRequest) ToModel(photographerID primitive.ObjectID) *models.BusyTime {
 	return &models.BusyTime{
 		ID:             primitive.NewObjectID(),

@@ -22,18 +22,30 @@ type AppointmentStrictRequest struct {
 	Location string `bson:"location" json:"location" example:"Bangkok, Thailand"`
 }
 
-type AppointmentResponse struct {
-	ID             string `bson:"_id,omitempty" json:"id" ts_type:"string" example:"656e2b5e3f1a3c4d8b9e1234"`
-	CustomerID     string `bson:"user_id" json:"customer_id" ts_type:"string" example:"656e2b5e3f1a3c4d8b9e5678"`
-	PhotographerID string `bson:"photographer_id" json:"photographer_id" ts_type:"string" example:"656e2b5e3f1a3c4d8b9e91011"`
-	PackageID      string `bson:"package_id" json:"package_id" ts_type:"string" example:"656e2b5e3f1a3c4d8b9e6969"`
-	SubPackageID   string `bson:"sub_package_id" json:"sub_package_id" ts_type:"string" example:"656e2b5e3f1a3c4d8b9e4205"`
+type AppointmentDetailResponse struct {
+	ID               primitive.ObjectID       `bson:"_id,omitempty" json:"id" ts_type:"string" example:"656e2b5e3f1a3c4d8b9e1234"`
+	PackageName      string                   `bson:"package_name" json:"packageName" ts_type:"string" example:"Wedding Package"`
+	SubpackageName   string                   `bson:"subpackage_name" json:"subpackageName" ts_type:"string" example:"Wedding Subpackage"`
+	CustomerName     string                   `bson:"customer_name" json:"customerName" ts_type:"string" example:"John Doe"`
+	PhotographerName string                   `bson:"photographer_name" json:"photographerName" ts_type:"string" example:"Jane Smith"`
+	Price            int                      `bson:"price" json:"price" ts_type:"number" example:"1500"`
+	StartTime        time.Time                `bson:"start_time" json:"startTime" ts_type:"string" example:"2023-10-01T10:00:00Z"`
+	EndTime          time.Time                `bson:"end_time" json:"endTime" ts_type:"string" example:"2023-10-01T12:00:00Z"`
+	Status           models.AppointmentStatus `bson:"status" json:"status" ts_type:"string" example:"Pending"`
+	Location         string                   `bson:"location,omitempty" json:"location" ts_type:"string" example:"Bangkok, Thailand"`
+}
 
-	StartTime time.Time `bson:"start_time" json:"startTime" ts_type:"string" example:"2025-02-18T10:00:00Z"`
-	EndTime   time.Time `bson:"end_time" json:"end_time" ts_type:"string" example:"2025-02-18T12:00:00Z"`
-	Status    string    `bson:"status" json:"status" example:"Pending"` // "pending", "accepted", "rejected", "completed"
-	Location  string    `bson:"location,omitempty" json:"location" example:"Bangkok, Thailand"`
-	// Payment       Payment   `bson:"payment,omitempty" json:"payment,omitempty" example:"{...}"`
+type AppointmentResponse struct {
+	ID             primitive.ObjectID       `bson:"_id,omitempty" json:"id" ts_type:"string" example:"656e2b5e3f1a3c4d8b9e1234"`
+	CustomerID     primitive.ObjectID       `bson:"customer_id" json:"customerId" ts_type:"string" example:"656e2b5e3f1a3c4d8b9e1238"`
+	PhotographerID primitive.ObjectID       `bson:"photographer_id" json:"photographerId" ts_type:"string" example:"656e2b5e3f1a324d8b9e1236"`
+	PackageID      primitive.ObjectID       `bson:"package_id" json:"packageId" ts_type:"string" example:"656e2b5e3f1a3c4d8b9e1235"`
+	SubpackageID   primitive.ObjectID       `bson:"sub_package_id" json:"subpackageId" ts_type:"string" example:"656e2b5e3f1a3c4d8b9e9999"`
+	BusyTimeID     primitive.ObjectID       `bson:"busy_time_id" json:"busyTimeId" ts_type:"string" example:"656e2b5e3f1a3c4d8b9e7877"`
+	Status         models.AppointmentStatus `bson:"status" json:"status" binding:"appointment_status" ts_type:"string" example:"pending"`
+	Location       string                   `bson:"location,omitempty" json:"location" ts_type:"string" example:"Bangkok, Thailand"`
+	Price          int                      `bson:"price" json:"price" ts_type:"number" example:"1500"`
+	// Payment       Payment            `bson:"payment,omitempty" json:"payment,omitempty" example:"{...}"`
 }
 
 func (req *AppointmentStrictRequest) ToModel(user *models.User, pkg *models.Package, subpackage *models.Subpackage, busyTime *models.BusyTime) *models.Appointment {
