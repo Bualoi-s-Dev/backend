@@ -322,15 +322,17 @@ func (a *AppointmentController) UpdateAppointmentStatus(c *gin.Context) {
 		validStatus = true // from "Pending" to "Accepted" => isValid = true (reserve a photographer busyTime)
 	}
 
-	oldID := busyTime.ID
-	if err := a.BusyTimeService.Delete(c, oldID.Hex()); err != nil {
-		apperrors.HandleError(c, err, "(Update Status) Could not delete appointment before update")
-	}
-
 	busyTimeReq := &dto.BusyTimeStrictRequest{
 		Type:      busyTime.Type,
 		StartTime: busyTime.StartTime,
 		IsValid:   validStatus,
+	}
+
+	// FIXME: For overlapping case If one accept and reject another => error
+	oldID := busyTime.ID
+
+	if err := a.BusyTimeService.Delete(c, oldID.Hex()); err != nil {
+		apperrors.HandleError(c, err, "(Update Status) Could not delete appointment before update")
 	}
 
 	if err := a.BusyTimeService.CreateForUpdate(c, busyTimeReq, oldID, appointment.PhotographerID); err != nil {
