@@ -315,30 +315,31 @@ func (a *AppointmentController) UpdateAppointmentStatus(c *gin.Context) {
 		return
 	}
 
-	var validStatus bool
-	if appointment.Status == models.AppointmentAccepted && req.Status == models.AppointmentCanceled {
-		validStatus = false
-	} else if appointment.Status == models.AppointmentPending && req.Status == models.AppointmentAccepted {
+	validStatus := false
+	if appointment.Status == models.AppointmentPending && req.Status == models.AppointmentAccepted { // accept pending status
 		validStatus = true // from "Pending" to "Accepted" => isValid = true (reserve a photographer busyTime)
 	}
+	busyTime.IsValid = validStatus
 
-	busyTimeReq := &dto.BusyTimeStrictRequest{
-		Type:      busyTime.Type,
-		StartTime: busyTime.StartTime,
-		IsValid:   validStatus,
+	if err := a.BusyTimeService.UpdateValidStatus(c.Request.Context(), busyTime); err != nil {
+		apperrors.HandleError(c, err, "(Update Status) Could not update busyTime")
+		return
 	}
 
 	// FIXME: For overlapping case If one accept and reject another => error
-	oldID := busyTime.ID
 
-	if err := a.BusyTimeService.Delete(c, oldID.Hex()); err != nil {
-		apperrors.HandleError(c, err, "(Update Status) Could not delete appointment before update")
-	}
+	// if err := a.BusyTimeService.Delete(c, oldID.Hex()); err != nil {
+	// 	apperrors.HandleError(c, err, "(Update Status) Could not delete appointment before update")
+	// }
 
-	if err := a.BusyTimeService.CreateForUpdate(c, busyTimeReq, oldID, appointment.PhotographerID); err != nil {
-		apperrors.HandleError(c, err, "(Update Status) Could not re-create appointment")
-		return
-	}
+	// if err := a.BusyTimeService.Delete(c, oldID.Hex()); err != nil {
+	// 	apperrors.HandleError(c, err, "(Update Status) Could not delete appointment before update")
+	// }
+
+	// if err := a.BusyTimeService.CreateForUpdate(c, busyTimeReq, oldID, appointment.PhotographerID); err != nil {
+	// 	apperrors.HandleError(c, err, "(Update Status) Could not re-create appointment")
+	// 	return
+	// }
 
 	updatedAppointment, err := a.AppointmentService.UpdateAppointmentStatus(c.Request.Context(), user, appointment, &req)
 	if err != nil {
