@@ -111,18 +111,18 @@ func (s *SubpackageService) FindIntersectBusyTime(ctx context.Context, subpackag
 	return busyTimes, nil
 }
 
-func (s *BusyTimeService) IsIntersect(ctx context.Context, subpackage *Subpackage, busyTime *BusyTime) (bool, error) {
+func (s *BusyTimeService) IsIntersect(ctx context.Context, subpackage *models.Subpackage, busyTime *models.BusyTime) (bool, error) {
 	if subpackage == nil || busyTime == nil {
 		return false, errors.New("invalid input: subpackage or busyTime is nil")
 	}
 
 	// Parse subpackage available start and end time
 	layout := "15:04"
-	subStartTime, err := time.Parse(layout, subpackage.AvaliableStartTime)
+	_, err := time.Parse(layout, subpackage.AvaliableStartTime)
 	if err != nil {
 		return false, fmt.Errorf("invalid available start time format: %v", err)
 	}
-	subEndTime, err := time.Parse(layout, subpackage.AvaliableEndTime)
+	_, err = time.Parse(layout, subpackage.AvaliableEndTime)
 	if err != nil {
 		return false, fmt.Errorf("invalid available end time format: %v", err)
 	}
@@ -147,7 +147,7 @@ func (s *BusyTimeService) IsIntersect(ctx context.Context, subpackage *Subpackag
 	// Iterate over each day in the busy period
 	for d := busyTime.StartTime; d.Before(busyTime.EndTime) || d.Equal(busyTime.EndTime); d = d.Add(24 * time.Hour) {
 		for _, day := range subpackage.RepeatedDay {
-			if strings.EqualFold(day.String(), d.Weekday().String()) {
+			if string(day) == d.Weekday().String() {
 				// Determine busy time range for this specific day
 				var busyDayStart time.Time
 				var busyDayEnd time.Time
