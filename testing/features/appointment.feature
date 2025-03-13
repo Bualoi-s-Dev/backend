@@ -1,4 +1,4 @@
-Feature: EPIC7 Appointment
+Feature: EPIC7-1 Appointment
     As a customer,
     I can create appointments based on sub package and selected time slots,
     so that my schedule is organized.
