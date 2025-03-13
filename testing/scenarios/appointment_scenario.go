@@ -17,15 +17,11 @@ import (
 )
 
 type AppointmentScenario struct {
-	Server     *httptest.Server
-	Token      string
-	Package    *dto.PackageResponse
-	Subpackage *dto.SubpackageResponse
-	// TODO: change to new dto
-	Appointment struct {
-		Appointment models.Appointment `json:"appointment"`
-		BusyTime    models.BusyTime    `json:"busyTime"`
-	}
+	Server         *httptest.Server
+	Token          string
+	Package        *dto.PackageResponse
+	Subpackage     *dto.SubpackageResponse
+	Appointment    *dto.CreateAppointmentResponse
 	PhotographerID primitive.ObjectID
 	CustomerID     primitive.ObjectID
 }
@@ -210,15 +206,11 @@ func (s *AppointmentScenario) theCustomerCreatesAnAppointment() error {
 		return fmt.Errorf("failed to create appointment, status code: %d, response: %s", res.StatusCode, string(body))
 	}
 
-	// TODO: change to new dto
-	var appointment struct {
-		Appointment models.Appointment `json:"appointment"`
-		BusyTime    models.BusyTime    `json:"busyTime"`
-	}
+	var appointment dto.CreateAppointmentResponse
 	if err := json.NewDecoder(res.Body).Decode(&appointment); err != nil {
 		return err
 	}
-	s.Appointment = appointment
+	s.Appointment = &appointment
 	return nil
 }
 

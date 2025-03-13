@@ -116,7 +116,7 @@ func (a *AppointmentController) GetAppointmentById(c *gin.Context) {
 // @Description Create a new appointment from a specific subpackage
 // @Param subpackageId path string true "Subpackage ID"
 // @Body {AppointmenStrictRequest} request body "Create Appointment Request"
-// @Success 200 {object} dto.AppointmentResponse
+// @Success 200 {object} dto.CreateAppointmentResponse
 // @Failure 400 {object} string "Invalid appointment id"
 // @Failure 401 {object} string "Unauthorized"
 // @Failure 500 {object} string "Internal Server Error"

@@ -48,6 +48,11 @@ type AppointmentResponse struct {
 	// Payment       Payment            `bson:"payment,omitempty" json:"payment,omitempty" example:"{...}"`
 }
 
+type CreateAppointmentResponse struct {
+	Appointment AppointmentResponse `bson:"appointment" json:"appointment" ts_type:"AppointmentResponse" example:"{...}"`
+	BusyTime    models.BusyTime     `bson:"busy_time" json:"busyTime" ts_type:"BusyTime" example:"{...}"`
+}
+
 func (req *AppointmentStrictRequest) ToModel(user *models.User, pkg *models.Package, subpackage *models.Subpackage, busyTime *models.BusyTime) *models.Appointment {
 	return &models.Appointment{
 		ID:             primitive.NewObjectID(),
