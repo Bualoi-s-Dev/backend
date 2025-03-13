@@ -52,12 +52,15 @@ func (s *BusyTimeService) CreateForUpdate(ctx context.Context, request *dto.Busy
 }
 
 func (s *BusyTimeService) CreateFromModel(ctx context.Context, photographerId primitive.ObjectID, model *models.BusyTime) error {
-	isAvailable, err := s.IsPhotographerAvailable(ctx, photographerId, model.StartTime, model.EndTime, model.IsValid)
-	if err != nil {
-		return err
-	}
-	if !isAvailable {
-		return apperrors.ErrTimeOverlapped
+	// If the model reserves a photographer time it need to be validated
+	if model.IsValid {
+		isAvailable, err := s.IsPhotographerAvailable(ctx, photographerId, model.StartTime, model.EndTime)
+		if err != nil {
+			return err
+		}
+		if !isAvailable {
+			return apperrors.ErrTimeOverlapped
+		}
 	}
 	return s.Repository.Create(ctx, model)
 }
@@ -79,8 +82,8 @@ func (s *BusyTimeService) CreateFromSubpackage(ctx context.Context, request *dto
 	}
 
 	photographerId := pkg.OwnerID
-	model := request.ToModel(photographerId)                                                                 // when customer create first time
-	isAvailable, err := s.IsPhotographerAvailable(ctx, photographerId, model.StartTime, model.EndTime, true) // always check if it's new package
+	model := request.ToModel(photographerId)                                                           // when customer create first time
+	isAvailable, err := s.IsPhotographerAvailable(ctx, photographerId, model.StartTime, model.EndTime) // always validate if it's new package
 	if err != nil {
 		return nil, err
 	}
@@ -94,10 +97,7 @@ func (s *BusyTimeService) Delete(ctx context.Context, id string) error {
 	return s.Repository.DeleteOne(ctx, id)
 }
 
-func (s *BusyTimeService) IsPhotographerAvailable(ctx context.Context, photographerId primitive.ObjectID, startTime, endTime time.Time, isNewStatusValid bool) (bool, error) {
-	if !isNewStatusValid {
-		return true, nil
-	}
+func (s *BusyTimeService) IsPhotographerAvailable(ctx context.Context, photographerId primitive.ObjectID, startTime, endTime time.Time) (bool, error) {
 	busyTimes, err := s.Repository.GetByPhotographerIdValid(ctx, photographerId)
 	if err != nil {
 		return false, err
