@@ -65,6 +65,13 @@ func (a *AppointmentController) GetAllAppointment(c *gin.Context) {
 	c.JSON(http.StatusOK, appointments)
 }
 
+// GetAllAppointmentDetail godoc
+// @Tags Appointment
+// @Summary Get all available appointments with provided details
+// @Description Retrieve all available appointments detail that the user can see from the database
+// @Success 200 {array} dto.AppointmentDetailResponse
+// @Failure 401 {object} string "Unauthorized"
+// @Router /appointment/detail [get]
 func (a *AppointmentController) GetAllAppointmentDetail(c *gin.Context) {
 	user := middleware.GetUserFromContext(c)
 	appointmentDetails, err := a.AppointmentService.GetAllAppointmentDetail(c, user)
@@ -325,21 +332,6 @@ func (a *AppointmentController) UpdateAppointmentStatus(c *gin.Context) {
 		apperrors.HandleError(c, err, "(Update Status) Could not update busyTime")
 		return
 	}
-
-	// FIXME: For overlapping case If one accept and reject another => error
-
-	// if err := a.BusyTimeService.Delete(c, oldID.Hex()); err != nil {
-	// 	apperrors.HandleError(c, err, "(Update Status) Could not delete appointment before update")
-	// }
-
-	// if err := a.BusyTimeService.Delete(c, oldID.Hex()); err != nil {
-	// 	apperrors.HandleError(c, err, "(Update Status) Could not delete appointment before update")
-	// }
-
-	// if err := a.BusyTimeService.CreateForUpdate(c, busyTimeReq, oldID, appointment.PhotographerID); err != nil {
-	// 	apperrors.HandleError(c, err, "(Update Status) Could not re-create appointment")
-	// 	return
-	// }
 
 	updatedAppointment, err := a.AppointmentService.UpdateAppointmentStatus(c.Request.Context(), user, appointment, &req)
 	if err != nil {
