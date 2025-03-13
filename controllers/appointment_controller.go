@@ -138,7 +138,7 @@ func (a *AppointmentController) CreateAppointment(c *gin.Context) {
 		return
 	}
 
-	busyTimeType := models.TypePhotographer
+	busyTimeType := models.TypeAppointment
 	busyTimeReq := &dto.BusyTimeStrictRequest{
 		Type:      busyTimeType,
 		StartTime: req.StartTime,
