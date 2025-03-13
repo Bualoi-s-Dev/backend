@@ -1,6 +1,7 @@
 package configs
 
 import (
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -18,12 +19,13 @@ func EnableCORS() gin.HandlerFunc {
 		// Check if the origin is in the allowed list
 		allowed := false
 		for _, o := range allowedOrigins {
-			if o == origin {
+			if strings.EqualFold(o, origin) {
 				allowed = true
 				break
 			}
 		}
 
+		fmt.Println("Allow origin", allowed, origin)
 		// Set CORS headers if the origin is allowed
 		if allowed {
 			c.Writer.Header().Set("Access-Control-Allow-Origin", origin)
