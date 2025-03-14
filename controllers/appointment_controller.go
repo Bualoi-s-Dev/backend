@@ -297,6 +297,10 @@ func (a *AppointmentController) UpdateAppointmentStatus(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Cannot update status to Completed directly"})
 		return
 	}
+	if req.Status == models.AppointmentPending {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Cannot update status to Pending"})
+		return
+	}
 
 	appointment, err := a.AppointmentService.GetAppointmentById(c.Request.Context(), user, appointmentId)
 	if err != nil {
@@ -316,7 +320,13 @@ func (a *AppointmentController) UpdateAppointmentStatus(c *gin.Context) {
 		return
 	}
 
+	if appointment.Status == models.AppointmentAccepted && req.Status != models.AppointmentCanceled {
+		apperrors.HandleError(c, apperrors.ErrBadRequest, "Can change status to Canceled only if status is Accepted")
+		return
+	}
+
 	// TODO: refactor in route later
+	// Customer can't accept appointment
 	if user.Role == models.Customer && req.Status == models.AppointmentAccepted {
 		apperrors.HandleError(c, apperrors.ErrUnauthorized, "Customer can't accepted an appointment.")
 		return
@@ -327,6 +337,12 @@ func (a *AppointmentController) UpdateAppointmentStatus(c *gin.Context) {
 		validStatus = true // from "Pending" to "Accepted" => isValid = true (reserve a photographer busyTime)
 	}
 	busyTime.IsValid = validStatus
+
+	minimumAvailableCanceledTime := busyTime.StartTime.Add(-24 * time.Hour)
+	if req.Status == models.AppointmentCanceled && time.Now().After(minimumAvailableCanceledTime) {
+		apperrors.HandleError(c, apperrors.ErrBadRequest, "Cannot cancel an appointment before 24 hours")
+		return
+	}
 
 	if err := a.BusyTimeService.UpdateValidStatus(c.Request.Context(), busyTime); err != nil {
 		apperrors.HandleError(c, err, "(Update Status) Could not update busyTime")
