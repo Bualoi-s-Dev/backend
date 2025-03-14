@@ -26,6 +26,39 @@ func (s *SubpackageService) GetAll(ctx context.Context) ([]models.Subpackage, er
 	return s.Repository.GetAll(ctx)
 }
 
+func (s *SubpackageService) GetFilteredSubpackages(ctx context.Context, filters map[string]string) ([]dto.SubpackageResponse, error) {
+	items, err := s.GetAll(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	var responses []dto.SubpackageResponse
+	for _, item := range items {
+		pkg, err := s.PackageRepository.GetById(ctx, item.PackageID.Hex())
+		if err != nil {
+			return nil, err
+		}
+		if !s.passesFilters(pkg, item, filters) {
+			continue
+		}
+
+		res, err := s.MappedToSubpackageResponse(ctx, &item)
+		if err != nil {
+			return nil, err
+		}
+		responses = append(responses, *res)
+	}
+	return responses, nil
+}
+
+func (s *SubpackageService) passesFilters(pkg *models.Package, item models.Subpackage, filters map[string]string) bool {
+	return (filters["type"] == "" || string(pkg.Type) == filters["type"]) &&
+		(filters["avaliableStartTime"] == "" || item.AvaliableStartTime >= filters["avaliableStartTime"]) &&
+		(filters["avaliableEndTime"] == "" || item.AvaliableEndTime <= filters["avaliableEndTime"]) &&
+		(filters["avaliableStartDay"] == "" || item.AvaliableStartDay >= filters["avaliableStartDay"]) &&
+		(filters["avaliableEndDay"] == "" || item.AvaliableEndDay <= filters["avaliableEndDay"])
+}
+
 func (s *SubpackageService) GetById(ctx context.Context, id string) (*models.Subpackage, error) {
 	return s.Repository.GetById(ctx, id)
 }

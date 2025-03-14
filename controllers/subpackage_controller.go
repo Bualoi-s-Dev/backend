@@ -27,21 +27,22 @@ func NewSubpackageController(service *services.SubpackageService, packageService
 // @Failure 400 {object} string "Bad Request"
 // @Router /subpackage [GET]
 func (ctrl *SubpackageController) GetAllSubpackages(c *gin.Context) {
-	items, err := ctrl.Service.GetAll(c.Request.Context())
+	// Get query parameters for filtering
+	filters := map[string]string{
+		"type":               c.Query("type"),
+		"avaliableStartTime": c.Query("avaliableStartTime"),
+		"avaliableEndTime":   c.Query("avaliableEndTime"),
+		"avaliableStartDay":  c.Query("avaliableStartDay"),
+		"avaliableEndDay":    c.Query("avaliableEndDay"),
+	}
+
+	// Retrieve filtered subpackages
+	responses, err := ctrl.Service.GetFilteredSubpackages(c.Request.Context(), filters)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch items, " + err.Error()})
 		return
 	}
 
-	var responses []dto.SubpackageResponse
-	for _, item := range items {
-		res, err := ctrl.Service.MappedToSubpackageResponse(c, &item)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to map items, " + err.Error()})
-			return
-		}
-		responses = append(responses, *res)
-	}
 	c.JSON(http.StatusOK, responses)
 }
 
