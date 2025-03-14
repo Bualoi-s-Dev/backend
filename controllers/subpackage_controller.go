@@ -3,6 +3,7 @@ package controllers
 import (
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/Bualoi-s-Dev/backend/dto"
 	"github.com/Bualoi-s-Dev/backend/services"
@@ -36,8 +37,12 @@ func (ctrl *SubpackageController) GetAllSubpackages(c *gin.Context) {
 		"avaliableEndDay":    c.Query("avaliableEndDay"),
 	}
 
-	// Retrieve filtered subpackages
-	responses, err := ctrl.Service.GetFilteredSubpackages(c.Request.Context(), filters)
+	// Pagination parameters
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
+
+	// Retrieve and filter subpackages with pagination
+	responses, err := ctrl.Service.GetFilteredSubpackages(c.Request.Context(), filters, page, limit)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch items, " + err.Error()})
 		return
