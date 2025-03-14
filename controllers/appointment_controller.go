@@ -3,6 +3,7 @@ package controllers
 import (
 	"fmt"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/Bualoi-s-Dev/backend/apperrors"
@@ -55,13 +56,26 @@ func getSubpackageIDFromParam(c *gin.Context) (primitive.ObjectID, error) {
 // @Failure 401 {object} string "Unauthorized"
 // @Router /appointment [get]
 func (a *AppointmentController) GetAllAppointment(c *gin.Context) {
+	// Get query parameters for filtering
+	filters := map[string]string{
+		"status":            c.Query("status"),
+		"availableStartDay": c.Query("availableStartDay"),
+		"availableEndDay":   c.Query("availableEndDay"),
+	}
+
 	user := middleware.GetUserFromContext(c)
 
-	appointments, err := a.AppointmentService.GetAllAppointment(c.Request.Context(), user)
+	// Pagination parameters
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
+
+	// Retrieve and filter subpackages with pagination
+	appointments, err := a.AppointmentService.GetFilteredAppointments(c.Request.Context(), user, filters, page, limit)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch items, " + err.Error()})
 		return
 	}
+
 	c.JSON(http.StatusOK, appointments)
 }
 

@@ -31,10 +31,10 @@ func (ctrl *SubpackageController) GetAllSubpackages(c *gin.Context) {
 	// Get query parameters for filtering
 	filters := map[string]string{
 		"type":               c.Query("type"),
-		"avaliableStartTime": c.Query("avaliableStartTime"),
-		"avaliableEndTime":   c.Query("avaliableEndTime"),
-		"avaliableStartDay":  c.Query("avaliableStartDay"),
-		"avaliableEndDay":    c.Query("avaliableEndDay"),
+		"availableStartTime": c.Query("availableStartTime"),
+		"availableEndTime":   c.Query("availableEndTime"),
+		"availableStartDay":  c.Query("availableStartDay"),
+		"availableEndDay":    c.Query("availableEndDay"),
 	}
 
 	// Pagination parameters

@@ -102,10 +102,10 @@ func (s *SubpackageScenario) thePhotographerCreatesASubpackage() error {
 
 		"isInf":              false,
 		"repeatedDay":        []string{"SUN", "WED"},
-		"avaliableStartTime": "15:11",
-		"avaliableEndTime":   "16:00",
-		"avaliableStartDay":  "2022-12-22",
-		"avaliableEndDay":    "2023-01-22",
+		"availableStartTime": "15:11",
+		"availableEndTime":   "16:00",
+		"availableStartDay":  "2022-12-22",
+		"availableEndDay":    "2023-01-22",
 	})
 	req, err := http.NewRequest("POST", s.Server.URL+"/subpackage/"+s.Package.ID.Hex(), bytes.NewBuffer(reqBody))
 	if err != nil {
@@ -183,8 +183,8 @@ func (s *SubpackageScenario) thePhotographerCreatesASubpackageWithWrongFormat() 
 		"description":        "1234556",
 		"price":              -10,     // Invalid negative price
 		"duration":           "23",    // Invalid non-numeric duration
-		"avaliableStartTime": "25:00", // Invalid time format
-		"avaliableEndTime":   "16:00",
+		"availableStartTime": "25:00", // Invalid time format
+		"availableEndTime":   "16:00",
 	})
 
 	req, err := http.NewRequest("POST", s.Server.URL+"/subpackage/"+s.Package.ID.Hex(), bytes.NewBuffer(reqBody))
@@ -265,10 +265,10 @@ func (s *SubpackageScenario) theSubpackageIsCreated() error {
 		Duration:           23,
 		IsInf:              false,
 		RepeatedDay:        []models.DayName{models.Sunday, models.Wednesday},
-		AvaliableStartTime: "15:11",
-		AvaliableEndTime:   "16:00",
-		AvaliableStartDay:  "2022-12-22",
-		AvaliableEndDay:    "2023-01-22",
+		availableStartTime: "15:11",
+		availableEndTime:   "16:00",
+		availableStartDay:  "2022-12-22",
+		availableEndDay:    "2023-01-22",
 	}
 	if err := utils.CompareStructsExcept(expect, *s.Subpackage, []string{"ID", "BusyTimes", "BusyTimeMap"}); err != nil {
 		return err
@@ -285,10 +285,10 @@ func (s *SubpackageScenario) theSubpackageIsUpdated() error {
 		Duration:           23,
 		IsInf:              false,
 		RepeatedDay:        []models.DayName{models.Sunday, models.Wednesday},
-		AvaliableStartTime: "15:11",
-		AvaliableEndTime:   "16:00",
-		AvaliableStartDay:  "2022-12-22",
-		AvaliableEndDay:    "2023-01-22",
+		availableStartTime: "15:11",
+		availableEndTime:   "16:00",
+		availableStartDay:  "2022-12-22",
+		availableEndDay:    "2023-01-22",
 	}
 	if err := utils.CompareStructsExcept(expect, *s.Subpackage, []string{"ID", "BusyTimes", "BusyTimeMap"}); err != nil {
 		return err

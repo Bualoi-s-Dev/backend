@@ -83,10 +83,10 @@ func (s *AppointmentScenario) thePhotographerHasPackageAndSubpackage() error {
 		"duration":           23,
 		"isInf":              false,
 		"repeatedDay":        []string{"SUN", "WED"},
-		"avaliableStartTime": "15:11",
-		"avaliableEndTime":   "16:00",
-		"avaliableStartDay":  "2022-12-22",
-		"avaliableEndDay":    "2023-01-22",
+		"availableStartTime": "15:11",
+		"availableEndTime":   "16:00",
+		"availableStartDay":  "2022-12-22",
+		"availableEndDay":    "2023-01-22",
 	})
 	req, err = http.NewRequest("POST", s.Server.URL+"/subpackage/"+s.Package.ID.Hex(), bytes.NewBuffer(reqBody))
 	if err != nil {

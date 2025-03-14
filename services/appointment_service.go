@@ -38,6 +38,45 @@ func (s *AppointmentService) GetAllAppointment(ctx context.Context, user *models
 	return s.AppointmentRepo.GetAll(ctx, user.ID, user.Role)
 }
 
+func (s *AppointmentService) GetFilteredAppointments(ctx context.Context, user *models.User, filters map[string]string, page, limit int) ([]models.Appointment, error) {
+	items, err := s.AppointmentRepo.GetAll(ctx, user.ID, user.Role)
+	if err != nil {
+		return nil, err
+	}
+
+	var appointments []models.Appointment
+	startIdx := (page - 1) * limit
+	endIdx := startIdx + limit
+
+	for _, item := range items {
+		subPkg, err := s.SubpackageRepo.GetById(ctx, item.SubpackageID.Hex())
+		if err != nil {
+			fmt.Println("(GetFilteredAppointments) Error while getting subpackage")
+			return nil, err
+		}
+		if !s.passesFilters(subPkg, item, filters) {
+			continue
+		}
+
+		appointments = append(appointments, item)
+	}
+
+	// Apply pagination
+	if startIdx > len(appointments) {
+		return []models.Appointment{}, nil
+	}
+	if endIdx > len(appointments) {
+		endIdx = len(appointments)
+	}
+	return appointments[startIdx:endIdx], nil
+}
+
+func (s *AppointmentService) passesFilters(subPkg *models.Subpackage, item models.Appointment, filters map[string]string) bool {
+	return (filters["status"] == "" || string(item.Status) == filters["status"]) &&
+		(filters["avaliableStartDay"] == "" || subPkg.AvaliableStartDay >= filters["avaliableStartDay"]) &&
+		(filters["avaliableEndDay"] == "" || subPkg.AvaliableEndDay <= filters["avaliableEndDay"])
+}
+
 func (s *AppointmentService) GetAllAppointmentDetail(ctx context.Context, user *models.User) ([]models.AppointmentDetail, error) {
 	allAppointment, err := s.AppointmentRepo.GetAll(ctx, user.ID, user.Role)
 	if err != nil {
