@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"fmt"
 	"sort"
 
 	"github.com/Bualoi-s-Dev/backend/apperrors"
@@ -46,29 +47,34 @@ func (s *AppointmentService) GetAllAppointmentDetail(ctx context.Context, user *
 	for _, appointment := range allAppointment {
 		pkg, err := s.PackageRepo.GetById(ctx, appointment.PackageID.Hex())
 		if err != nil {
-			return nil, apperrors.ErrInternalServer
+			fmt.Println("(GetAllAppointmentDetail) Error while getting package")
+			return nil, err
 		}
 		subpackage, err := s.SubpackageRepo.GetById(ctx, appointment.SubpackageID.Hex())
 		if err != nil {
-			return nil, apperrors.ErrInternalServer
+			fmt.Println("(GetAllAppointmentDetail) Error while getting subpackage")
+			return nil, err
 		}
 		busyTime, err := s.BusyTimeRepo.GetById(ctx, appointment.BusyTimeID.Hex())
 		if err != nil {
-			return nil, apperrors.ErrInternalServer
+			fmt.Println("(GetAllAppointmentDetail) Error while getting busyTime")
+			return nil, err
 		}
 		var customerName, photographerName string
 		if user.Role == models.Customer {
 			customerName = user.Name
 			photographer, err := s.UserRepo.FindUserByID(ctx, appointment.PhotographerID)
 			if err != nil {
-				return nil, apperrors.ErrInternalServer
+				fmt.Println("(GetAllAppointmentDetail) Error while getting photographer")
+				return nil, err
 			}
 			photographerName = photographer.Name
 		} else if user.Role == models.Photographer {
 			photographerName = user.Name
 			customer, err := s.UserRepo.FindUserByID(ctx, appointment.CustomerID)
 			if err != nil {
-				return nil, apperrors.ErrInternalServer
+				fmt.Println("(GetAllAppointmentDetail) Error while getting customer")
+				return nil, err
 			}
 			customerName = customer.Name
 		}

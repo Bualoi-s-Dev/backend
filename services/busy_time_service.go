@@ -36,31 +36,22 @@ func (s *BusyTimeService) GetById(ctx context.Context, id string) (*models.BusyT
 func (s *BusyTimeService) GetByPhotographerId(ctx context.Context, photographerId primitive.ObjectID) ([]models.BusyTime, error) {
 	return s.Repository.GetByPhotographerId(ctx, photographerId)
 }
-func (s *BusyTimeService) CreateFromUser(ctx context.Context, request *dto.BusyTimeRequest, photographerId primitive.ObjectID) error {
+func (s *BusyTimeService) CreateFromUser(ctx context.Context, request *dto.BusyTimeStrictRequest, photographerId primitive.ObjectID) (*models.BusyTime, error) {
 	model := request.ToModel(photographerId)
-	return s.CreateFromModel(ctx, photographerId, model)
-}
-
-// func (s *BusyTimeService) CreateFromAppointment(ctx context.Context, request *dto.BusyTimeStrictRequest, photographerId primitive.ObjectID) error {
-// 	model := request.ToModel(photographerId)
-// 	return s.CreateFromModel(ctx, photographerId, model)
-// }
-
-func (s *BusyTimeService) CreateForUpdate(ctx context.Context, request *dto.BusyTimeStrictRequest, oldID, photographerId primitive.ObjectID) error {
-	model := request.ToModelUpdate(oldID, photographerId)
-	return s.CreateFromModel(ctx, photographerId, model)
-}
-
-func (s *BusyTimeService) CreateFromModel(ctx context.Context, photographerId primitive.ObjectID, model *models.BusyTime) error {
-	isAvailable, err := s.IsPhotographerAvailable(ctx, photographerId, model.StartTime, model.EndTime)
+	isAvailable, err := s.IsPhotographerAvailable(ctx, photographerId, model.StartTime, model.EndTime, nil)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if !isAvailable {
-		return apperrors.ErrTimeOverlapped
+		return nil, apperrors.ErrTimeOverlapped
 	}
-	return s.Repository.Create(ctx, model)
+	return nil, s.Repository.Create(ctx, model)
 }
+
+// func (s *BusyTimeService) CreateForUpdate(ctx context.Context, request *dto.BusyTimeStrictRequest, oldID, photographerId primitive.ObjectID) error {
+// 	model := request.ToModelUpdate(oldID, photographerId)
+// 	return s.CreateFromModel(ctx, photographerId, model)
+// }
 
 func (s *BusyTimeService) CreateFromSubpackage(ctx context.Context, request *dto.BusyTimeStrictRequest, subpackageId primitive.ObjectID) (*models.BusyTime, error) {
 	subpackage, err := s.SubpackageRepo.GetById(ctx, subpackageId.Hex())
@@ -79,8 +70,8 @@ func (s *BusyTimeService) CreateFromSubpackage(ctx context.Context, request *dto
 	}
 
 	photographerId := pkg.OwnerID
-	model := request.ToModel(photographerId) // when customer create first time
-	isAvailable, err := s.IsPhotographerAvailable(ctx, photographerId, model.StartTime, model.EndTime)
+	model := request.ToModel(photographerId)                                                                // when customer create first time
+	isAvailable, err := s.IsPhotographerAvailable(ctx, photographerId, model.StartTime, model.EndTime, nil) // always validate when create new busyTime via appointment
 	if err != nil {
 		return nil, err
 	}
@@ -90,17 +81,33 @@ func (s *BusyTimeService) CreateFromSubpackage(ctx context.Context, request *dto
 	return model, s.Repository.Create(ctx, model)
 }
 
+func (s *BusyTimeService) UpdateValidStatus(ctx context.Context, busyTime *models.BusyTime) error {
+	if busyTime.IsValid { // need to validate to reserve a photographer time
+		isAvailable, err := s.IsPhotographerAvailable(ctx, busyTime.PhotographerID, busyTime.StartTime, busyTime.EndTime, &busyTime.ID) // ignore current busyTime when accept offer
+		if err != nil {
+			return err
+		}
+		if !isAvailable {
+			return apperrors.ErrTimeOverlapped
+		}
+	}
+	return s.Repository.UpdateOne(ctx, busyTime)
+}
+
 func (s *BusyTimeService) Delete(ctx context.Context, id string) error {
 	return s.Repository.DeleteOne(ctx, id)
 }
 
-func (s *BusyTimeService) IsPhotographerAvailable(ctx context.Context, photographerId primitive.ObjectID, startTime, endTime time.Time) (bool, error) {
+func (s *BusyTimeService) IsPhotographerAvailable(ctx context.Context, photographerId primitive.ObjectID, startTime, endTime time.Time, ignoreBusyTime *primitive.ObjectID) (bool, error) {
 	busyTimes, err := s.Repository.GetByPhotographerIdValid(ctx, photographerId)
 	if err != nil {
 		return false, err
 	}
 
 	for _, busy := range busyTimes {
+		if busy.ID == *ignoreBusyTime {
+			continue
+		}
 		// Check overlap
 		if (startTime.Before(busy.EndTime) && endTime.After(busy.StartTime)) ||
 			(startTime.Equal(busy.StartTime) || endTime.Equal(busy.EndTime)) {
