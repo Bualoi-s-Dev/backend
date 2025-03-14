@@ -265,10 +265,10 @@ func (s *SubpackageScenario) theSubpackageIsCreated() error {
 		Duration:           23,
 		IsInf:              false,
 		RepeatedDay:        []models.DayName{models.Sunday, models.Wednesday},
-		availableStartTime: "15:11",
-		availableEndTime:   "16:00",
-		availableStartDay:  "2022-12-22",
-		availableEndDay:    "2023-01-22",
+		AvailableStartTime: "15:11",
+		AvailableEndTime:   "16:00",
+		AvailableStartDay:  "2022-12-22",
+		AvailableEndDay:    "2023-01-22",
 	}
 	if err := utils.CompareStructsExcept(expect, *s.Subpackage, []string{"ID", "BusyTimes", "BusyTimeMap"}); err != nil {
 		return err
@@ -285,10 +285,10 @@ func (s *SubpackageScenario) theSubpackageIsUpdated() error {
 		Duration:           23,
 		IsInf:              false,
 		RepeatedDay:        []models.DayName{models.Sunday, models.Wednesday},
-		availableStartTime: "15:11",
-		availableEndTime:   "16:00",
-		availableStartDay:  "2022-12-22",
-		availableEndDay:    "2023-01-22",
+		AvailableStartTime: "15:11",
+		AvailableEndTime:   "16:00",
+		AvailableStartDay:  "2022-12-22",
+		AvailableEndDay:    "2023-01-22",
 	}
 	if err := utils.CompareStructsExcept(expect, *s.Subpackage, []string{"ID", "BusyTimes", "BusyTimeMap"}); err != nil {
 		return err

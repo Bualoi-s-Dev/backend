@@ -73,8 +73,8 @@ func (s *AppointmentService) GetFilteredAppointments(ctx context.Context, user *
 
 func (s *AppointmentService) passesFilters(subPkg *models.Subpackage, item models.Appointment, filters map[string]string) bool {
 	return (filters["status"] == "" || string(item.Status) == filters["status"]) &&
-		(filters["avaliableStartDay"] == "" || subPkg.AvaliableStartDay >= filters["avaliableStartDay"]) &&
-		(filters["avaliableEndDay"] == "" || subPkg.AvaliableEndDay <= filters["avaliableEndDay"])
+		(filters["avaliableStartDay"] == "" || subPkg.AvailableStartDay >= filters["avaliableStartDay"]) &&
+		(filters["avaliableEndDay"] == "" || subPkg.AvailableEndDay <= filters["avaliableEndDay"])
 }
 
 func (s *AppointmentService) GetAllAppointmentDetail(ctx context.Context, user *models.User) ([]models.AppointmentDetail, error) {

@@ -12,11 +12,11 @@ type Subpackage struct {
 
 	IsInf              bool      `bson:"is_inf,omitempty" json:"isInf" example:"false"`
 	RepeatedDay        []DayName `bson:"repeated_day,omitempty" json:"repeatedDay" binding:"day_names" ts_type:"DayName[]" example:"MON,TUE,WED"`
-	availableStartTime string    `bson:"available_start_time,omitempty" json:"availableStartTime" binding:"time_format" example:"15:04"`
-	availableEndTime   string    `bson:"available_end_time,omitempty" json:"availableEndTime" binding:"time_format" example:"16:27"`
+	AvailableStartTime string    `bson:"available_start_time,omitempty" json:"availableStartTime" binding:"time_format" example:"15:04"`
+	AvailableEndTime   string    `bson:"available_end_time,omitempty" json:"availableEndTime" binding:"time_format" example:"16:27"`
 
-	availableStartDay string `bson:"available_start_day,omitempty" json:"availableStartDay" binding:"date_format" example:"2021-01-01"`
-	availableEndDay   string `bson:"available_end_day,omitempty" json:"availableEndDay" binding:"date_format" example:"2021-12-31"`
+	AvailableStartDay string `bson:"available_start_day,omitempty" json:"availableStartDay" binding:"date_format" example:"2021-01-01"`
+	AvailableEndDay   string `bson:"available_end_day,omitempty" json:"availableEndDay" binding:"date_format" example:"2021-12-31"`
 }
 
 type DayName string

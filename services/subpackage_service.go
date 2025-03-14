@@ -65,10 +65,10 @@ func (s *SubpackageService) GetFilteredSubpackages(ctx context.Context, filters 
 
 func (s *SubpackageService) passesFilters(pkg *models.Package, item models.Subpackage, filters map[string]string) bool {
 	return (filters["type"] == "" || string(pkg.Type) == filters["type"]) &&
-		(filters["availableStartTime"] == "" || item.availableStartTime >= filters["availableStartTime"]) &&
-		(filters["availableEndTime"] == "" || item.availableEndTime <= filters["availableEndTime"]) &&
-		(filters["availableStartDay"] == "" || item.availableStartDay >= filters["availableStartDay"]) &&
-		(filters["availableEndDay"] == "" || item.availableEndDay <= filters["availableEndDay"])
+		(filters["availableStartTime"] == "" || item.AvailableStartTime >= filters["availableStartTime"]) &&
+		(filters["availableEndTime"] == "" || item.AvailableEndTime <= filters["availableEndTime"]) &&
+		(filters["availableStartDay"] == "" || item.AvailableStartDay >= filters["availableStartDay"]) &&
+		(filters["availableEndDay"] == "" || item.AvailableEndDay <= filters["availableEndDay"])
 }
 
 func (s *SubpackageService) GetById(ctx context.Context, id string) (*models.Subpackage, error) {
@@ -116,14 +116,14 @@ func (s *SubpackageService) VerifyStrictRequest(ctx context.Context, subpackage 
 	if subpackage.RepeatedDay == nil {
 		return errors.New("repeated_day is required")
 	}
-	if subpackage.availableStartTime == nil {
+	if subpackage.AvailableStartTime == nil {
 		return errors.New("available_start_time is required")
 	}
-	if subpackage.availableEndTime == nil {
+	if subpackage.AvailableEndTime == nil {
 		return errors.New("available_end_time is required")
 	}
 
-	if (subpackage.IsInf != nil && !*subpackage.IsInf) && (subpackage.availableStartDay == nil || subpackage.availableEndDay == nil) {
+	if (subpackage.IsInf != nil && !*subpackage.IsInf) && (subpackage.AvailableStartDay == nil || subpackage.AvailableEndDay == nil) {
 		return errors.New("available_start_day and available_end_day are required")
 	}
 	return nil
@@ -200,10 +200,10 @@ func (s *SubpackageService) MappedToSubpackageResponse(ctx context.Context, subp
 		Duration:           subpackage.Duration,
 		IsInf:              subpackage.IsInf,
 		RepeatedDay:        subpackage.RepeatedDay,
-		availableStartTime: subpackage.availableStartTime,
-		availableEndTime:   subpackage.availableEndTime,
-		availableStartDay:  subpackage.availableStartDay,
-		availableEndDay:    subpackage.availableEndDay,
+		AvailableStartTime: subpackage.AvailableStartTime,
+		AvailableEndTime:   subpackage.AvailableEndTime,
+		AvailableStartDay:  subpackage.AvailableStartDay,
+		AvailableEndDay:    subpackage.AvailableEndDay,
 		// TODO: Change this to busyTimes
 		BusyTimes:   []models.BusyTime{},
 		BusyTimeMap: busyTimeMap,
@@ -220,8 +220,8 @@ func (s *SubpackageService) GetBusyTimeDateMap(ctx context.Context, subpackage m
 		dayRange = 30
 		startDate = time.Now()
 	} else {
-		startDate, _ = time.Parse("2006-01-02", subpackage.availableStartDay)
-		endDate, _ := time.Parse("2006-01-02", subpackage.availableEndDay)
+		startDate, _ = time.Parse("2006-01-02", subpackage.AvailableStartDay)
+		endDate, _ := time.Parse("2006-01-02", subpackage.AvailableEndDay)
 		dayRange = int(endDate.Sub(startDate).Hours()/24) + 1
 	}
 	for _, busyTime := range busyTimes {

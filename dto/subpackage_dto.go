@@ -15,10 +15,10 @@ type SubpackageRequest struct {
 	IsInf *bool `bson:"is_inf" json:"isInf" binding:"omitempty,isInf_rule" example:"false"`
 	// TODO: change tsgen type to Dayname
 	RepeatedDay        *[]models.DayName `bson:"repeated_day" json:"repeatedDay" binding:"omitempty,day_names" example:"MON,TUE,WED"`
-	availableStartTime *string           `bson:"available_start_time" json:"availableStartTime" binding:"omitempty,time_format" example:"15:04"`
-	availableEndTime   *string           `bson:"available_end_time" json:"availableEndTime" binding:"omitempty,time_format" example:"16:27"`
-	availableStartDay  *string           `bson:"available_start_day" json:"availableStartDay" binding:"omitempty,date_format" example:"2021-01-01"`
-	availableEndDay    *string           `bson:"available_end_day" json:"availableEndDay" binding:"omitempty,date_format" example:"2021-12-31"`
+	AvailableStartTime *string           `bson:"available_start_time" json:"availableStartTime" binding:"omitempty,time_format" example:"15:04"`
+	AvailableEndTime   *string           `bson:"available_end_time" json:"availableEndTime" binding:"omitempty,time_format" example:"16:27"`
+	AvailableStartDay  *string           `bson:"available_start_day" json:"availableStartDay" binding:"omitempty,date_format" example:"2021-01-01"`
+	AvailableEndDay    *string           `bson:"available_end_day" json:"availableEndDay" binding:"omitempty,date_format" example:"2021-12-31"`
 }
 
 type SubpackageResponse struct {
@@ -32,10 +32,10 @@ type SubpackageResponse struct {
 	IsInf bool `bson:"is_inf" json:"isInf" binding:"omitempty,isInf_rule" example:"false"`
 	// TODO: change tsgen type to Dayname
 	RepeatedDay        []models.DayName `bson:"repeated_day" json:"repeatedDay" binding:"omitempty,day_names" example:"MON,TUE,WED"`
-	availableStartTime string           `bson:"available_start_time" json:"availableStartTime" binding:"omitempty,time_format" example:"15:04"`
-	availableEndTime   string           `bson:"available_end_time" json:"availableEndTime" binding:"omitempty,time_format" example:"16:27"`
-	availableStartDay  string           `bson:"available_start_day" json:"availableStartDay" binding:"omitempty,date_format" example:"2021-01-01"`
-	availableEndDay    string           `bson:"available_end_day" json:"availableEndDay" binding:"omitempty,date_format" example:"2021-12-31"`
+	AvailableStartTime string           `bson:"available_start_time" json:"availableStartTime" binding:"omitempty,time_format" example:"15:04"`
+	AvailableEndTime   string           `bson:"available_end_time" json:"availableEndTime" binding:"omitempty,time_format" example:"16:27"`
+	AvailableStartDay  string           `bson:"available_start_day" json:"availableStartDay" binding:"omitempty,date_format" example:"2021-01-01"`
+	AvailableEndDay    string           `bson:"available_end_day" json:"availableEndDay" binding:"omitempty,date_format" example:"2021-12-31"`
 
 	BusyTimes []models.BusyTime `bson:"busy_times" json:"busyTimes" binding:"omitempty"`
 
@@ -50,8 +50,8 @@ func (item *SubpackageRequest) ToModel() *models.Subpackage {
 		availableStartDay = nil
 		availableEndDay = nil
 	} else {
-		availableStartDay = item.availableStartDay
-		availableEndDay = item.availableEndDay
+		availableStartDay = item.AvailableStartDay
+		availableEndDay = item.AvailableEndDay
 	}
 	return &models.Subpackage{
 		Title:              *item.Title,
@@ -60,9 +60,9 @@ func (item *SubpackageRequest) ToModel() *models.Subpackage {
 		Duration:           *item.Duration,
 		IsInf:              *item.IsInf,
 		RepeatedDay:        *item.RepeatedDay,
-		availableStartTime: *item.availableStartTime,
-		availableEndTime:   *item.availableEndTime,
-		availableStartDay:  utils.SafeString(availableStartDay),
-		availableEndDay:    utils.SafeString(availableEndDay),
+		AvailableStartTime: *item.AvailableStartTime,
+		AvailableEndTime:   *item.AvailableEndTime,
+		AvailableStartDay:  utils.SafeString(availableStartDay),
+		AvailableEndDay:    utils.SafeString(availableEndDay),
 	}
 }
