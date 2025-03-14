@@ -1,7 +1,7 @@
-Feature: EPIC6 Package system
+Feature: EPIC6-1 Package system
     As a photographer,
     I can create, update, and delete subpackages under a specific package,
-    that I can customize my services.
+    so that I can customize my services.
 
     Background: Server is running
         Given the server is running

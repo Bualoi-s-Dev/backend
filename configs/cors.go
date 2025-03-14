@@ -18,7 +18,7 @@ func EnableCORS() gin.HandlerFunc {
 		// Check if the origin is in the allowed list
 		allowed := false
 		for _, o := range allowedOrigins {
-			if o == origin {
+			if strings.EqualFold(o, origin) {
 				allowed = true
 				break
 			}
@@ -28,7 +28,7 @@ func EnableCORS() gin.HandlerFunc {
 		if allowed {
 			c.Writer.Header().Set("Access-Control-Allow-Origin", origin)
 			c.Writer.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
-			c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+			c.Writer.Header().Set("Access-Control-Allow-Headers", "Origin, Content-Type, Authorization")
 			c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
 		}
 
