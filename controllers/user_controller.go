@@ -62,6 +62,25 @@ func (uc *UserController) GetUserProfile(c *gin.Context) {
 	c.JSON(http.StatusOK, userDb)
 }
 
+// GetUserPhogographer godoc
+// @Tags User
+// @Summary Get user photographers from database
+// @Description Retrieve user photographers from database
+// @Success 200 {object} dto.UserResponse
+// @Failure 400 {object} string "Bad Request"
+// @Router /user/photographer [get]
+func (uc UserController) GetPhotographers(c *gin.Context) {
+	// Call the service to get the user's profile picture URL
+	photographers, err := uc.Service.GetPhotographers(c.Request.Context())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get photographers, " + err.Error()})
+		return
+	}
+
+	//Return the profile picture URL
+	c.JSON(http.StatusOK, photographers)
+}
+
 // GetUserProfileByID godoc
 // @Tags User
 // @Summary Get a user profile by ID

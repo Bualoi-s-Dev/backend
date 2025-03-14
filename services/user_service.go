@@ -49,6 +49,24 @@ func (s *UserService) GetUserByID(ctx context.Context, userId primitive.ObjectID
 	return s.mappedToUserResponse(ctx, user)
 }
 
+func (s *UserService) GetPhotographers(ctx context.Context) ([]dto.UserResponse, error) {
+	photographers, err := s.Repo.FindPhotographers(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	var res []dto.UserResponse
+	for _, photographer := range photographers {
+		userRes, err := s.mappedToUserResponse(ctx, &photographer)
+		if err != nil {
+			return nil, err
+		}
+		res = append(res, *userRes)
+	}
+
+	return res, nil
+}
+
 func (s *UserService) CreateUser(ctx context.Context, user *models.User) error {
 	return s.Repo.CreateUser(ctx, user)
 }
