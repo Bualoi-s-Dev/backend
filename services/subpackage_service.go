@@ -162,22 +162,22 @@ func (s *BusyTimeService) IsIntersect(ctx context.Context, subpackage *models.Su
 
 	// Parse subpackage available start and end time
 	layout := "15:04"
-	_, err := time.Parse(layout, subpackage.AvaliableStartTime)
+	_, err := time.Parse(layout, subpackage.AvailableStartTime)
 	if err != nil {
 		return false, errors.New("invalid available start time format")
 	}
-	_, err = time.Parse(layout, subpackage.AvaliableEndTime)
+	_, err = time.Parse(layout, subpackage.AvailableEndTime)
 	if err != nil {
 		return false, errors.New("invalid available end time format")
 	}
 
 	// If IsInf is false, validate start and end dates
 	if !subpackage.IsInf {
-		subStartDate, err := time.Parse("2006-01-02", subpackage.AvaliableStartDay)
+		subStartDate, err := time.Parse("2006-01-02", subpackage.AvailableStartDay)
 		if err != nil {
 			return false, errors.New("invalid available start date format")
 		}
-		subEndDate, err := time.Parse("2006-01-02", subpackage.AvaliableEndDay)
+		subEndDate, err := time.Parse("2006-01-02", subpackage.AvailableEndDay)
 		if err != nil {
 			return false, errors.New("invalid available end date format")
 		}
@@ -215,7 +215,7 @@ func (s *BusyTimeService) IsIntersect(ctx context.Context, subpackage *models.Su
 				busyEndTime := busyDayEnd.Format("15:04")
 
 				// Check if busy time range overlaps with subpackage available time
-				if busyStartTime < subpackage.AvaliableEndTime && busyEndTime > subpackage.AvaliableStartTime {
+				if busyStartTime < subpackage.AvailableEndTime && busyEndTime > subpackage.AvailableStartTime {
 					return true, nil
 				}
 			}
