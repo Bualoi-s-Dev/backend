@@ -3,6 +3,8 @@ package services
 import (
 	"context"
 	"fmt"
+	"log"
+	"strconv"
 
 	"firebase.google.com/go/auth"
 	"github.com/Bualoi-s-Dev/backend/dto"
@@ -13,14 +15,15 @@ import (
 )
 
 type UserService struct {
-	Repo           *repositories.UserRepository
-	S3Service      *S3Service
-	PackageService *PackageService
-	AuthClient     *auth.Client
+	Repo              *repositories.UserRepository
+	S3Service         *S3Service
+	PackageService    *PackageService
+	SubpackageService *SubpackageService
+	AuthClient        *auth.Client
 }
 
-func NewUserService(repo *repositories.UserRepository, s3Service *S3Service, packageService *PackageService, authClient *auth.Client) *UserService {
-	return &UserService{Repo: repo, S3Service: s3Service, PackageService: packageService, AuthClient: authClient}
+func NewUserService(repo *repositories.UserRepository, s3Service *S3Service, packageService *PackageService, subpackageService *SubpackageService, authClient *auth.Client) *UserService {
+	return &UserService{Repo: repo, S3Service: s3Service, PackageService: packageService, SubpackageService: subpackageService, AuthClient: authClient}
 }
 
 func (s *UserService) FindUser(ctx context.Context, email string) (*models.User, error) {
@@ -65,6 +68,98 @@ func (s *UserService) GetPhotographers(ctx context.Context) ([]dto.UserResponse,
 	}
 
 	return res, nil
+}
+
+func (s *UserService) GetFilteredPhotographers(ctx context.Context, filters map[string]string, page, limit int) ([]dto.UserResponse, error) {
+	photographers, err := s.Repo.FindPhotographers(ctx)
+	if err != nil {
+		return nil, err
+	}
+	// fmt.Println(len(photographers))
+	var res []dto.UserResponse
+	startIdx := (page - 1) * limit
+	endIdx := startIdx + limit
+
+	for _, photographer := range photographers {
+		if filters["name"] != "" && photographer.Name != filters["name"] {
+			continue
+		}
+		if filters["location"] != "" && photographer.Location != filters["location"] {
+			continue
+		}
+
+		var packageMatch bool
+		if filters["type"] == "" && filters["price"] == "" {
+			packageMatch = true
+		}
+
+		pkgs, err := s.PackageService.GetByOwnerId(ctx, photographer.ID)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, pkg := range pkgs {
+			if packageMatch {
+				break
+			}
+
+			if filters["type"] != "" && string(pkg.Type) != filters["type"] {
+				continue
+			}
+
+			if filters["price"] != "" {
+				if s.SubpackageService == nil {
+					log.Println("SubpackageService is nil in GetFilteredPhotographers")
+					return nil, fmt.Errorf("SubpackageService is not initialized")
+				}
+
+				subPkgs, err := s.SubpackageService.GetByPackageId(ctx, pkg.ID)
+				if err != nil {
+					return nil, err
+				}
+
+				if subPkgs == nil {
+					subPkgs = []models.Subpackage{} // Prevent nil pointer issue
+				}
+
+				if !matchesPriceFilter(filters["price"], subPkgs) {
+					continue
+				}
+			}
+
+			packageMatch = true
+			break
+		}
+
+		if !packageMatch {
+			continue
+		}
+
+		userRes, err := s.mappedToUserResponse(ctx, &photographer)
+		if err != nil {
+			return nil, err
+		}
+
+		res = append(res, *userRes)
+	}
+	// fmt.Println(len(res))
+	// Apply pagination
+	if startIdx > len(res) {
+		return []dto.UserResponse{}, nil
+	}
+	if endIdx > len(res) {
+		endIdx = len(res)
+	}
+	return res[startIdx:endIdx], nil
+}
+
+func matchesPriceFilter(priceFilter string, subPkgs []models.Subpackage) bool {
+	for _, sub := range subPkgs {
+		if strconv.Itoa(sub.Price) <= priceFilter {
+			return true
+		}
+	}
+	return false
 }
 
 func (s *UserService) CreateUser(ctx context.Context, user *models.User) error {

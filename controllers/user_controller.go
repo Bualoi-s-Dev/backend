@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/Bualoi-s-Dev/backend/dto"
 	"github.com/Bualoi-s-Dev/backend/middleware"
@@ -70,8 +71,20 @@ func (uc *UserController) GetUserProfile(c *gin.Context) {
 // @Failure 400 {object} string "Bad Request"
 // @Router /user/photographer [get]
 func (uc UserController) GetPhotographers(c *gin.Context) {
+	// Get query parameters for filtering
+	filters := map[string]string{
+		"name":     c.Query("name"),
+		"location": c.Query("location"),
+		"price":    c.Query("price"),
+		"type":     c.Query("type"),
+	}
+
+	// Pagination parameters
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
+
 	// Call the service to get the user's profile picture URL
-	photographers, err := uc.Service.GetPhotographers(c.Request.Context())
+	photographers, err := uc.Service.GetFilteredPhotographers(c.Request.Context(), filters, page, limit)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get photographers, " + err.Error()})
 		return
