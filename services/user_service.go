@@ -3,7 +3,6 @@ package services
 import (
 	"context"
 	"fmt"
-	"log"
 	"strconv"
 
 	"firebase.google.com/go/auth"
@@ -75,10 +74,30 @@ func (s *UserService) GetFilteredPhotographers(ctx context.Context, filters map[
 	if err != nil {
 		return nil, err
 	}
-	// fmt.Println(len(photographers))
+
 	var res []dto.UserResponse
 	startIdx := (page - 1) * limit
 	endIdx := startIdx + limit
+
+	// Convert price filters to integers safely
+	var minPrice, maxPrice int
+	if filters["minPrice"] != "" {
+		minPrice, err = strconv.Atoi(filters["minPrice"])
+		if err != nil {
+			return nil, fmt.Errorf("invalid minPrice filter: %v", err)
+		}
+	} else {
+		minPrice = 0 // Default to 0 if not provided
+	}
+
+	if filters["maxPrice"] != "" {
+		maxPrice, err = strconv.Atoi(filters["maxPrice"])
+		if err != nil {
+			return nil, fmt.Errorf("invalid maxPrice filter: %v", err)
+		}
+	} else {
+		maxPrice = int(^uint(0) >> 1) // Default to max int if not provided
+	}
 
 	for _, photographer := range photographers {
 		if filters["name"] != "" && photographer.Name != filters["name"] {
@@ -88,10 +107,7 @@ func (s *UserService) GetFilteredPhotographers(ctx context.Context, filters map[
 			continue
 		}
 
-		var packageMatch bool
-		if filters["type"] == "" && filters["price"] == "" {
-			packageMatch = true
-		}
+		packageMatch := (filters["type"] == "" && filters["minPrice"] == "" && filters["maxPrice"] == "")
 
 		pkgs, err := s.PackageService.GetByOwnerId(ctx, photographer.ID)
 		if err != nil {
@@ -107,12 +123,7 @@ func (s *UserService) GetFilteredPhotographers(ctx context.Context, filters map[
 				continue
 			}
 
-			if filters["price"] != "" {
-				if s.SubpackageService == nil {
-					log.Println("SubpackageService is nil in GetFilteredPhotographers")
-					return nil, fmt.Errorf("SubpackageService is not initialized")
-				}
-
+			if filters["minPrice"] != "" || filters["maxPrice"] != "" {
 				subPkgs, err := s.SubpackageService.GetByPackageId(ctx, pkg.ID)
 				if err != nil {
 					return nil, err
@@ -122,9 +133,10 @@ func (s *UserService) GetFilteredPhotographers(ctx context.Context, filters map[
 					subPkgs = []models.Subpackage{} // Prevent nil pointer issue
 				}
 
-				if !matchesPriceFilter(filters["price"], subPkgs) {
+				if !matchesPriceFilter(minPrice, maxPrice, subPkgs) {
 					continue
 				}
+
 			}
 
 			packageMatch = true
@@ -142,9 +154,9 @@ func (s *UserService) GetFilteredPhotographers(ctx context.Context, filters map[
 
 		res = append(res, *userRes)
 	}
-	// fmt.Println(len(res))
+
 	// Apply pagination
-	if startIdx > len(res) {
+	if startIdx >= len(res) {
 		return []dto.UserResponse{}, nil
 	}
 	if endIdx > len(res) {
@@ -153,9 +165,10 @@ func (s *UserService) GetFilteredPhotographers(ctx context.Context, filters map[
 	return res[startIdx:endIdx], nil
 }
 
-func matchesPriceFilter(priceFilter string, subPkgs []models.Subpackage) bool {
+func matchesPriceFilter(minPrice int, maxPrice int, subPkgs []models.Subpackage) bool {
 	for _, sub := range subPkgs {
-		if strconv.Itoa(sub.Price) <= priceFilter {
+		if sub.Price >= minPrice && sub.Price <= maxPrice {
+			// fmt.Println("Matching package price:", sub.Price)
 			return true
 		}
 	}

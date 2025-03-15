@@ -75,7 +75,8 @@ func (uc UserController) GetPhotographers(c *gin.Context) {
 	filters := map[string]string{
 		"name":     c.Query("name"),
 		"location": c.Query("location"),
-		"price":    c.Query("price"),
+		"minPrice": c.Query("minPrice"),
+		"maxPrice": c.Query("maxPrice"),
 		"type":     c.Query("type"),
 	}
 
