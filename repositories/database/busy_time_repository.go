@@ -112,6 +112,11 @@ func (r *BusyTimeRepository) Create(ctx context.Context, item *models.BusyTime) 
 	return err
 }
 
+func (r *BusyTimeRepository) UpdateOne(ctx context.Context, item *models.BusyTime) error {
+	_, err := r.Collection.UpdateOne(ctx, bson.M{"_id": item.ID}, bson.M{"$set": item})
+	return err
+}
+
 func (r *BusyTimeRepository) DeleteOne(ctx context.Context, id string) error {
 	oid, err := primitive.ObjectIDFromHex(id)
 	if err != nil {

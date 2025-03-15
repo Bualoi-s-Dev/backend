@@ -155,30 +155,73 @@ func (s *SubpackageService) FindIntersectBusyTime(ctx context.Context, subpackag
 	return busyTimes, nil
 }
 
-func (s *SubpackageService) IsIntersect(subpackage *models.Subpackage, busyTime *models.BusyTime) (bool, error) {
-	// TODO: Implement this method
-	// // Check date
-	// availableStartDay, _ := time.Parse("2006-01-02", subpackage.availableStartDay)
-	// availableEndDay, _ := time.Parse("2006-01-02", subpackage.availableEndDay)
-	// if !subpackage.IsInf && (busyTime.StartTime.Before(availableStartDay) || busyTime.EndTime.After(availableEndDay)) {
-	// 	continue
-	// }
+func (s *BusyTimeService) IsIntersect(ctx context.Context, subpackage *models.Subpackage, busyTime *models.BusyTime) (bool, error) {
+	if subpackage == nil || busyTime == nil {
+		return false, errors.New("invalid input: subpackage or busyTime is nil")
+	}
 
-	// // Check weekday
-	// dayBusyTime := strings.ToUpper(busyTime.StartTime.Weekday().String()[0:3])
-	// if !slices.Contains(subpackage.RepeatedDay, models.DayName(dayBusyTime)) {
-	// 	continue
-	// }
+	// Parse subpackage available start and end time
+	layout := "15:04"
+	_, err := time.Parse(layout, subpackage.AvaliableStartTime)
+	if err != nil {
+		return false, errors.New("invalid available start time format")
+	}
+	_, err = time.Parse(layout, subpackage.AvaliableEndTime)
+	if err != nil {
+		return false, errors.New("invalid available end time format")
+	}
 
-	// // Check time
-	// availableStartMinute := utils.TimeToMinutes(subpackage.availableStartTime)
-	// availableEndMinute := utils.TimeToMinutes(subpackage.availableEndTime)
+	// If IsInf is false, validate start and end dates
+	if !subpackage.IsInf {
+		subStartDate, err := time.Parse("2006-01-02", subpackage.AvaliableStartDay)
+		if err != nil {
+			return false, errors.New("invalid available start date format")
+		}
+		subEndDate, err := time.Parse("2006-01-02", subpackage.AvaliableEndDay)
+		if err != nil {
+			return false, errors.New("invalid available end date format")
+		}
 
-	// busyStartMinute := utils.TimeToMinutes(busyTime.StartTime.Format("15:04"))
-	// busyEndMinute := utils.TimeToMinutes(busyTime.EndTime.Format("15:04"))
-	// if (busyStartMinute < availableStartMinute) || (busyEndMinute > availableEndMinute) {
-	// 	continue
-	// }
+		// Check if BusyTime falls within the available date range
+		if busyTime.EndTime.Before(subStartDate) || busyTime.StartTime.After(subEndDate) {
+			return false, nil
+		}
+	}
+
+	// Iterate over each day in the busy period
+	for d := busyTime.StartTime; d.Before(busyTime.EndTime) || d.Equal(busyTime.EndTime); d = d.Add(24 * time.Hour) {
+		for _, day := range subpackage.RepeatedDay {
+			if string(day) == d.Weekday().String() {
+				// Determine busy time range for this specific day
+				var busyDayStart time.Time
+				var busyDayEnd time.Time
+
+				if d.Format("2006-01-02") == busyTime.StartTime.Format("2006-01-02") {
+					// First day: busy period starts from actual start time
+					busyDayStart = busyTime.StartTime
+					busyDayEnd = time.Date(d.Year(), d.Month(), d.Day(), 23, 59, 59, 0, d.Location())
+				} else if d.Format("2006-01-02") == busyTime.EndTime.Format("2006-01-02") {
+					// Last day: busy period ends at actual end time
+					busyDayStart = time.Date(d.Year(), d.Month(), d.Day(), 0, 0, 0, 0, d.Location())
+					busyDayEnd = busyTime.EndTime
+				} else {
+					// Full day busy
+					busyDayStart = time.Date(d.Year(), d.Month(), d.Day(), 0, 0, 0, 0, d.Location())
+					busyDayEnd = time.Date(d.Year(), d.Month(), d.Day(), 23, 59, 59, 0, d.Location())
+				}
+
+				// Convert busy day times to strings
+				busyStartTime := busyDayStart.Format("15:04")
+				busyEndTime := busyDayEnd.Format("15:04")
+
+				// Check if busy time range overlaps with subpackage available time
+				if busyStartTime < subpackage.AvaliableEndTime && busyEndTime > subpackage.AvaliableStartTime {
+					return true, nil
+				}
+			}
+		}
+	}
+
 	return false, nil
 }
 
