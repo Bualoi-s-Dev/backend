@@ -8,8 +8,6 @@ import (
 	"github.com/Bualoi-s-Dev/backend/models"
 	"github.com/Bualoi-s-Dev/backend/services"
 	"github.com/gin-gonic/gin"
-
-	"strings"
 )
 
 type PackageController struct {
@@ -32,9 +30,9 @@ func NewPackageController(service *services.PackageService, s3Service *services.
 // @x-order 1
 func (ctrl *PackageController) GetAllPackages(c *gin.Context) {
 	items, err := ctrl.Service.GetAll(c.Request.Context())
-	searchTitle, hasSearchTitle := c.GetQuery("title")
-	searchOwnerName, hasSearchOwnerName := c.GetQuery("ownerName")
-	searchType_, hasSearchType := c.GetQuery("type")
+	searchTitle, _ := c.GetQuery("title")
+	searchOwnerName, _ := c.GetQuery("ownerName")
+	searchType_, _ := c.GetQuery("type")
 	searchType := models.PackageType(searchType_)
 
 	if err != nil {
@@ -44,26 +42,19 @@ func (ctrl *PackageController) GetAllPackages(c *gin.Context) {
 
 	var res []dto.PackageResponse
 	for _, item := range items {
+		IsFiltered, err := ctrl.Service.FilterPackage(c.Request.Context(), &item, searchTitle, searchOwnerName, searchType)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to filter item, " + err.Error()})
+			return
+		}
+		if !IsFiltered {
+			continue
+		}
+
 		mappedItem, err := ctrl.Service.MappedToPackageResponse(c.Request.Context(), &item)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to map item, " + err.Error()})
 			return
-		}
-		if hasSearchTitle && !strings.HasPrefix(strings.ToLower(mappedItem.Title), strings.ToLower(searchTitle)) {
-			continue
-		}
-		if hasSearchOwnerName {
-			ownerUser, err := ctrl.UserService.GetUserByID(c.Request.Context(), mappedItem.OwnerID)
-			if err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch owner user, " + err.Error()})
-				return
-			}
-			if !strings.HasPrefix(strings.ToLower(ownerUser.Name), strings.ToLower(searchOwnerName)) {
-				continue
-			}
-		}
-		if hasSearchType && mappedItem.Type != searchType {
-			continue
 		}
 		res = append(res, *mappedItem)
 	}

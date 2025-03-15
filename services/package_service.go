@@ -16,10 +16,11 @@ type PackageService struct {
 	Repo              *repositories.PackageRepository
 	S3Service         *S3Service
 	SubpackageService *SubpackageService
+	UserRepo          *repositories.UserRepository
 }
 
-func NewPackageService(repo *repositories.PackageRepository, s3Service *S3Service, subpackageService *SubpackageService) *PackageService {
-	return &PackageService{Repo: repo, S3Service: s3Service, SubpackageService: subpackageService}
+func NewPackageService(repo *repositories.PackageRepository, s3Service *S3Service, subpackageService *SubpackageService, userRepo *repositories.UserRepository) *PackageService {
+	return &PackageService{Repo: repo, S3Service: s3Service, SubpackageService: subpackageService, UserRepo: userRepo}
 }
 
 func (s *PackageService) GetAll(ctx context.Context) ([]models.Package, error) {
@@ -160,6 +161,7 @@ func (s *PackageService) MappedToPackageResponse(ctx context.Context, item *mode
 	if err != nil {
 		return nil, err
 	}
+
 	return &dto.PackageResponse{
 		ID:          item.ID,
 		OwnerID:     item.OwnerID,
@@ -169,4 +171,24 @@ func (s *PackageService) MappedToPackageResponse(ctx context.Context, item *mode
 		SubPackages: subpackages,
 	}, nil
 
+}
+
+func (s *PackageService) FilterPackage(ctx context.Context, item *models.Package, searchTitle, searchOwnerName string, searchType models.PackageType) (bool, error) {
+	hasSearchType, hasSearchTitle, hasSearchOwnerName := searchType != "", searchTitle != "", searchOwnerName != ""
+	if hasSearchTitle && !strings.HasPrefix(strings.ToLower(item.Title), strings.ToLower(searchTitle)) {
+		return false, nil
+	}
+	if hasSearchOwnerName {
+		ownerUser, err := s.UserRepo.FindUserByID(ctx, item.OwnerID)
+		if err != nil {
+			return false, err
+		}
+		if !strings.HasPrefix(strings.ToLower(ownerUser.Name), strings.ToLower(searchOwnerName)) {
+			return false, nil
+		}
+	}
+	if hasSearchType && item.Type != searchType {
+		return false, nil
+	}
+	return true, nil
 }
