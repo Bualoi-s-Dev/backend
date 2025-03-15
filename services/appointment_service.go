@@ -10,7 +10,6 @@ import (
 	"github.com/Bualoi-s-Dev/backend/dto"
 	"github.com/Bualoi-s-Dev/backend/models"
 	repositories "github.com/Bualoi-s-Dev/backend/repositories/database"
-	"github.com/jinzhu/copier"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -134,14 +133,6 @@ func (s *AppointmentService) CreateOneAppointment(ctx context.Context, user *mod
 	appointment := req.ToModel(user, pkg, subpackage, busyTime)
 
 	return s.AppointmentRepo.CreateAppointment(ctx, appointment)
-}
-
-func (s *AppointmentService) UpdateAppointment(ctx context.Context, user *models.User, appointment *models.Appointment, req *dto.AppointmentRequest) (*models.Appointment, error) {
-	if err := copier.Copy(appointment, req); err != nil {
-		return nil, err
-	}
-
-	return s.AppointmentRepo.ReplaceAppointment(ctx, appointment)
 }
 
 func (s *AppointmentService) UpdateAppointmentStatus(ctx context.Context, user *models.User, appointment *models.Appointment, req *dto.AppointmentUpdateStatusRequest) (*models.Appointment, error) {
