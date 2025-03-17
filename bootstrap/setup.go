@@ -71,9 +71,9 @@ func SetupServer(client *mongo.Database) (*gin.Engine, *ServerRepositories, *Ser
 	subpackageService := services.NewSubpackageService(subpackageRepo, packageRepo, busyTimeRepo)
 	appointmentService := services.NewAppointmentService(appointmentRepo, packageRepo, subpackageRepo, busyTimeRepo, userRepo)
 	packageService := services.NewPackageService(packageRepo, s3Service, subpackageService)
-	userService := services.NewUserService(userRepo, s3Service, packageService, authClient)
-	busyTimeService := services.NewBusyTimeService(busyTimeRepo, subpackageRepo, packageRepo)
 	RatingService := services.NewRatingService(ratingRepo)
+	userService := services.NewUserService(userRepo, s3Service, packageService, authClient, RatingService)
+	busyTimeService := services.NewBusyTimeService(busyTimeRepo, subpackageRepo, packageRepo)
 
 	packageController := controllers.NewPackageController(packageService, s3Service, userService)
 	subPackageController := controllers.NewSubpackageController(subpackageService, packageService)

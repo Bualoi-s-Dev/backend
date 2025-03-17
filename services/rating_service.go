@@ -84,11 +84,7 @@ func (s *RatingService) DeleteOne(ctx context.Context, userId,ratingId primitive
 }
 
 func (s *RatingService) MappedToRatingResponse(ctx context.Context, item *models.Rating) (*dto.RatingResponse, error) {
-	ratings, err := s.RatingService.GetById(ctx, item.ID)
-	if err != nil {
-		return nil, err
-	}
-	return &dto.PackageResponse{
+	return &dto.RatingResponse{
 		ID:				item.ID,
 		CustomerID:		item.CustomerID,
 		PhotographerID:	item.PhotographerID,

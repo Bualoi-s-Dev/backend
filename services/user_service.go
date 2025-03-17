@@ -17,10 +17,11 @@ type UserService struct {
 	S3Service      *S3Service
 	PackageService *PackageService
 	AuthClient     *auth.Client
+	RatingService  *RatingService
 }
 
-func NewUserService(repo *repositories.UserRepository, s3Service *S3Service, packageService *PackageService, authClient *auth.Client) *UserService {
-	return &UserService{Repo: repo, S3Service: s3Service, PackageService: packageService, AuthClient: authClient}
+func NewUserService(repo *repositories.UserRepository, s3Service *S3Service, packageService *PackageService, authClient *auth.Client, RatingService *RatingService) *UserService {
+	return &UserService{Repo: repo, S3Service: s3Service, PackageService: packageService, AuthClient: authClient, RatingService: RatingService}
 }
 
 func (s *UserService) FindUser(ctx context.Context, email string) (*models.User, error) {
@@ -158,6 +159,22 @@ func (s *UserService) mappedToUserResponse(ctx context.Context, user *models.Use
 		showcasePackageResponse = append(showcasePackageResponse, *packageRes)
 	}
 
+	ratingResponse := []dto.RatingResponse{}
+	if user.Role == models.Photographer {
+		ratings, err := s.RatingService.GetByPhotographerId(ctx, user.ID)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, rating := range ratings {
+			ratingRes, err := s.RatingService.MappedToRatingResponse(ctx, &rating)
+			if err != nil {
+				return nil, err
+			}
+			ratingResponse = append(ratingResponse, *ratingRes)
+		}
+	}
+
 	return &dto.UserResponse{
 		ID:               user.ID,
 		Email:            user.Email,
@@ -175,5 +192,6 @@ func (s *UserService) mappedToUserResponse(ctx context.Context, user *models.Use
 		Instagram:        user.Instagram,
 		ShowcasePackages: showcasePackageResponse,
 		Packages:         packageResponse,
+		Ratings:		  ratingResponse,
 	}, nil
 }
