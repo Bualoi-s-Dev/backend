@@ -32,8 +32,10 @@ func (s *AppointmentScenario) InitializeScenario(ctx *godog.ScenarioContext) {
 	ctx.Given(`^a customer is logged in$`, s.theCustomerIsLoggedIn)
 
 	ctx.When(`^a customer creates an appointment$`, s.theCustomerCreatesAnAppointment)
+	ctx.When(`^a customer creates an appointment with wrong format$`, s.theCustomerCreatesAnAppointmentWithWrongFormat)
 
 	ctx.Then(`^the appointment is created$`, s.theAppointmentIsCreated)
+	ctx.Then(`^the appointment is not created$`, s.theAppointmentIsNotCreated)
 }
 
 func (s *AppointmentScenario) thePhotographerHasPackageAndSubpackage() error {
@@ -214,6 +216,33 @@ func (s *AppointmentScenario) theCustomerCreatesAnAppointment() error {
 	return nil
 }
 
+func (s *AppointmentScenario) theCustomerCreatesAnAppointmentWithWrongFormat() error {
+	// Creating an appointment with an incorrect format (e.g., missing required fields)
+	reqBody, _ := json.Marshal(map[string]interface{}{
+		"location": 12345, // Incorrect format: should be a string, not an integer
+	})
+
+	req, err := http.NewRequest("POST", s.Server.URL+"/appointment/"+s.Subpackage.ID.Hex(), bytes.NewBuffer(reqBody))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Authorization", "Bearer "+s.Token)
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{}
+	res, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer res.Body.Close()
+
+	if res.StatusCode == http.StatusCreated {
+		return fmt.Errorf("unexpected success: appointment was created despite wrong format")
+	}
+
+	return nil
+}
+
 func (s *AppointmentScenario) theAppointmentIsCreated() error {
 	expectAppointment := models.Appointment{
 		CustomerID:     s.CustomerID,
@@ -228,5 +257,41 @@ func (s *AppointmentScenario) theAppointmentIsCreated() error {
 	if err := utils.CompareStructsExcept(expectAppointment, s.Appointment.Appointment, []string{"ID", "BusyTimeID"}); err != nil {
 		return err
 	}
+	return nil
+}
+
+func (s *AppointmentScenario) theAppointmentIsNotCreated() error {
+	req, err := http.NewRequest("GET", s.Server.URL+"/appointment/customer/"+s.CustomerID.Hex(), nil)
+	if err != nil {
+		return err
+	}
+
+	req.Header.Set("Authorization", "Bearer "+s.Token)
+
+	client := &http.Client{}
+	res, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer res.Body.Close()
+
+	if res.StatusCode == http.StatusNotFound {
+		// No appointments exist, which is expected
+		return nil
+	}
+
+	if res.StatusCode != http.StatusOK {
+		return fmt.Errorf("unexpected status code: %d", res.StatusCode)
+	}
+
+	var appointments []models.Appointment
+	if err := json.NewDecoder(res.Body).Decode(&appointments); err != nil {
+		return err
+	}
+
+	if len(appointments) > 0 {
+		return fmt.Errorf("unexpected: appointments exist despite invalid creation attempt")
+	}
+
 	return nil
 }

@@ -35,7 +35,6 @@ type ServerServices struct {
 
 func SetupServer(client *mongo.Database) (*gin.Engine, *ServerRepositories, *ServerServices) {
 	r := gin.Default()
-	r.RemoveExtraSlash = true
 
 	// r.Use(cors.New(cors.Config{
 	// 	AllowOrigins:     []string{"http://localhost:3000", "https://frontend-2gn.pages.dev"},
