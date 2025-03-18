@@ -23,5 +23,6 @@ var (
 // Rating
 var (
 	ErrCustomerRatingMismatched		= errors.New("Customer does not own this rating")
-	ErrPhotographerRatingMismatched	= errors.New("Photographer does not own this rating")	
+	ErrPhotographerRatingMismatched	= errors.New("Photographer does not own this rating")
+	ErrAlreadyReviewed				= errors.New("Customer has already review this photographer")
 )

@@ -43,13 +43,13 @@ func (s *RatingService) GetById(ctx context.Context, photographerId, ratingId pr
 
 func (s *RatingService) CreateOneFromCustomer(ctx context.Context, request *dto.RatingRequest, customerId primitive.ObjectID, photographerId primitive.ObjectID) error {
 	model := request.ToModel(customerId, photographerId)
-	// hasReviewed, err := s.Repository.CustomerHasReviewedPhotographer(ctx, customerId, model.PhotographerID)
-	// if err != nil {
-	// 	return nil, err
-	// }
-	// if hasReviewed {
-	// 	return nil, apperrors.ErrAlreadyReviewed // Define this error to indicate duplicate review
-	// }
+	hasReviewed, err := s.Repository.CustomerHasReviewedPhotographer(ctx, customerId, model.PhotographerID)
+	if err != nil {
+		return err
+	}
+	if hasReviewed {
+		return apperrors.ErrAlreadyReviewed
+	}
 	return s.Repository.CreateOne(ctx, model)
 }
 
