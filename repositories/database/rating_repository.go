@@ -131,9 +131,23 @@ func (r *RatingRepository) CustomerHasReviewedPhotographer(ctx context.Context, 
 	return count > 0, nil
 }
 
-func (r *RatingRepository) IsUserRatingOwner(ctx context.Context, customerId, ratingId primitive.ObjectID) (bool, error) {
+func (r *RatingRepository) IsCustomerRatingOwner(ctx context.Context, customerId, ratingId primitive.ObjectID) (bool, error) {
 	filter := bson.M{
 		"customer_id":     customerId,
+		"_id": ratingId,
+	}
+
+	count, err := r.Collection.CountDocuments(ctx, filter)
+	if err != nil {
+		return false, err
+	}
+
+	return count > 0, nil
+}
+
+func (r *RatingRepository) IsPhotographerRatingOwner(ctx context.Context, photographerId, ratingId primitive.ObjectID) (bool, error) {
+	filter := bson.M{
+		"photographer_id":     photographerId,
 		"_id": ratingId,
 	}
 

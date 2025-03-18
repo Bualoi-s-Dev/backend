@@ -3,7 +3,6 @@ package controllers
 import (
 	"net/http"
 
-	"github.com/Bualoi-s-Dev/backend/apperrors"
 	"github.com/Bualoi-s-Dev/backend/dto"
 	"github.com/Bualoi-s-Dev/backend/services"
 	"github.com/Bualoi-s-Dev/backend/middleware"
@@ -12,11 +11,12 @@ import (
 )
 
 type RatingController struct {
-	Service *services.RatingService
+	RatingService	*services.RatingService
+	UserService		*services.UserService	
 }
 
-func NewRatingController(service *services.RatingService) *RatingController {
-	return &RatingController{Service: service}
+func NewRatingController(ratingService *services.RatingService, userService *services.UserService) *RatingController {
+	return &RatingController{RatingService: ratingService, UserService: userService}
 }
 
 // GetAllRatingsFromPhotographer godoc
@@ -37,8 +37,19 @@ func (ctrl *RatingController) GetAllRatingsFromPhotographer(c *gin.Context) {
 		return
 	}
 
+	//Check if user in photographerId is photographer
+	isPhotographer, err := ctrl.UserService.IsPhotographerByUserId(c.Request.Context(), photographerObjectID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error checking photographer role, " + err.Error()})
+		return
+	}
+	if !isPhotographer {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "User is not a photographer"})
+		return
+	}
+
 	// Fetch ratings for the photographer
-	items, err := ctrl.Service.GetByPhotographerId(c.Request.Context(), photographerObjectID)
+	items, err := ctrl.RatingService.GetByPhotographerId(c.Request.Context(), photographerObjectID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch ratings, " + err.Error()})
 		return
@@ -67,19 +78,30 @@ func (ctrl *RatingController) CreateRating(c *gin.Context) {
 		return
 	}
 
+	//Check if user in photographerId is photographer
+	isPhotographer, err := ctrl.UserService.IsPhotographerByUserId(c.Request.Context(), photographerObjectID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error checking photographer role, " + err.Error()})
+		return
+	}
+	if !isPhotographer {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "User is not a photographer"})
+		return
+	}
+
 	var ratingRequest dto.RatingRequest
 	if err := c.ShouldBindJSON(&ratingRequest); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request, " + err.Error()})
 		return
 	}
 
-	item, err := ctrl.Service.CreateOneFromCustomer(c.Request.Context(), &ratingRequest, user.ID, photographerObjectID)
+	err = ctrl.RatingService.CreateOneFromCustomer(c.Request.Context(), &ratingRequest, user.ID, photographerObjectID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create rating, " + err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusCreated, item)
+	c.JSON(http.StatusCreated, gin.H{"message": "Rating created successfully"})
 }
 
 // GetRatingById godoc
@@ -99,9 +121,27 @@ func (ctrl *RatingController) GetRatingById(c *gin.Context) {
 		return
 	}
 
-	item, err := ctrl.Service.GetById(c.Request.Context(), ratingObjectID)
+	photographerId := c.Param("photographerId")
+	photographerObjectID, err := primitive.ObjectIDFromHex(photographerId)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Rating not found, " + err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid photographer ID"})
+		return
+	}
+
+	//Check if user in photographerId is photographer
+	isPhotographer, err := ctrl.UserService.IsPhotographerByUserId(c.Request.Context(), photographerObjectID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error checking photographer role, " + err.Error()})
+		return
+	}
+	if !isPhotographer {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "User is not a photographer"})
+		return
+	}
+
+	item, err := ctrl.RatingService.GetById(c.Request.Context(), photographerObjectID, ratingObjectID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Failed to get rating, " + err.Error()})
 		return
 	}
 
@@ -118,7 +158,7 @@ func (ctrl *RatingController) GetRatingById(c *gin.Context) {
 // @Success 200 {object} models.Rating
 // @Failure 403 {object} string "Forbidden"
 // @Failure 400 {object} string "Bad Request"
-// @Router /user/{photographerId}/rating/{ratingId} [PATCH]
+// @Router /user/{photographerId}/rating/{ratingId} [PUT]
 func (ctrl *RatingController) UpdateRating(c *gin.Context) {
 	user := middleware.GetUserFromContext(c)
 
@@ -129,6 +169,24 @@ func (ctrl *RatingController) UpdateRating(c *gin.Context) {
 		return
 	}
 
+	photographerId := c.Param("photographerId")
+	photographerObjectID, err := primitive.ObjectIDFromHex(photographerId)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid photographer ID"})
+		return
+	}
+
+	//Check if user in photographerId is photographer
+	isPhotographer, err := ctrl.UserService.IsPhotographerByUserId(c.Request.Context(), photographerObjectID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error checking photographer role, " + err.Error()})
+		return
+	}
+	if !isPhotographer {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "User is not a photographer"})
+		return
+	}
+
 	// Bind request JSON to DTO
 	var ratingRequest dto.RatingRequest
 	if err := c.ShouldBindJSON(&ratingRequest); err != nil {
@@ -136,12 +194,8 @@ func (ctrl *RatingController) UpdateRating(c *gin.Context) {
 		return
 	}
 	
-	err = ctrl.Service.UpdateOne(c.Request.Context(), user.ID, ratingObjectID, &ratingRequest)
+	err = ctrl.RatingService.UpdateOne(c.Request.Context(), user.ID, photographerObjectID, ratingObjectID, &ratingRequest)
 	if err != nil {
-		if err == apperrors.ErrUnauthorized {
-			c.JSON(http.StatusForbidden, gin.H{"error": "You can only update your own review"})
-			return
-		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update rating, " + err.Error()})
 		return
 	}
@@ -168,13 +222,27 @@ func (ctrl *RatingController) DeleteRating(c *gin.Context) {
 		return
 	}
 
-	// Call service to delete the rating
-	err = ctrl.Service.DeleteOne(c.Request.Context(), user.ID, ratingObjectID)
+	photographerId := c.Param("photographerId")
+	photographerObjectID, err := primitive.ObjectIDFromHex(photographerId)
 	if err != nil {
-		if err == apperrors.ErrUnauthorized {
-			c.JSON(http.StatusForbidden, gin.H{"error": "You can only delete your own review"})
-			return
-		}
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid photographer ID"})
+		return
+	}
+
+	//Check if user in photographerId is photographer
+	isPhotographer, err := ctrl.UserService.IsPhotographerByUserId(c.Request.Context(), photographerObjectID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error checking photographer role, " + err.Error()})
+		return
+	}
+	if !isPhotographer {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "User is not a photographer"})
+		return
+	}
+
+	// Call service to delete the rating
+	err = ctrl.RatingService.DeleteOne(c.Request.Context(), user.ID, photographerObjectID, ratingObjectID)
+	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete rating, " + err.Error()})
 		return
 	}

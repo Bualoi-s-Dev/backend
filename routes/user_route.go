@@ -18,7 +18,7 @@ func UserRoutes(router *gin.Engine, userController *controllers.UserController, 
 	customerRoutes := userGroup.Group("", middleware.AllowRoles(models.Customer))
 	{
 		customerRoutes.POST("/:photographerId/rating", RatingController.CreateRating)
-		customerRoutes.PATCH("/:photographerId/rating/:ratingId", RatingController.UpdateRating)
+		customerRoutes.PUT("/:photographerId/rating/:ratingId", RatingController.UpdateRating)
 		customerRoutes.DELETE("/:photographerId/rating/:ratingId", RatingController.DeleteRating)
 	}
 	photographerRoutes := userGroup.Group("", middleware.AllowRoles(models.Photographer))

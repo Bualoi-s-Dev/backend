@@ -28,11 +28,20 @@ func (s *RatingService) GetByPhotographerId(ctx context.Context, photographerId 
 	return s.Repository.GetByPhotographerId(ctx, photographerId)
 }
 
-func (s *RatingService) GetById(ctx context.Context, ratingId primitive.ObjectID) (*models.Rating, error) {
+func (s *RatingService) GetById(ctx context.Context, photographerId, ratingId primitive.ObjectID) (*models.Rating, error) {
+	var item *models.Rating
+	isPhotographerOwner, err := s.Repository.IsPhotographerRatingOwner(ctx, photographerId, ratingId)
+	if err != nil {
+		return item, err
+	}
+	if !isPhotographerOwner {
+		return item, apperrors.ErrPhotographerRatingMismatched
+	}
+
 	return s.Repository.GetById(ctx, ratingId)
 }
 
-func (s *RatingService) CreateOneFromCustomer(ctx context.Context, request *dto.RatingRequest, customerId primitive.ObjectID, photographerId primitive.ObjectID) (*models.Rating, error) {
+func (s *RatingService) CreateOneFromCustomer(ctx context.Context, request *dto.RatingRequest, customerId primitive.ObjectID, photographerId primitive.ObjectID) error {
 	model := request.ToModel(customerId, photographerId)
 	// hasReviewed, err := s.Repository.CustomerHasReviewedPhotographer(ctx, customerId, model.PhotographerID)
 	// if err != nil {
@@ -41,17 +50,12 @@ func (s *RatingService) CreateOneFromCustomer(ctx context.Context, request *dto.
 	// if hasReviewed {
 	// 	return nil, apperrors.ErrAlreadyReviewed // Define this error to indicate duplicate review
 	// }
-	return nil, s.Repository.CreateOne(ctx, model)
+	return s.Repository.CreateOne(ctx, model)
 }
 
-func (s *RatingService) UpdateOne(ctx context.Context, userId,ratingId primitive.ObjectID, request *dto.RatingRequest) error {
-	// Check if the rating exists and was written by this user
-	isOwner, err := s.Repository.IsUserRatingOwner(ctx, userId, ratingId)
-	if err != nil {
+func (s *RatingService) UpdateOne(ctx context.Context, customerId, photographerId, ratingId primitive.ObjectID, request *dto.RatingRequest) error {
+	if err := s.IsOwner(ctx, customerId, photographerId, ratingId); err != nil {
 		return err
-	}
-	if !isOwner {
-		return apperrors.ErrUnauthorized
 	}
 
 	// Fetch the existing rating
@@ -69,14 +73,9 @@ func (s *RatingService) UpdateOne(ctx context.Context, userId,ratingId primitive
 	return s.Repository.UpdateOne(ctx, existingRating)
 }
 
-func (s *RatingService) DeleteOne(ctx context.Context, userId,ratingId primitive.ObjectID) error {
-	// Check if the rating exists and was written by this user
-	isOwner, err := s.Repository.IsUserRatingOwner(ctx, userId, ratingId)
-	if err != nil {
+func (s *RatingService) DeleteOne(ctx context.Context, customerId, photographerId, ratingId primitive.ObjectID) error {
+	if err := s.IsOwner(ctx, customerId, photographerId, ratingId); err != nil {
 		return err
-	}
-	if !isOwner {
-		return apperrors.ErrUnauthorized
 	}
 
 	// Proceed with deletion
@@ -91,5 +90,28 @@ func (s *RatingService) MappedToRatingResponse(ctx context.Context, item *models
 		Rating:			item.Rating,
 		Review:			item.Review,
 	}, nil
+
+}
+
+func (s *RatingService) IsOwner(ctx context.Context, customerId, photographerId, ratingId primitive.ObjectID,) error {
+	// Check if the rating exists and was written by this user
+	isCustomerOwner, err := s.Repository.IsCustomerRatingOwner(ctx, customerId, ratingId)
+	if err != nil {
+		return err
+	}
+	if !isCustomerOwner {
+		return apperrors.ErrCustomerRatingMismatched
+	}
+	
+	// Check if the rating exists and was written by this user
+	isPhotographerOwner, err := s.Repository.IsPhotographerRatingOwner(ctx, photographerId, ratingId)
+	if err != nil {
+		return err
+	}
+	if !isPhotographerOwner {
+		return apperrors.ErrPhotographerRatingMismatched
+	}
+
+	return nil
 
 }

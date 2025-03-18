@@ -71,8 +71,8 @@ func SetupServer(client *mongo.Database) (*gin.Engine, *ServerRepositories, *Ser
 	subpackageService := services.NewSubpackageService(subpackageRepo, packageRepo, busyTimeRepo)
 	appointmentService := services.NewAppointmentService(appointmentRepo, packageRepo, subpackageRepo, busyTimeRepo, userRepo)
 	packageService := services.NewPackageService(packageRepo, s3Service, subpackageService)
-	RatingService := services.NewRatingService(ratingRepo)
-	userService := services.NewUserService(userRepo, s3Service, packageService, authClient, RatingService)
+	ratingService := services.NewRatingService(ratingRepo)
+	userService := services.NewUserService(userRepo, s3Service, packageService, authClient, ratingService)
 	busyTimeService := services.NewBusyTimeService(busyTimeRepo, subpackageRepo, packageRepo)
 
 	packageController := controllers.NewPackageController(packageService, s3Service, userService)
@@ -82,7 +82,7 @@ func SetupServer(client *mongo.Database) (*gin.Engine, *ServerRepositories, *Ser
 	userController := controllers.NewUserController(userService, s3Service, busyTimeService)
 	BusyTimeController := controllers.NewBusyTimeController(busyTimeService)
 	internalController := controllers.NewInternalController(firebaseService, s3Service)
-	RatingController := controllers.NewRatingController(RatingService)
+	RatingController := controllers.NewRatingController(ratingService, userService)
 
 	serverRepositories := &ServerRepositories{
 		packageRepo:     packageRepo,

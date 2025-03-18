@@ -20,8 +20,8 @@ type UserService struct {
 	RatingService  *RatingService
 }
 
-func NewUserService(repo *repositories.UserRepository, s3Service *S3Service, packageService *PackageService, authClient *auth.Client, RatingService *RatingService) *UserService {
-	return &UserService{Repo: repo, S3Service: s3Service, PackageService: packageService, AuthClient: authClient, RatingService: RatingService}
+func NewUserService(repo *repositories.UserRepository, s3Service *S3Service, packageService *PackageService, authClient *auth.Client, ratingService *RatingService) *UserService {
+	return &UserService{Repo: repo, S3Service: s3Service, PackageService: packageService, AuthClient: authClient, RatingService: ratingService}
 }
 
 func (s *UserService) FindUser(ctx context.Context, email string) (*models.User, error) {
@@ -194,4 +194,22 @@ func (s *UserService) mappedToUserResponse(ctx context.Context, user *models.Use
 		Packages:         packageResponse,
 		Ratings:		  ratingResponse,
 	}, nil
+}
+
+func (s *UserService) GetUserRoleByID(ctx context.Context, userId primitive.ObjectID) (*models.UserRole, error) {
+	user, err := s.GetUserByID(ctx, userId)
+	if err != nil {
+		return nil, err
+	}
+
+	return &user.Role, nil
+}
+
+func (s *UserService) IsPhotographerByUserId(ctx context.Context, userId primitive.ObjectID) (bool, error) {
+	userRole, err := s.GetUserRoleByID(ctx, userId)
+	if err != nil {
+		return false, err
+	}
+
+	return *userRole == models.Photographer, nil
 }
