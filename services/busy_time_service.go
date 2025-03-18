@@ -105,7 +105,7 @@ func (s *BusyTimeService) IsPhotographerAvailable(ctx context.Context, photograp
 	}
 
 	for _, busy := range busyTimes {
-		if busy.ID == *ignoreBusyTime {
+		if ignoreBusyTime != nil && busy.ID == *ignoreBusyTime {
 			continue
 		}
 		// Check overlap
