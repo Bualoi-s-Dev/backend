@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/Bualoi-s-Dev/backend/dto"
 	"github.com/Bualoi-s-Dev/backend/middleware"
@@ -74,8 +75,14 @@ func (ctrl *PackageController) GetAllPackages(c *gin.Context) {
 // @Router /package [get]
 // @x-order 6
 func (ctrl *PackageController) GetRecommendedPackages(c *gin.Context) {
-	items, err := ctrl.Service.GetAll(c.Request.Context())
+	size_ := c.Query("size")
+	size, err := strconv.Atoi(size_)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid size parameter"})
+		return
+	}
 
+	items, err := ctrl.Service.GetAllRecommended(c.Request.Context(), size)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch items, " + err.Error()})
 		return
@@ -90,6 +97,7 @@ func (ctrl *PackageController) GetRecommendedPackages(c *gin.Context) {
 		}
 		res = append(res, *mappedItem)
 	}
+
 	c.JSON(http.StatusOK, res)
 }
 

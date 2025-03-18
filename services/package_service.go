@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"errors"
+	"math/rand"
 	"strings"
 
 	"github.com/Bualoi-s-Dev/backend/dto"
@@ -25,6 +26,21 @@ func NewPackageService(repo *repositories.PackageRepository, s3Service *S3Servic
 
 func (s *PackageService) GetAll(ctx context.Context) ([]models.Package, error) {
 	return s.Repo.GetAll(ctx)
+}
+
+func (s *PackageService) GetAllRecommended(ctx context.Context, size int) ([]models.Package, error) {
+	pkgs, err := s.Repo.GetAll(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if len(pkgs) < size {
+		size = len(pkgs)
+	}
+	// TODO: Integrate with rating system later
+	rand.Shuffle(len(pkgs), func(i, j int) { pkgs[i], pkgs[j] = pkgs[j], pkgs[i] })
+
+	return pkgs[:size], nil
+
 }
 
 func (s *PackageService) GetById(ctx context.Context, packageId string) (*models.Package, error) {

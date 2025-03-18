@@ -37,12 +37,12 @@ func (s *AppointmentService) GetAllAppointment(ctx context.Context, user *models
 	return s.AppointmentRepo.GetAll(ctx, user.ID, user.Role)
 }
 
-func (s *AppointmentService) GetAllAppointmentDetail(ctx context.Context, user *models.User) ([]models.AppointmentDetail, error) {
+func (s *AppointmentService) GetAllAppointmentDetail(ctx context.Context, user *models.User) ([]dto.AppointmentDetail, error) {
 	allAppointment, err := s.AppointmentRepo.GetAll(ctx, user.ID, user.Role)
 	if err != nil {
 		return nil, apperrors.ErrBadRequest
 	}
-	var appointmentDetails []models.AppointmentDetail
+	var appointmentDetails []dto.AppointmentDetail
 	for _, appointment := range allAppointment {
 		pkg, err := s.PackageRepo.GetById(ctx, appointment.PackageID.Hex())
 		if err != nil {
@@ -78,7 +78,7 @@ func (s *AppointmentService) GetAllAppointmentDetail(ctx context.Context, user *
 			customerName = customer.Name
 		}
 
-		detail := models.AppointmentDetail{
+		detail := dto.AppointmentDetail{
 			ID:               appointment.ID,
 			PackageName:      pkg.Title,
 			SubpackageName:   subpackage.Title,
