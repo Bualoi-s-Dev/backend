@@ -25,8 +25,7 @@ func NewPackageController(service *services.PackageService, s3Service *services.
 // @Tags Package
 // @Summary Get a list of packages
 // @Description Retrieve all packages from the database
-// @Param title query string false "Filter by package title (prefix filter)"
-// @Param ownerName query string false "Filter by owner's name"
+// @Param search query string false "Filter by package title or owner (prefix filter)"
 // @Param type query string false "Filter by package type(prefix filter)"
 // @Success 200 {object} []dto.PackageResponse
 // @Failure 400 {object} string "Bad Request"
@@ -34,8 +33,7 @@ func NewPackageController(service *services.PackageService, s3Service *services.
 // @x-order 1
 func (ctrl *PackageController) GetAllPackages(c *gin.Context) {
 	items, err := ctrl.Service.GetAll(c.Request.Context())
-	searchTitle, _ := c.GetQuery("title")
-	searchOwnerName, _ := c.GetQuery("ownerName")
+	searchString, _ := c.GetQuery("search")
 	searchType_, _ := c.GetQuery("type")
 	searchType := models.PackageType(searchType_)
 
@@ -46,7 +44,7 @@ func (ctrl *PackageController) GetAllPackages(c *gin.Context) {
 
 	var res []dto.PackageResponse
 	for _, item := range items {
-		IsFiltered, err := ctrl.Service.FilterPackage(c.Request.Context(), &item, searchTitle, searchOwnerName, searchType)
+		IsFiltered, err := ctrl.Service.FilterPackage(c.Request.Context(), &item, searchString, searchType)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to filter item, " + err.Error()})
 			return

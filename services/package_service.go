@@ -189,22 +189,23 @@ func (s *PackageService) MappedToPackageResponse(ctx context.Context, item *mode
 
 }
 
-func (s *PackageService) FilterPackage(ctx context.Context, item *models.Package, searchTitle, searchOwnerName string, searchType models.PackageType) (bool, error) {
-	hasSearchType, hasSearchTitle, hasSearchOwnerName := searchType != "", searchTitle != "", searchOwnerName != ""
-	if hasSearchTitle && !strings.HasPrefix(strings.ToLower(item.Title), strings.ToLower(searchTitle)) {
+// TODO: Add price range search
+func (s *PackageService) FilterPackage(ctx context.Context, item *models.Package, searchString string, searchType models.PackageType) (bool, error) {
+	hasSearchString, hasSearchType := searchString != "", searchType != ""
+	if hasSearchType && item.Type != searchType {
 		return false, nil
 	}
-	if hasSearchOwnerName {
+	if hasSearchString {
+		if strings.HasPrefix(strings.ToLower(item.Title), strings.ToLower(searchString)) {
+			return true, nil
+		}
 		ownerUser, err := s.UserRepo.FindUserByID(ctx, item.OwnerID)
 		if err != nil {
 			return false, err
 		}
-		if !strings.HasPrefix(strings.ToLower(ownerUser.Name), strings.ToLower(searchOwnerName)) {
-			return false, nil
+		if strings.HasPrefix(strings.ToLower(ownerUser.Name), strings.ToLower(searchString)) {
+			return true, nil
 		}
-	}
-	if hasSearchType && item.Type != searchType {
-		return false, nil
 	}
 	return true, nil
 }
