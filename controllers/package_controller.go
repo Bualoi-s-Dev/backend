@@ -24,6 +24,9 @@ func NewPackageController(service *services.PackageService, s3Service *services.
 // @Tags Package
 // @Summary Get a list of packages
 // @Description Retrieve all packages from the database
+// @Param title query string false "Filter by package title (prefix filter)"
+// @Param ownerName query string false "Filter by owner's name"
+// @Param type query string false "Filter by package type(prefix filter)"
 // @Success 200 {object} []dto.PackageResponse
 // @Failure 400 {object} string "Bad Request"
 // @Router /package [get]
@@ -51,6 +54,35 @@ func (ctrl *PackageController) GetAllPackages(c *gin.Context) {
 			continue
 		}
 
+		mappedItem, err := ctrl.Service.MappedToPackageResponse(c.Request.Context(), &item)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to map item, " + err.Error()})
+			return
+		}
+		res = append(res, *mappedItem)
+	}
+	c.JSON(http.StatusOK, res)
+}
+
+// GetRecommendedPackages godoc
+// @Tags Package
+// @Summary Get a list of recommended packages
+// @Description Retrieve recommended packages from the database by size
+// @Param size query int false "Recommended package size"
+// @Success 200 {object} []dto.PackageResponse
+// @Failure 400 {object} string "Bad Request"
+// @Router /package [get]
+// @x-order 6
+func (ctrl *PackageController) GetRecommendedPackages(c *gin.Context) {
+	items, err := ctrl.Service.GetAll(c.Request.Context())
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch items, " + err.Error()})
+		return
+	}
+
+	var res []dto.PackageResponse
+	for _, item := range items {
 		mappedItem, err := ctrl.Service.MappedToPackageResponse(c.Request.Context(), &item)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to map item, " + err.Error()})
