@@ -40,7 +40,6 @@ func (s *PackageService) GetAllRecommended(ctx context.Context, size int) ([]mod
 	rand.Shuffle(len(pkgs), func(i, j int) { pkgs[i], pkgs[j] = pkgs[j], pkgs[i] })
 
 	return pkgs[:size], nil
-
 }
 
 func (s *PackageService) GetById(ctx context.Context, packageId string) (*models.Package, error) {
@@ -189,7 +188,15 @@ func (s *PackageService) MappedToPackageResponse(ctx context.Context, item *mode
 
 }
 
-// TODO: Add price range search
+func (s *PackageService) FilterPrice(ctx context.Context, item *dto.PackageResponse, minPrice int, maxPrice int) (bool, error) {
+	for _, subpackage := range item.SubPackages {
+		if minPrice <= subpackage.Price && subpackage.Price <= maxPrice {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
 func (s *PackageService) FilterPackage(ctx context.Context, item *models.Package, searchString string, searchType models.PackageType) (bool, error) {
 	hasSearchString, hasSearchType := searchString != "", searchType != ""
 	if hasSearchType && item.Type != searchType {
