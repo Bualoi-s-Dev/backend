@@ -67,6 +67,11 @@ func (uc *UserController) GetUserProfile(c *gin.Context) {
 // @Tags User
 // @Summary Get user photographers from database
 // @Description Retrieve user photographers from database
+// @Param name query string false "Photographer name"
+// @Param location query string false "Photographer location"
+// @Param minPrice query string false "Minimum price"
+// @Param maxPrice query string false "Maximum price"
+// @Param type query string false "Photographer type"
 // @Success 200 {object} dto.UserResponse
 // @Failure 400 {object} string "Bad Request"
 // @Router /user/photographer [get]

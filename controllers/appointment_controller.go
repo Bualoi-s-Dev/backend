@@ -52,6 +52,9 @@ func getSubpackageIDFromParam(c *gin.Context) (primitive.ObjectID, error) {
 // @Tags Appointment
 // @Summary Get all available appointments
 // @Description Retrieve all available appointments that the user can see from the database
+// @Param status query string false "Status of appointment"
+// @Param availableStartDay query string false "Available start day of appointment"
+// @Param availableEndDay query string false "Available end day of appointment"
 // @Success 200 {array} dto.AppointmentResponse
 // @Failure 401 {object} string "Unauthorized"
 // @Router /appointment [get]
@@ -61,6 +64,21 @@ func (a *AppointmentController) GetAllAppointment(c *gin.Context) {
 		"status":            c.Query("status"),
 		"availableStartDay": c.Query("availableStartDay"),
 		"availableEndDay":   c.Query("availableEndDay"),
+	}
+
+	// Verify date format
+	dateFormat := "2006-01-02"
+	if filters["availableStartDay"] != "" {
+		if _, err := time.Parse(dateFormat, filters["availableStartDay"]); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid date format for availableStartDay. Use YYYY-MM-DD."})
+			return
+		}
+	}
+	if filters["availableEndDay"] != "" {
+		if _, err := time.Parse(dateFormat, filters["availableEndDay"]); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid date format for availableEndDay. Use YYYY-MM-DD."})
+			return
+		}
 	}
 
 	user := middleware.GetUserFromContext(c)

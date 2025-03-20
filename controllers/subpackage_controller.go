@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/Bualoi-s-Dev/backend/dto"
 	"github.com/Bualoi-s-Dev/backend/services"
@@ -23,6 +24,11 @@ func NewSubpackageController(service *services.SubpackageService, packageService
 // GetAllSubpackages godoc
 // @Summary Get all subpackages
 // @Description Get all subpackages
+// @Param type query string false "Type of subpackage"
+// @Param availableStartTime query string false "Available start time of subpackage"
+// @Param availableEndTime query string false "Available end time of subpackage"
+// @Param availableStartDay query string false "Available start day of subpackage"
+// @Param availableEndDay query string false "Available end day of subpackage"
 // @Tags Subpackage
 // @Success 200 {object} []dto.SubpackageResponse
 // @Failure 400 {object} string "Bad Request"
@@ -35,6 +41,36 @@ func (ctrl *SubpackageController) GetAllSubpackages(c *gin.Context) {
 		"availableEndTime":   c.Query("availableEndTime"),
 		"availableStartDay":  c.Query("availableStartDay"),
 		"availableEndDay":    c.Query("availableEndDay"),
+	}
+
+	// Verify date format
+	dateFormat := "2006-01-02"
+	if filters["availableStartDay"] != "" {
+		if _, err := time.Parse(dateFormat, filters["availableStartDay"]); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid date format for availableStartDay. Use YYYY-MM-DD."})
+			return
+		}
+	}
+	if filters["availableEndDay"] != "" {
+		if _, err := time.Parse(dateFormat, filters["availableEndDay"]); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid date format for availableEndDay. Use YYYY-MM-DD."})
+			return
+		}
+	}
+
+	// Verify time format (HH:MM)
+	timeFormat := "15:03"
+	if filters["availableStartTime"] != "" {
+		if _, err := time.Parse(timeFormat, filters["availableStartTime"]); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid time format for availableStartTime. Use HH:MM."})
+			return
+		}
+	}
+	if filters["availableEndTime"] != "" {
+		if _, err := time.Parse(timeFormat, filters["availableEndTime"]); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid time format for availableEndTime. Use HH:MM."})
+			return
+		}
 	}
 
 	// Pagination parameters
