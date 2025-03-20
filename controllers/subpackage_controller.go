@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/Bualoi-s-Dev/backend/dto"
@@ -24,11 +25,13 @@ func NewSubpackageController(service *services.SubpackageService, packageService
 // GetAllSubpackages godoc
 // @Summary Get all subpackages
 // @Description Get all subpackages
+// @Param packageId query string false "Package ID of subpackage"
 // @Param type query string false "Type of subpackage"
 // @Param availableStartTime query string false "Available start time of subpackage"
 // @Param availableEndTime query string false "Available end time of subpackage"
 // @Param availableStartDay query string false "Available start day of subpackage"
 // @Param availableEndDay query string false "Available end day of subpackage"
+// @Param repeatedDay query []string false "Repeated day of subpackage"
 // @Tags Subpackage
 // @Success 200 {object} []dto.SubpackageResponse
 // @Failure 400 {object} string "Bad Request"
@@ -36,11 +39,13 @@ func NewSubpackageController(service *services.SubpackageService, packageService
 func (ctrl *SubpackageController) GetAllSubpackages(c *gin.Context) {
 	// Get query parameters for filtering
 	filters := map[string]string{
+		"packageId":          c.Query("packageId"),
 		"type":               c.Query("type"),
 		"availableStartTime": c.Query("availableStartTime"),
 		"availableEndTime":   c.Query("availableEndTime"),
 		"availableStartDay":  c.Query("availableStartDay"),
 		"availableEndDay":    c.Query("availableEndDay"),
+		"repeatedDay":        c.Query("repeatedDay"),
 	}
 
 	// Verify date format
@@ -70,6 +75,20 @@ func (ctrl *SubpackageController) GetAllSubpackages(c *gin.Context) {
 		if _, err := time.Parse(timeFormat, filters["availableEndTime"]); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid time format for availableEndTime. Use HH:MM."})
 			return
+		}
+	}
+
+	// Verify repeatedDay format
+	validDays := map[string]bool{
+		"SUN": true, "MON": true, "TUE": true, "WED": true, "THU": true, "FRI": true, "SAT": true,
+	}
+	if filters["repeatedDay"] != "" {
+		days := strings.Split(filters["repeatedDay"], ",")
+		for _, day := range days {
+			if !validDays[strings.TrimSpace(day)] {
+				c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid repeatedDay value. Use a comma-separated list of SUN, MON, TUE, WED, THU, FRI, SAT."})
+				return
+			}
 		}
 	}
 

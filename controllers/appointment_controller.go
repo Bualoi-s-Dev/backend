@@ -55,6 +55,9 @@ func getSubpackageIDFromParam(c *gin.Context) (primitive.ObjectID, error) {
 // @Param status query string false "Status of appointment"
 // @Param availableStartDay query string false "Available start day of appointment"
 // @Param availableEndDay query string false "Available end day of appointment"
+// @Param name query string false "Name of package title or customer name"
+// @Param minPrice query string false "Minimum price of appointment"
+// @Param maxPrice query string false "Maximum price of appointment"
 // @Success 200 {array} dto.AppointmentResponse
 // @Failure 401 {object} string "Unauthorized"
 // @Router /appointment [get]
@@ -64,6 +67,9 @@ func (a *AppointmentController) GetAllAppointment(c *gin.Context) {
 		"status":            c.Query("status"),
 		"availableStartDay": c.Query("availableStartDay"),
 		"availableEndDay":   c.Query("availableEndDay"),
+		"name":              c.Query("name"),
+		"minPrice":          c.Query("minPrice"),
+		"maxPrice":          c.Query("maxPrice"),
 	}
 
 	// Verify date format

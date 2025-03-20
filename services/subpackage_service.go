@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"errors"
+	"strings"
 	"time"
 
 	"github.com/Bualoi-s-Dev/backend/dto"
@@ -64,6 +65,29 @@ func (s *SubpackageService) GetFilteredSubpackages(ctx context.Context, filters 
 }
 
 func (s *SubpackageService) passesFilters(pkg *models.Package, item models.Subpackage, filters map[string]string) bool {
+	if filters["packageId"] != "" && pkg.ID.Hex() != filters["packageId"] {
+		return false
+	}
+
+	if filters["repeatedDay"] != "" {
+		days := strings.Split(filters["repeatedDay"], ",")
+		dayMap := make(map[string]bool)
+		for _, day := range days {
+			dayMap[strings.TrimSpace(day)] = true
+		}
+
+		match := false
+		for _, itemDay := range item.RepeatedDay {
+			if dayMap[string(itemDay)] {
+				match = true
+				break
+			}
+		}
+		if !match {
+			return false
+		}
+	}
+
 	return (filters["type"] == "" || string(pkg.Type) == filters["type"]) &&
 		(filters["availableStartTime"] == "" || item.AvailableStartTime >= filters["availableStartTime"]) &&
 		(filters["availableEndTime"] == "" || item.AvailableEndTime <= filters["availableEndTime"]) &&
