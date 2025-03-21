@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"firebase.google.com/go/auth"
 	"github.com/Bualoi-s-Dev/backend/dto"
@@ -101,10 +102,10 @@ func (s *UserService) GetFilteredPhotographers(ctx context.Context, filters map[
 	}
 
 	for _, photographer := range photographers {
-		if filters["name"] != "" && photographer.Name != filters["name"] {
+		if filters["name"] != "" && !strings.HasPrefix(filters["name"], photographer.Name) {
 			continue
 		}
-		if filters["location"] != "" && photographer.Location != filters["location"] {
+		if filters["location"] != "" && !strings.HasPrefix(filters["location"], photographer.Location) {
 			continue
 		}
 

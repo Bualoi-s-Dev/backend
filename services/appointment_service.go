@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"sort"
 	"strconv"
+	"strings"
 
 	"github.com/Bualoi-s-Dev/backend/apperrors"
 
@@ -97,7 +98,7 @@ func (s *AppointmentService) GetFilteredAppointments(ctx context.Context, user *
 				return nil, err
 			}
 
-			if pkg.Title != filters["name"] && ctm.Name != filters["name"] {
+			if !strings.HasPrefix(filters["name"], pkg.Title) && !strings.HasPrefix(filters["name"], ctm.Name) {
 				continue
 			}
 		}
