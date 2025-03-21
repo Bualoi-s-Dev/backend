@@ -40,6 +40,7 @@ type UserResponse struct {
 	Instagram        string            `bson:"instagram,omitempty" json:"instagram" example:"Meen"`
 	ShowcasePackages []PackageResponse `bson:"showcase_packages,omitempty" json:"showcasePackages" ts_type:"PackageResponse[]"`
 	Packages         []PackageResponse `bson:"photographer_packages,omitempty" json:"photographerPackages" ts_type:"PackageResponse[]"`
+	Ratings			 []RatingResponse  `bson:"ratings,omitempty" json:"photographerRatings" ts_type:"RatingResponse[]"`
 }
 
 type AuthUserCredentials struct {
