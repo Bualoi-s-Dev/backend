@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"errors"
+	"math/rand"
 	"strings"
 
 	"github.com/Bualoi-s-Dev/backend/dto"
@@ -16,14 +17,29 @@ type PackageService struct {
 	Repo              *repositories.PackageRepository
 	S3Service         *S3Service
 	SubpackageService *SubpackageService
+	UserRepo          *repositories.UserRepository
 }
 
-func NewPackageService(repo *repositories.PackageRepository, s3Service *S3Service, subpackageService *SubpackageService) *PackageService {
-	return &PackageService{Repo: repo, S3Service: s3Service, SubpackageService: subpackageService}
+func NewPackageService(repo *repositories.PackageRepository, s3Service *S3Service, subpackageService *SubpackageService, userRepo *repositories.UserRepository) *PackageService {
+	return &PackageService{Repo: repo, S3Service: s3Service, SubpackageService: subpackageService, UserRepo: userRepo}
 }
 
 func (s *PackageService) GetAll(ctx context.Context) ([]models.Package, error) {
 	return s.Repo.GetAll(ctx)
+}
+
+func (s *PackageService) GetAllRecommended(ctx context.Context, size int) ([]models.Package, error) {
+	pkgs, err := s.Repo.GetAll(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if len(pkgs) < size {
+		size = len(pkgs)
+	}
+	// TODO: Integrate with rating system later
+	rand.Shuffle(len(pkgs), func(i, j int) { pkgs[i], pkgs[j] = pkgs[j], pkgs[i] })
+
+	return pkgs[:size], nil
 }
 
 func (s *PackageService) GetById(ctx context.Context, packageId string) (*models.Package, error) {
@@ -160,6 +176,7 @@ func (s *PackageService) MappedToPackageResponse(ctx context.Context, item *mode
 	if err != nil {
 		return nil, err
 	}
+
 	return &dto.PackageResponse{
 		ID:          item.ID,
 		OwnerID:     item.OwnerID,
@@ -169,4 +186,33 @@ func (s *PackageService) MappedToPackageResponse(ctx context.Context, item *mode
 		SubPackages: subpackages,
 	}, nil
 
+}
+
+func (s *PackageService) FilterPrice(ctx context.Context, item *dto.PackageResponse, minPrice int, maxPrice int) (bool, error) {
+	for _, subpackage := range item.SubPackages {
+		if minPrice <= subpackage.Price && subpackage.Price <= maxPrice {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+func (s *PackageService) FilterPackage(ctx context.Context, item *models.Package, searchString string, searchType models.PackageType) (bool, error) {
+	hasSearchString, hasSearchType := searchString != "", searchType != ""
+	if hasSearchType && item.Type != searchType {
+		return false, nil
+	}
+	if hasSearchString {
+		if strings.HasPrefix(strings.ToLower(item.Title), strings.ToLower(searchString)) {
+			return true, nil
+		}
+		ownerUser, err := s.UserRepo.FindUserByID(ctx, item.OwnerID)
+		if err != nil {
+			return false, err
+		}
+		if strings.HasPrefix(strings.ToLower(ownerUser.Name), strings.ToLower(searchString)) {
+			return true, nil
+		}
+	}
+	return true, nil
 }

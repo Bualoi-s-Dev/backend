@@ -12,6 +12,7 @@ func PackageRoutes(router *gin.Engine, ctrl *controllers.PackageController) {
 	commonRoutes := packageRoutes.Group("", middleware.AllowRoles(models.Photographer, models.Customer))
 	{
 		commonRoutes.GET("", ctrl.GetAllPackages)
+		commonRoutes.GET("/recommend", ctrl.GetRecommendedPackages)
 		commonRoutes.GET("/:id", ctrl.GetOnePackage)
 	}
 

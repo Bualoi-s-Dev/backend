@@ -30,7 +30,6 @@ func main() {
 		AddEnum(models.ValidDayNames)
 	converter.
 		Add(models.BusyTime{}).
-		Add(dto.BusyTimeRequest{}).
 		Add(dto.BusyTimeStrictRequest{}).
 		AddEnum(models.ValidBusyTimeTypes)
 	converter.
