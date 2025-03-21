@@ -38,6 +38,9 @@ func main() {
 		Add(dto.AppointmentUpdateStatusRequest{}).
 		Add(dto.AppointmentResponse{}).
 		AddEnum(models.ValidAppointmentStatus)
+	converter.
+		Add(dto.RatingRequest{}).
+		Add(dto.RatingResponse{}).
 
 	// Change to interface
 	converter.CreateInterface = true

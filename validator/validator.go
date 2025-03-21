@@ -126,8 +126,8 @@ func IsInfRule(fl validator.FieldLevel) bool {
 
 	// If IsInf is false, both fields must be non-empty
 	if req.IsInf != nil && !*req.IsInf {
-		return req.AvaliableStartDay != nil && *req.AvaliableStartDay != "" &&
-			req.AvaliableEndDay != nil && *req.AvaliableEndDay != ""
+		return req.AvailableStartDay != nil && *req.AvailableStartDay != "" &&
+			req.AvailableEndDay != nil && *req.AvailableEndDay != ""
 	}
 
 	return true

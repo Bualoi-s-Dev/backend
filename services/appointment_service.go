@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"sort"
+	"strconv"
+	"strings"
 
 	"github.com/Bualoi-s-Dev/backend/apperrors"
 
@@ -89,6 +91,88 @@ func (s *AppointmentService) GetAppointmentDetailById(ctx context.Context, user 
 	}
 	return detail, nil
 }
+func (s *AppointmentService) GetFilteredAppointments(ctx context.Context, user *models.User, filters map[string]string, page, limit int) ([]models.Appointment, error) {
+	items, err := s.AppointmentRepo.GetAll(ctx, user.ID, user.Role)
+	if err != nil {
+		return nil, err
+	}
+
+	var appointments []models.Appointment
+	startIdx := (page - 1) * limit
+	endIdx := startIdx + limit
+
+	// Convert price filters to integers safely
+	minPrice, maxPrice := 0, int(^uint(0)>>1) // Default: minPrice = 0, maxPrice = max int
+
+	if filters["minPrice"] != "" {
+		if parsedMinPrice, err := strconv.Atoi(filters["minPrice"]); err == nil {
+			minPrice = parsedMinPrice
+		} else {
+			return nil, fmt.Errorf("invalid minPrice filter: %v", err)
+		}
+	}
+
+	if filters["maxPrice"] != "" {
+		if parsedMaxPrice, err := strconv.Atoi(filters["maxPrice"]); err == nil {
+			maxPrice = parsedMaxPrice
+		} else {
+			return nil, fmt.Errorf("invalid maxPrice filter: %v", err)
+		}
+	}
+
+	for _, item := range items {
+		if filters["status"] != "" && string(item.Status) != filters["status"] {
+			continue
+		}
+		if item.Price < minPrice || item.Price > maxPrice {
+			continue
+		}
+
+		subPkg, err := s.SubpackageRepo.GetById(ctx, item.SubpackageID.Hex())
+		if err != nil {
+			fmt.Println("(GetFilteredAppointments) Error while getting subpackage")
+			return nil, err
+		}
+		if !s.passesFilters(subPkg, filters) {
+			continue
+		}
+
+		if filters["name"] != "" {
+			pkg, err := s.PackageRepo.GetById(ctx, item.PackageID.Hex())
+			if err != nil {
+				fmt.Println("(GetFilteredAppointments) Error while getting package")
+				return nil, err
+			}
+
+			ctm, err := s.UserRepo.FindUserByID(ctx, item.CustomerID)
+			if err != nil {
+				fmt.Println("(GetFilteredAppointments) Error while getting customer")
+				return nil, err
+			}
+
+			if !strings.HasPrefix(filters["name"], pkg.Title) && !strings.HasPrefix(filters["name"], ctm.Name) {
+				continue
+			}
+		}
+
+		appointments = append(appointments, item)
+	}
+
+	// Apply pagination
+	if startIdx > len(appointments) {
+		return []models.Appointment{}, nil
+	}
+	if endIdx > len(appointments) {
+		endIdx = len(appointments)
+	}
+	return appointments[startIdx:endIdx], nil
+}
+
+func (s *AppointmentService) passesFilters(subPkg *models.Subpackage, filters map[string]string) bool {
+	return (filters["availableStartDay"] == "" || subPkg.AvailableStartDay >= filters["availableStartDay"]) &&
+		(filters["availableEndDay"] == "" || subPkg.AvailableEndDay <= filters["availableEndDay"])
+}
+
 func (s *AppointmentService) GetAllAppointmentDetail(ctx context.Context, user *models.User) ([]dto.AppointmentDetail, error) {
 	allAppointment, err := s.AppointmentRepo.GetAll(ctx, user.ID, user.Role)
 	if err != nil {
