@@ -36,7 +36,59 @@ func NewAppointmentService(appointmentRepo *repositories.AppointmentRepository, 
 func (s *AppointmentService) GetAllAppointment(ctx context.Context, user *models.User) ([]models.Appointment, error) {
 	return s.AppointmentRepo.GetAll(ctx, user.ID, user.Role)
 }
+func (s *AppointmentService) GetAppointmentDetailById(ctx context.Context, user *models.User, appointment *models.Appointment) (*dto.AppointmentDetail, error) {
+	pkg, err := s.PackageRepo.GetById(ctx, appointment.PackageID.Hex())
+	if err != nil {
+		fmt.Println("(GetAllAppointmentDetail) Error while getting package")
+		return nil, err
+	}
+	subpackage, err := s.SubpackageRepo.GetById(ctx, appointment.SubpackageID.Hex())
+	if err != nil {
+		fmt.Println("(GetAllAppointmentDetail) Error while getting subpackage")
+		return nil, err
+	}
+	busyTime, err := s.BusyTimeRepo.GetById(ctx, appointment.BusyTimeID.Hex())
+	if err != nil {
+		fmt.Println("(GetAllAppointmentDetail) Error while getting busyTime")
+		return nil, err
+	}
+	var customerName, photographerName string
+	if user.Role == models.Customer {
+		customerName = user.Name
+		photographer, err := s.UserRepo.FindUserByID(ctx, appointment.PhotographerID)
+		if err != nil {
+			fmt.Println("(GetAllAppointmentDetail) Error while getting photographer")
+			return nil, err
+		}
+		photographerName = photographer.Name
+	} else if user.Role == models.Photographer {
+		photographerName = user.Name
+		customer, err := s.UserRepo.FindUserByID(ctx, appointment.CustomerID)
+		if err != nil {
+			fmt.Println("(GetAllAppointmentDetail) Error while getting customer")
+			return nil, err
+		}
+		customerName = customer.Name
+	}
 
+	detail := &dto.AppointmentDetail{
+		ID:               appointment.ID,
+		PackageID:        pkg.ID,
+		SubpackageID:     subpackage.ID,
+		PhotographerID:   appointment.PhotographerID,
+		CustomerID:       appointment.CustomerID,
+		PackageName:      pkg.Title,
+		SubpackageName:   subpackage.Title,
+		CustomerName:     customerName,
+		PhotographerName: photographerName,
+		Price:            appointment.Price,
+		StartTime:        busyTime.StartTime,
+		EndTime:          busyTime.EndTime,
+		Status:           appointment.Status,
+		Location:         appointment.Location,
+	}
+	return detail, nil
+}
 func (s *AppointmentService) GetAllAppointmentDetail(ctx context.Context, user *models.User) ([]dto.AppointmentDetail, error) {
 	allAppointment, err := s.AppointmentRepo.GetAll(ctx, user.ID, user.Role)
 	if err != nil {
@@ -44,53 +96,11 @@ func (s *AppointmentService) GetAllAppointmentDetail(ctx context.Context, user *
 	}
 	var appointmentDetails []dto.AppointmentDetail
 	for _, appointment := range allAppointment {
-		pkg, err := s.PackageRepo.GetById(ctx, appointment.PackageID.Hex())
+		detail, err := s.GetAppointmentDetailById(ctx, user, &appointment)
 		if err != nil {
-			fmt.Println("(GetAllAppointmentDetail) Error while getting package")
 			return nil, err
 		}
-		subpackage, err := s.SubpackageRepo.GetById(ctx, appointment.SubpackageID.Hex())
-		if err != nil {
-			fmt.Println("(GetAllAppointmentDetail) Error while getting subpackage")
-			return nil, err
-		}
-		busyTime, err := s.BusyTimeRepo.GetById(ctx, appointment.BusyTimeID.Hex())
-		if err != nil {
-			fmt.Println("(GetAllAppointmentDetail) Error while getting busyTime")
-			return nil, err
-		}
-		var customerName, photographerName string
-		if user.Role == models.Customer {
-			customerName = user.Name
-			photographer, err := s.UserRepo.FindUserByID(ctx, appointment.PhotographerID)
-			if err != nil {
-				fmt.Println("(GetAllAppointmentDetail) Error while getting photographer")
-				return nil, err
-			}
-			photographerName = photographer.Name
-		} else if user.Role == models.Photographer {
-			photographerName = user.Name
-			customer, err := s.UserRepo.FindUserByID(ctx, appointment.CustomerID)
-			if err != nil {
-				fmt.Println("(GetAllAppointmentDetail) Error while getting customer")
-				return nil, err
-			}
-			customerName = customer.Name
-		}
-
-		detail := dto.AppointmentDetail{
-			ID:               appointment.ID,
-			PackageName:      pkg.Title,
-			SubpackageName:   subpackage.Title,
-			CustomerName:     customerName,
-			PhotographerName: photographerName,
-			Price:            appointment.Price,
-			StartTime:        busyTime.StartTime,
-			EndTime:          busyTime.EndTime,
-			Status:           appointment.Status,
-			Location:         appointment.Location,
-		}
-		appointmentDetails = append(appointmentDetails, detail)
+		appointmentDetails = append(appointmentDetails, *detail)
 	}
 	sort.Slice(appointmentDetails, func(i, j int) bool {
 		statusOrder := map[string]int{

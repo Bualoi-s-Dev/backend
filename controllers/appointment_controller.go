@@ -82,6 +82,31 @@ func (a *AppointmentController) GetAllAppointmentDetail(c *gin.Context) {
 	c.JSON(http.StatusOK, appointmentDetails)
 }
 
+// GetAllAppointmentDetailById godoc
+// @Tags Appointment
+// @Summary Get an appointments with provided details by Id
+// @Description Retrieve all available appointments detail that the user can see from the database
+// @Param id path string true "Appointment ID"
+// @Success 200 {object} dto.AppointmentDetailResponse
+// @Failure 401 {object} string "Unauthorized"
+// @Router /appointment/detail/{id} [get]
+func (a *AppointmentController) GetAllAppointmentDetailById(c *gin.Context) {
+	user := middleware.GetUserFromContext(c)
+	appointmentId, err := getIDFromParam(c)
+	if err != nil {
+		apperrors.HandleError(c, err, "Cannot get appointmentId from param.")
+		return
+	}
+
+	appointment, err := a.AppointmentService.GetAppointmentById(c.Request.Context(), user, appointmentId)
+	appointmentDetail, err := a.AppointmentService.GetAppointmentDetailById(c, user, appointment)
+	if err != nil {
+		apperrors.HandleError(c, err, "Error while get all appointment detail")
+		return
+	}
+	c.JSON(http.StatusOK, appointmentDetail)
+}
+
 // GetAppointmentById godoc
 // @Tags Appointment
 // @Summary Get appointment by ID
