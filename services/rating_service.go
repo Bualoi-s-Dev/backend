@@ -11,12 +11,12 @@ import (
 )
 
 type RatingService struct {
-	Repository	*repositories.RatingRepository
+	Repository *repositories.RatingRepository
 }
 
 func NewRatingService(repository *repositories.RatingRepository) *RatingService {
 	return &RatingService{
-		Repository:	repository,
+		Repository: repository,
 	}
 }
 
@@ -84,16 +84,17 @@ func (s *RatingService) DeleteOne(ctx context.Context, customerId, photographerI
 
 func (s *RatingService) MappedToRatingResponse(ctx context.Context, item *models.Rating) (*dto.RatingResponse, error) {
 	return &dto.RatingResponse{
-		ID:				item.ID,
-		CustomerID:		item.CustomerID,
-		PhotographerID:	item.PhotographerID,
-		Rating:			item.Rating,
-		Review:			item.Review,
+		ID:             item.ID,
+		CustomerID:     item.CustomerID,
+		PhotographerID: item.PhotographerID,
+		Rating:         item.Rating,
+		Review:         item.Review,
+		CreatedTime:    item.CreatedTime,
 	}, nil
 
 }
 
-func (s *RatingService) IsOwner(ctx context.Context, customerId, photographerId, ratingId primitive.ObjectID,) error {
+func (s *RatingService) IsOwner(ctx context.Context, customerId, photographerId, ratingId primitive.ObjectID) error {
 	// Check if the rating exists and was written by this user
 	isCustomerOwner, err := s.Repository.IsCustomerRatingOwner(ctx, customerId, ratingId)
 	if err != nil {
@@ -102,7 +103,7 @@ func (s *RatingService) IsOwner(ctx context.Context, customerId, photographerId,
 	if !isCustomerOwner {
 		return apperrors.ErrCustomerRatingMismatched
 	}
-	
+
 	// Check if the rating exists and was written by this user
 	isPhotographerOwner, err := s.Repository.IsPhotographerRatingOwner(ctx, photographerId, ratingId)
 	if err != nil {
