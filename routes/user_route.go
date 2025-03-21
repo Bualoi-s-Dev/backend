@@ -11,9 +11,10 @@ func UserRoutes(router *gin.Engine, userController *controllers.UserController, 
 	userGroup := router.Group("/user")
 	commonRoutes := userGroup.Group("", middleware.AllowRoles(models.Photographer, models.Customer))
 	{
+		commonRoutes.GET("/photographers", userController.GetPhotographers)
 		commonRoutes.GET("/:photographerId/rating", RatingController.GetAllRatingsFromPhotographer)
 		commonRoutes.GET("/:photographerId/rating/:ratingId", RatingController.GetRatingById)
-		
+
 	}
 	customerRoutes := userGroup.Group("", middleware.AllowRoles(models.Customer))
 	{
@@ -35,5 +36,4 @@ func UserRoutes(router *gin.Engine, userController *controllers.UserController, 
 		publicRoutes.PATCH("/profile", userController.UpdateUserProfile)
 	}
 
-	
 }

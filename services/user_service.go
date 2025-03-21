@@ -3,6 +3,8 @@ package services
 import (
 	"context"
 	"fmt"
+	"strconv"
+	"strings"
 
 	"firebase.google.com/go/auth"
 	"github.com/Bualoi-s-Dev/backend/dto"
@@ -13,15 +15,16 @@ import (
 )
 
 type UserService struct {
-	Repo           *repositories.UserRepository
-	S3Service      *S3Service
-	PackageService *PackageService
-	AuthClient     *auth.Client
-	RatingService  *RatingService
+	Repo              *repositories.UserRepository
+	S3Service         *S3Service
+	PackageService    *PackageService
+	SubpackageService *SubpackageService
+	AuthClient        *auth.Client
+	RatingService     *RatingService
 }
 
-func NewUserService(repo *repositories.UserRepository, s3Service *S3Service, packageService *PackageService, authClient *auth.Client, ratingService *RatingService) *UserService {
-	return &UserService{Repo: repo, S3Service: s3Service, PackageService: packageService, AuthClient: authClient, RatingService: ratingService}
+func NewUserService(repo *repositories.UserRepository, s3Service *S3Service, packageService *PackageService, subpackageService *SubpackageService, authClient *auth.Client, ratingService *RatingService) *UserService {
+	return &UserService{Repo: repo, S3Service: s3Service, PackageService: packageService, SubpackageService: subpackageService, AuthClient: authClient, RatingService: ratingService}
 }
 
 func (s *UserService) FindUser(ctx context.Context, email string) (*models.User, error) {
@@ -48,6 +51,130 @@ func (s *UserService) GetUserByID(ctx context.Context, userId primitive.ObjectID
 	}
 
 	return s.mappedToUserResponse(ctx, user)
+}
+
+func (s *UserService) GetPhotographers(ctx context.Context) ([]dto.UserResponse, error) {
+	photographers, err := s.Repo.FindPhotographers(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	var res []dto.UserResponse
+	for _, photographer := range photographers {
+		userRes, err := s.mappedToUserResponse(ctx, &photographer)
+		if err != nil {
+			return nil, err
+		}
+		res = append(res, *userRes)
+	}
+
+	return res, nil
+}
+
+func (s *UserService) GetFilteredPhotographers(ctx context.Context, filters map[string]string, page, limit int) ([]dto.UserResponse, error) {
+	photographers, err := s.Repo.FindPhotographers(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	var res []dto.UserResponse
+	startIdx := (page - 1) * limit
+	endIdx := startIdx + limit
+
+	// Convert price filters to integers safely
+	var minPrice, maxPrice int
+	if filters["minPrice"] != "" {
+		minPrice, err = strconv.Atoi(filters["minPrice"])
+		if err != nil {
+			return nil, fmt.Errorf("invalid minPrice filter: %v", err)
+		}
+	} else {
+		minPrice = 0 // Default to 0 if not provided
+	}
+
+	if filters["maxPrice"] != "" {
+		maxPrice, err = strconv.Atoi(filters["maxPrice"])
+		if err != nil {
+			return nil, fmt.Errorf("invalid maxPrice filter: %v", err)
+		}
+	} else {
+		maxPrice = int(^uint(0) >> 1) // Default to max int if not provided
+	}
+
+	for _, photographer := range photographers {
+		if filters["name"] != "" && !strings.HasPrefix(filters["name"], photographer.Name) {
+			continue
+		}
+		if filters["location"] != "" && !strings.HasPrefix(filters["location"], photographer.Location) {
+			continue
+		}
+
+		packageMatch := (filters["type"] == "" && filters["minPrice"] == "" && filters["maxPrice"] == "")
+
+		pkgs, err := s.PackageService.GetByOwnerId(ctx, photographer.ID)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, pkg := range pkgs {
+			if packageMatch {
+				break
+			}
+
+			if filters["type"] != "" && string(pkg.Type) != filters["type"] {
+				continue
+			}
+
+			if filters["minPrice"] != "" || filters["maxPrice"] != "" {
+				subPkgs, err := s.SubpackageService.GetByPackageId(ctx, pkg.ID)
+				if err != nil {
+					return nil, err
+				}
+
+				if subPkgs == nil {
+					subPkgs = []models.Subpackage{} // Prevent nil pointer issue
+				}
+
+				if !matchesPriceFilter(minPrice, maxPrice, subPkgs) {
+					continue
+				}
+
+			}
+
+			packageMatch = true
+			break
+		}
+
+		if !packageMatch {
+			continue
+		}
+
+		userRes, err := s.mappedToUserResponse(ctx, &photographer)
+		if err != nil {
+			return nil, err
+		}
+
+		res = append(res, *userRes)
+	}
+
+	// Apply pagination
+	if startIdx >= len(res) {
+		return []dto.UserResponse{}, nil
+	}
+	if endIdx > len(res) {
+		endIdx = len(res)
+	}
+	return res[startIdx:endIdx], nil
+}
+
+func matchesPriceFilter(minPrice int, maxPrice int, subPkgs []models.Subpackage) bool {
+	for _, sub := range subPkgs {
+		if sub.Price >= minPrice && sub.Price <= maxPrice {
+			// fmt.Println("Matching package price:", sub.Price)
+			return true
+		}
+	}
+	return false
 }
 
 func (s *UserService) CreateUser(ctx context.Context, user *models.User) error {
@@ -192,7 +319,7 @@ func (s *UserService) mappedToUserResponse(ctx context.Context, user *models.Use
 		Instagram:        user.Instagram,
 		ShowcasePackages: showcasePackageResponse,
 		Packages:         packageResponse,
-		Ratings:		  ratingResponse,
+		Ratings:          ratingResponse,
 	}, nil
 }
 

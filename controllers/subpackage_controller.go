@@ -3,6 +3,9 @@ package controllers
 import (
 	"fmt"
 	"net/http"
+	"strconv"
+	"strings"
+	"time"
 
 	"github.com/Bualoi-s-Dev/backend/dto"
 	"github.com/Bualoi-s-Dev/backend/services"
@@ -22,26 +25,84 @@ func NewSubpackageController(service *services.SubpackageService, packageService
 // GetAllSubpackages godoc
 // @Summary Get all subpackages
 // @Description Get all subpackages
+// @Param packageId query string false "Package ID of subpackage"
+// @Param type query string false "Type of subpackage"
+// @Param availableStartTime query string false "Available start time of subpackage"
+// @Param availableEndTime query string false "Available end time of subpackage"
+// @Param availableStartDay query string false "Available start day of subpackage"
+// @Param availableEndDay query string false "Available end day of subpackage"
+// @Param repeatedDay query []string false "Repeated day of subpackage"
 // @Tags Subpackage
 // @Success 200 {object} []dto.SubpackageResponse
 // @Failure 400 {object} string "Bad Request"
 // @Router /subpackage [GET]
 func (ctrl *SubpackageController) GetAllSubpackages(c *gin.Context) {
-	items, err := ctrl.Service.GetAll(c.Request.Context())
+	// Get query parameters for filtering
+	filters := map[string]string{
+		"packageId":          c.Query("packageId"),
+		"type":               c.Query("type"),
+		"availableStartTime": c.Query("availableStartTime"),
+		"availableEndTime":   c.Query("availableEndTime"),
+		"availableStartDay":  c.Query("availableStartDay"),
+		"availableEndDay":    c.Query("availableEndDay"),
+		"repeatedDay":        c.Query("repeatedDay"),
+	}
+
+	// Verify date format
+	dateFormat := "2006-01-02"
+	if filters["availableStartDay"] != "" {
+		if _, err := time.Parse(dateFormat, filters["availableStartDay"]); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid date format for availableStartDay. Use YYYY-MM-DD."})
+			return
+		}
+	}
+	if filters["availableEndDay"] != "" {
+		if _, err := time.Parse(dateFormat, filters["availableEndDay"]); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid date format for availableEndDay. Use YYYY-MM-DD."})
+			return
+		}
+	}
+
+	// Verify time format (HH:MM)
+	timeFormat := "15:03"
+	if filters["availableStartTime"] != "" {
+		if _, err := time.Parse(timeFormat, filters["availableStartTime"]); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid time format for availableStartTime. Use HH:MM."})
+			return
+		}
+	}
+	if filters["availableEndTime"] != "" {
+		if _, err := time.Parse(timeFormat, filters["availableEndTime"]); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid time format for availableEndTime. Use HH:MM."})
+			return
+		}
+	}
+
+	// Verify repeatedDay format
+	validDays := map[string]bool{
+		"SUN": true, "MON": true, "TUE": true, "WED": true, "THU": true, "FRI": true, "SAT": true,
+	}
+	if filters["repeatedDay"] != "" {
+		days := strings.Split(filters["repeatedDay"], ",")
+		for _, day := range days {
+			if !validDays[strings.TrimSpace(day)] {
+				c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid repeatedDay value. Use a comma-separated list of SUN, MON, TUE, WED, THU, FRI, SAT."})
+				return
+			}
+		}
+	}
+
+	// Pagination parameters
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
+
+	// Retrieve and filter subpackages with pagination
+	responses, err := ctrl.Service.GetFilteredSubpackages(c.Request.Context(), filters, page, limit)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch items, " + err.Error()})
 		return
 	}
 
-	var responses []dto.SubpackageResponse
-	for _, item := range items {
-		res, err := ctrl.Service.MappedToSubpackageResponse(c, &item)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to map items, " + err.Error()})
-			return
-		}
-		responses = append(responses, *res)
-	}
 	c.JSON(http.StatusOK, responses)
 }
 

@@ -3,6 +3,7 @@ package controllers
 import (
 	"fmt"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/Bualoi-s-Dev/backend/apperrors"
@@ -51,17 +52,54 @@ func getSubpackageIDFromParam(c *gin.Context) (primitive.ObjectID, error) {
 // @Tags Appointment
 // @Summary Get all available appointments
 // @Description Retrieve all available appointments that the user can see from the database
+// @Param status query string false "Status of appointment"
+// @Param availableStartDay query string false "Available start day of appointment"
+// @Param availableEndDay query string false "Available end day of appointment"
+// @Param name query string false "Name of package title or customer name"
+// @Param minPrice query string false "Minimum price of appointment"
+// @Param maxPrice query string false "Maximum price of appointment"
 // @Success 200 {array} dto.AppointmentResponse
 // @Failure 401 {object} string "Unauthorized"
 // @Router /appointment [get]
 func (a *AppointmentController) GetAllAppointment(c *gin.Context) {
+	// Get query parameters for filtering
+	filters := map[string]string{
+		"status":            c.Query("status"),
+		"availableStartDay": c.Query("availableStartDay"),
+		"availableEndDay":   c.Query("availableEndDay"),
+		"name":              c.Query("name"),
+		"minPrice":          c.Query("minPrice"),
+		"maxPrice":          c.Query("maxPrice"),
+	}
+
+	// Verify date format
+	dateFormat := "2006-01-02"
+	if filters["availableStartDay"] != "" {
+		if _, err := time.Parse(dateFormat, filters["availableStartDay"]); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid date format for availableStartDay. Use YYYY-MM-DD."})
+			return
+		}
+	}
+	if filters["availableEndDay"] != "" {
+		if _, err := time.Parse(dateFormat, filters["availableEndDay"]); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid date format for availableEndDay. Use YYYY-MM-DD."})
+			return
+		}
+	}
+
 	user := middleware.GetUserFromContext(c)
 
-	appointments, err := a.AppointmentService.GetAllAppointment(c.Request.Context(), user)
+	// Pagination parameters
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
+
+	// Retrieve and filter subpackages with pagination
+	appointments, err := a.AppointmentService.GetFilteredAppointments(c.Request.Context(), user, filters, page, limit)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch items, " + err.Error()})
 		return
 	}
+
 	c.JSON(http.StatusOK, appointments)
 }
 
