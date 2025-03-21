@@ -49,7 +49,11 @@ type AppointmentResponse struct {
 }
 
 type AppointmentDetail struct {
-	ID               primitive.ObjectID       `bson:"_id,omitempty" json:"id" ts_type:"string" example:"656e2b5e3f1a3c4d8b9e1234"`
+	ID               primitive.ObjectID       `bson:"_id" json:"id" ts_type:"string" example:"656e2b5e3f1a3c4d8b9e1234"`
+	PackageID        primitive.ObjectID       `bson:"package_id" json:"packageId" ts_type:"string" example:"656e2b5e3f1a3c4d8b9e1234"`
+	SubpackageID     primitive.ObjectID       `bson:"subpackage_id" json:"subpackageId" ts_type:"string" example:"656e2b5e3f1a3c4d8b9e1234"`
+	CustomerID       primitive.ObjectID       `bson:"customer_id" json:"customerId" ts_type:"string" example:"656e2b5e3f1a3c4d8b9e1234"`
+	PhotographerID   primitive.ObjectID       `bson:"photographer_id" json:"photographerId" ts_type:"string" example:"656e2b5e3f1a3c4d8b9e1234"`
 	PackageName      string                   `bson:"package_name" json:"packageName" ts_type:"string" example:"Wedding Package"`
 	SubpackageName   string                   `bson:"subpackage_name" json:"subpackageName" ts_type:"string" example:"Wedding Subpackage"`
 	CustomerName     string                   `bson:"customer_name" json:"customerName" ts_type:"string" example:"John Doe"`
@@ -58,7 +62,7 @@ type AppointmentDetail struct {
 	StartTime        time.Time                `bson:"start_time" json:"startTime" ts_type:"string" example:"2023-10-01T10:00:00Z"`
 	EndTime          time.Time                `bson:"end_time" json:"endTime" ts_type:"string" example:"2023-10-01T12:00:00Z"`
 	Status           models.AppointmentStatus `bson:"status" json:"status" ts_type:"string" example:"Pending"`
-	Location         string                   `bson:"location,omitempty" json:"location" ts_type:"string" example:"Bangkok, Thailand"`
+	Location         string                   `bson:"location" json:"location" ts_type:"string" example:"Bangkok, Thailand"`
 }
 
 type CreateAppointmentResponse struct {
