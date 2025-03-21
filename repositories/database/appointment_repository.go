@@ -178,7 +178,7 @@ func (repo *AppointmentRepository) GetAll(ctx context.Context, userID primitive.
 	} else if userRole == models.Customer {
 		fieldToFind = "customer_id"
 	} else {
-		return nil, fmt.Errorf("Guest cannot have appointments") // shouldn't have this error because authorization check
+		return nil, fmt.Errorf("guest cannot have appointments") // shouldn't have this error because authorization check
 	}
 	cursor, err := repo.AppointmentCollection.Find(ctx, bson.M{
 		fieldToFind: userID,
@@ -199,7 +199,7 @@ func (repo *AppointmentRepository) GetAll(ctx context.Context, userID primitive.
 	return items, nil
 }
 
-func (repo *AppointmentRepository) GetById(ctx context.Context, appointmentID primitive.ObjectID, userID primitive.ObjectID, userRole models.UserRole) (*models.Appointment, error) {
+func (repo *AppointmentRepository) GetById(ctx context.Context, appointmentID primitive.ObjectID) (*models.Appointment, error) {
 	var item models.Appointment
 
 	if err := repo.AppointmentCollection.FindOne(ctx, bson.M{"_id": appointmentID}).Decode(&item); err != nil {

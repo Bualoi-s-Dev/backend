@@ -110,7 +110,7 @@ func (s *AppointmentService) GetAllAppointmentDetail(ctx context.Context, user *
 }
 
 func (s *AppointmentService) GetAppointmentById(ctx context.Context, user *models.User, appointmentId primitive.ObjectID) (*models.Appointment, error) {
-	appointment, err := s.AppointmentRepo.GetById(ctx, appointmentId, user.ID, user.Role)
+	appointment, err := s.AppointmentRepo.GetById(ctx, appointmentId)
 	if err != nil {
 		return nil, apperrors.ErrBadRequest
 	}
