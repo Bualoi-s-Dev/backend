@@ -11,7 +11,6 @@ import (
 	"github.com/Bualoi-s-Dev/backend/dto"
 	"github.com/Bualoi-s-Dev/backend/models"
 	repositories "github.com/Bualoi-s-Dev/backend/repositories/database"
-	"github.com/jinzhu/copier"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -121,12 +120,12 @@ func (s *AppointmentService) passesFilters(subPkg *models.Subpackage, filters ma
 		(filters["availableEndDay"] == "" || subPkg.AvailableEndDay <= filters["availableEndDay"])
 }
 
-func (s *AppointmentService) GetAllAppointmentDetail(ctx context.Context, user *models.User) ([]models.AppointmentDetail, error) {
+func (s *AppointmentService) GetAllAppointmentDetail(ctx context.Context, user *models.User) ([]dto.AppointmentDetail, error) {
 	allAppointment, err := s.AppointmentRepo.GetAll(ctx, user.ID, user.Role)
 	if err != nil {
 		return nil, apperrors.ErrBadRequest
 	}
-	var appointmentDetails []models.AppointmentDetail
+	var appointmentDetails []dto.AppointmentDetail
 	for _, appointment := range allAppointment {
 		pkg, err := s.PackageRepo.GetById(ctx, appointment.PackageID.Hex())
 		if err != nil {
@@ -162,7 +161,7 @@ func (s *AppointmentService) GetAllAppointmentDetail(ctx context.Context, user *
 			customerName = customer.Name
 		}
 
-		detail := models.AppointmentDetail{
+		detail := dto.AppointmentDetail{
 			ID:               appointment.ID,
 			PackageName:      pkg.Title,
 			SubpackageName:   subpackage.Title,
@@ -217,14 +216,6 @@ func (s *AppointmentService) CreateOneAppointment(ctx context.Context, user *mod
 	appointment := req.ToModel(user, pkg, subpackage, busyTime)
 
 	return s.AppointmentRepo.CreateAppointment(ctx, appointment)
-}
-
-func (s *AppointmentService) UpdateAppointment(ctx context.Context, user *models.User, appointment *models.Appointment, req *dto.AppointmentRequest) (*models.Appointment, error) {
-	if err := copier.Copy(appointment, req); err != nil {
-		return nil, err
-	}
-
-	return s.AppointmentRepo.ReplaceAppointment(ctx, appointment)
 }
 
 func (s *AppointmentService) UpdateAppointmentStatus(ctx context.Context, user *models.User, appointment *models.Appointment, req *dto.AppointmentUpdateStatusRequest) (*models.Appointment, error) {

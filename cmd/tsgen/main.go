@@ -30,7 +30,6 @@ func main() {
 		AddEnum(models.ValidDayNames)
 	converter.
 		Add(models.BusyTime{}).
-		Add(dto.BusyTimeRequest{}).
 		Add(dto.BusyTimeStrictRequest{}).
 		AddEnum(models.ValidBusyTimeTypes)
 	converter.
@@ -39,6 +38,9 @@ func main() {
 		Add(dto.AppointmentUpdateStatusRequest{}).
 		Add(dto.AppointmentResponse{}).
 		AddEnum(models.ValidAppointmentStatus)
+	converter.
+		Add(dto.RatingRequest{}).
+		Add(dto.RatingResponse{}).
 
 	// Change to interface
 	converter.CreateInterface = true

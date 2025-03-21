@@ -20,7 +20,6 @@ func AppointmentRoutes(router *gin.Engine, ctrl *controllers.AppointmentControll
 	{
 		customerRoutes.POST("/:subpackageId", ctrl.CreateAppointment)
 		// TODO: refactor common route later
-		// customerRoutes.PATCH("/:id", ctrl.UpdateAppointment)
 	}
 
 	appointmentGroup.DELETE("/:id", ctrl.DeleteAppointment)

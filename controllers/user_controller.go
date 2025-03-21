@@ -176,8 +176,8 @@ func (uc *UserController) UpdateUserProfile(c *gin.Context) {
 // @Summary Create a busy time for the authenticated user
 // @Description Create a busy time entry using user ID from the JWT
 // @Tags User
-// @Param request body dto.BusyTimeRequest true "Create BusyTime Request"
-// @Success 201 {object} dto.BusyTimeRequest
+// @Param request body dto.BusyTimeStrictRequest true "Create BusyTime Request"
+// @Success 201 {object} dto.BusyTimeStrictRequest
 // @Failure 400 {object} string "Bad Request"
 // @Router /user/busytime [post]
 func (uc *UserController) CreateUserBusyTime(c *gin.Context) {
