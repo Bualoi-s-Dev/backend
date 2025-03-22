@@ -107,7 +107,7 @@ func (a *AppointmentController) GetAllAppointment(c *gin.Context) {
 // @Tags Appointment
 // @Summary Get all available appointments with provided details
 // @Description Retrieve all available appointments detail that the user can see from the database
-// @Success 200 {array} dto.AppointmentDetailResponse
+// @Success 200 {array} dto.AppointmentDetail
 // @Failure 401 {object} string "Unauthorized"
 // @Router /appointment/detail [get]
 func (a *AppointmentController) GetAllAppointmentDetail(c *gin.Context) {
@@ -125,7 +125,7 @@ func (a *AppointmentController) GetAllAppointmentDetail(c *gin.Context) {
 // @Summary Get an appointments with provided details by Id
 // @Description Retrieve all available appointments detail that the user can see from the database
 // @Param id path string true "Appointment ID"
-// @Success 200 {object} dto.AppointmentDetailResponse
+// @Success 200 {object} dto.AppointmentDetail
 // @Failure 401 {object} string "Unauthorized"
 // @Router /appointment/detail/{id} [get]
 func (a *AppointmentController) GetAllAppointmentDetailById(c *gin.Context) {
