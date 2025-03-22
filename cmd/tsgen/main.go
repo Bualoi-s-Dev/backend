@@ -40,7 +40,7 @@ func main() {
 		AddEnum(models.ValidAppointmentStatus)
 	converter.
 		Add(dto.RatingRequest{}).
-		Add(dto.RatingResponse{}).
+		Add(dto.RatingResponse{})
 
 	// Change to interface
 	converter.CreateInterface = true
