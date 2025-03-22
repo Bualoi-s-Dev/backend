@@ -5,7 +5,6 @@ import (
 	"errors"
 	"log"
 
-	"github.com/Bualoi-s-Dev/backend/dto"
 	"github.com/Bualoi-s-Dev/backend/models"
 	databaseRepo "github.com/Bualoi-s-Dev/backend/repositories/database"
 	stripeRepo "github.com/Bualoi-s-Dev/backend/repositories/stripe"
@@ -26,8 +25,7 @@ type PaymentService struct {
 }
 
 func NewPaymentService(databaseRepository *databaseRepo.PaymentRepository, userRepo *databaseRepo.UserRepository, appointmentRepo *databaseRepo.AppointmentRepository,
-	subpackageRepo *databaseRepo.SubpackageRepository, packageRepo *databaseRepo.PackageRepository, stripeRepository *stripeRepo.StripeRepository,
-	appointmentService *AppointmentService) *PaymentService {
+	subpackageRepo *databaseRepo.SubpackageRepository, packageRepo *databaseRepo.PackageRepository, stripeRepository *stripeRepo.StripeRepository) *PaymentService {
 	return &PaymentService{
 		DatabaseRepository:            databaseRepository,
 		UserDatabaseRepository:        userRepo,
@@ -35,8 +33,6 @@ func NewPaymentService(databaseRepository *databaseRepo.PaymentRepository, userR
 		SubpackageDatabaseRepository:  subpackageRepo,
 		PackageDatabaseRepository:     packageRepo,
 		StripeRepository:              stripeRepository,
-
-		AppointmentService: appointmentService,
 	}
 }
 
@@ -86,14 +82,24 @@ func (service *PaymentService) RegisterConnectedAccount(ctx context.Context, use
 	return account, nil
 }
 
-func (service *PaymentService) CreatePayment(ctx context.Context, appointmentId primitive.ObjectID, customer models.User) error {
+func (service *PaymentService) CreatePayment(ctx context.Context, appointmentId primitive.ObjectID) error {
+	// Get customer from appointment
+	appointment, err := service.AppointmentDatabaseRepository.GetById(ctx, appointmentId)
+	if err != nil {
+		return err
+	}
+	customer, err := service.UserDatabaseRepository.FindUserByID(ctx, appointment.CustomerID)
+	if err != nil {
+		return err
+	}
+
 	// Get customer stripe id, if not exist create new stripe customer
 	if customer.Role != models.Customer {
 		return errors.New("user is not a customer")
 	}
 	var stripeCustomerId string
 	if customer.StripeCustomerID == nil {
-		stripeCustomer, err := service.RegisterCustomer(ctx, customer)
+		stripeCustomer, err := service.RegisterCustomer(ctx, *customer)
 		if err != nil {
 			return err
 		}
@@ -103,10 +109,6 @@ func (service *PaymentService) CreatePayment(ctx context.Context, appointmentId 
 	}
 
 	// Create checkout session
-	appointment, err := service.AppointmentDatabaseRepository.GetById(ctx, appointmentId)
-	if err != nil {
-		return err
-	}
 	subpackage, err := service.SubpackageDatabaseRepository.GetById(ctx, appointment.SubpackageID.Hex())
 	if err != nil {
 		return err
@@ -223,16 +225,4 @@ func (service *PaymentService) UpdatePaidPhotographer(ctx context.Context, payou
 
 	// Update payment in database
 	return service.DatabaseRepository.Replace(ctx, payment.ID.Hex(), payment)
-}
-
-func (service *PaymentService) MappaymentToPaymentResponse(payment models.Payment) (*dto.PaymentResponse, error) {
-	appointment, err := service.AppointmentDatabaseRepository.GetById(context.Background(), payment.AppointmentID)
-	if err != nil {
-		return nil, err
-	}
-	appointmentDetail, err := service.AppointmentService.GetAppointmentDetailById(context.Background(), nil, appointment)
-	return &dto.PaymentResponse{
-		Payment:     payment,
-		Appointment: *appointmentDetail,
-	}, nil
 }

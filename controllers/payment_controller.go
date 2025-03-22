@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -8,10 +9,10 @@ import (
 
 	"github.com/Bualoi-s-Dev/backend/dto"
 	"github.com/Bualoi-s-Dev/backend/middleware"
+	"github.com/Bualoi-s-Dev/backend/models"
 	"github.com/Bualoi-s-Dev/backend/services"
 	"github.com/gin-gonic/gin"
 	"github.com/stripe/stripe-go/v81"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type PaymentController struct {
@@ -40,7 +41,7 @@ func (ctrl *PaymentController) GetAllOwnedPayments(c *gin.Context) {
 
 	var response []dto.PaymentResponse
 	for _, payment := range payments {
-		dto, err := ctrl.Service.MappaymentToPaymentResponse(payment)
+		dto, err := ctrl.mapToPaymentResponse(c, payment)
 		if err != nil {
 			c.JSON(500, gin.H{"error": err.Error()})
 			return
@@ -75,7 +76,7 @@ func (ctrl *PaymentController) GetPaymentById(c *gin.Context) {
 		return
 	}
 
-	response, err := ctrl.Service.MappaymentToPaymentResponse(*payment)
+	response, err := ctrl.mapToPaymentResponse(c, *payment)
 	if err != nil {
 		c.JSON(500, gin.H{"error": err.Error()})
 		return
@@ -132,12 +133,27 @@ func (ctrl *PaymentController) WebhookListener(c *gin.Context) {
 }
 
 func (ctrl *PaymentController) Test(c *gin.Context) {
-	user := middleware.GetUserFromContext(c)
-	id := "67d2497084553958bcfc0f4b"
-	objectID, err := primitive.ObjectIDFromHex(id)
+	// user := middleware.GetUserFromContext(c)
+	// id := "67d2497084553958bcfc0f4b"
+	// objectID, err := primitive.ObjectIDFromHex(id)
+	// if err != nil {
+	// 	c.JSON(400, gin.H{"error": "Invalid ID format"})
+	// 	return
+	// }
+	// ctrl.Service.CreatePayment(c.Request.Context(), objectID, *user)
+}
+
+func (ctrl *PaymentController) mapToPaymentResponse(ctx context.Context, payment models.Payment) (*dto.PaymentResponse, error) {
+	appointment, err := ctrl.Service.AppointmentDatabaseRepository.GetById(ctx, payment.AppointmentID)
 	if err != nil {
-		c.JSON(400, gin.H{"error": "Invalid ID format"})
-		return
+		return nil, err
 	}
-	ctrl.Service.CreatePayment(c.Request.Context(), objectID, *user)
+	appointmentDetail, err := ctrl.Service.AppointmentService.GetAppointmentDetailById(ctx, nil, appointment)
+	if err != nil {
+		return nil, err
+	}
+	return &dto.PaymentResponse{
+		Payment:     payment,
+		Appointment: *appointmentDetail,
+	}, nil
 }

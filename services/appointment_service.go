@@ -6,6 +6,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/Bualoi-s-Dev/backend/apperrors"
 
@@ -21,17 +22,20 @@ type AppointmentService struct {
 	SubpackageRepo  *repositories.SubpackageRepository
 	BusyTimeRepo    *repositories.BusyTimeRepository
 	UserRepo        *repositories.UserRepository
+	PaymentService  *PaymentService
 }
 
 // literally just getbyID and check if the user is authorized
 
-func NewAppointmentService(appointmentRepo *repositories.AppointmentRepository, packageRepo *repositories.PackageRepository, subpackageRepo *repositories.SubpackageRepository, busyTimeRepo *repositories.BusyTimeRepository, userRepo *repositories.UserRepository) *AppointmentService {
+func NewAppointmentService(appointmentRepo *repositories.AppointmentRepository, packageRepo *repositories.PackageRepository, subpackageRepo *repositories.SubpackageRepository,
+	busyTimeRepo *repositories.BusyTimeRepository, userRepo *repositories.UserRepository, paymentService *PaymentService) *AppointmentService {
 	return &AppointmentService{
 		AppointmentRepo: appointmentRepo,
 		PackageRepo:     packageRepo,
 		SubpackageRepo:  subpackageRepo,
 		BusyTimeRepo:    busyTimeRepo,
 		UserRepo:        userRepo,
+		PaymentService:  paymentService,
 	}
 }
 
@@ -250,4 +254,34 @@ func (s *AppointmentService) DeleteAppointment(ctx context.Context, appointmentI
 		return err
 	}
 	return s.AppointmentRepo.DeleteAppointment(ctx, appointmentId)
+}
+
+func (s *AppointmentService) AutoUpdateAppointmentStatus(ctx context.Context) error {
+
+	fmt.Println("Running scheduled update...")
+
+	// filter only start_time is grater than current time and status is "Pending"
+	// TODO: Fix this curse later
+	loc, _ := time.LoadLocation("Asia/Bangkok")
+	t := time.Now().In(loc)
+	currentTime := time.Date(
+		t.Year(), t.Month(), t.Day(),
+		t.Hour(), t.Minute(), t.Second(),
+		t.Nanosecond(), time.UTC,
+	)
+
+	go func() {
+		s.AppointmentRepo.UpdateCanceledAppointment(ctx, currentTime)
+	}()
+
+	// filter only end_time is less than current time and status is "Accepted"
+	// TODO: Maybe Mapped this two go routine into loop or function call
+	go func() {
+		updatedIds, _ := s.AppointmentRepo.UpdateCompletedAppointment(ctx, currentTime)
+		for _, id := range updatedIds {
+			s.PaymentService.CreatePayment(ctx, id)
+		}
+	}()
+
+	return nil
 }
