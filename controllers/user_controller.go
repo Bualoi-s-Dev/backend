@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/Bualoi-s-Dev/backend/dto"
 	"github.com/Bualoi-s-Dev/backend/middleware"
@@ -60,6 +61,43 @@ func (uc *UserController) GetUserProfile(c *gin.Context) {
 
 	// Return the profile picture URL
 	c.JSON(http.StatusOK, userDb)
+}
+
+// GetUserPhogographer godoc
+// @Tags User
+// @Summary Get user photographers from database
+// @Description Retrieve user photographers from database
+// @Param name query string false "Photographer name"
+// @Param location query string false "Photographer location"
+// @Param minPrice query string false "Minimum price"
+// @Param maxPrice query string false "Maximum price"
+// @Param type query string false "Photographer type"
+// @Success 200 {object} dto.UserResponse
+// @Failure 400 {object} string "Bad Request"
+// @Router /user/photographer [get]
+func (uc UserController) GetPhotographers(c *gin.Context) {
+	// Get query parameters for filtering
+	filters := map[string]string{
+		"name":     c.Query("name"),
+		"location": c.Query("location"),
+		"minPrice": c.Query("minPrice"),
+		"maxPrice": c.Query("maxPrice"),
+		"type":     c.Query("type"),
+	}
+
+	// Pagination parameters
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
+
+	// Call the service to get the user's profile picture URL
+	photographers, err := uc.Service.GetFilteredPhotographers(c.Request.Context(), filters, page, limit)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get photographers, " + err.Error()})
+		return
+	}
+
+	//Return the profile picture URL
+	c.JSON(http.StatusOK, photographers)
 }
 
 // GetUserProfileByID godoc
@@ -138,8 +176,8 @@ func (uc *UserController) UpdateUserProfile(c *gin.Context) {
 // @Summary Create a busy time for the authenticated user
 // @Description Create a busy time entry using user ID from the JWT
 // @Tags User
-// @Param request body dto.BusyTimeRequest true "Create BusyTime Request"
-// @Success 201 {object} dto.BusyTimeRequest
+// @Param request body dto.BusyTimeStrictRequest true "Create BusyTime Request"
+// @Success 201 {object} dto.BusyTimeStrictRequest
 // @Failure 400 {object} string "Bad Request"
 // @Router /user/busytime [post]
 func (uc *UserController) CreateUserBusyTime(c *gin.Context) {

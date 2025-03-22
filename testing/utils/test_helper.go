@@ -10,7 +10,7 @@ import (
 func SetupGodog(file string, InitializeScenario func(*godog.ScenarioContext)) *godog.TestSuite {
 	filePath := "./testing/features/" + file
 	opts := godog.Options{
-		Format: "pretty",
+		Format: "progress",
 		Paths:  []string{filePath},
 		Output: colors.Colored(os.Stdout),
 	}

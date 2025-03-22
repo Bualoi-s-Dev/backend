@@ -7,16 +7,33 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func UserRoutes(router *gin.Engine, userController *controllers.UserController) {
-	userRoutes := router.Group("/user")
+func UserRoutes(router *gin.Engine, userController *controllers.UserController, RatingController *controllers.RatingController) {
+	userGroup := router.Group("/user")
+	commonRoutes := userGroup.Group("", middleware.AllowRoles(models.Photographer, models.Customer))
 	{
-		userRoutes.GET("/me", userController.GetUserJWT)
+		commonRoutes.GET("/photographers", userController.GetPhotographers)
+		commonRoutes.GET("/:photographerId/rating", RatingController.GetAllRatingsFromPhotographer)
+		commonRoutes.GET("/:photographerId/rating/:ratingId", RatingController.GetRatingById)
 
-		userRoutes.GET("/profile", userController.GetUserProfile)
-		userRoutes.GET("/profile/:id", userController.GetUserProfileByID)
-		userRoutes.PATCH("/profile", userController.UpdateUserProfile)
-
-		userRoutes.POST("/busytime", middleware.AllowRoles(models.Photographer), userController.CreateUserBusyTime)
-		userRoutes.DELETE("/busytime/:busyTimeId", middleware.AllowRoles(models.Photographer), userController.DeleteUserBusyTime)
 	}
+	customerRoutes := userGroup.Group("", middleware.AllowRoles(models.Customer))
+	{
+		customerRoutes.POST("/:photographerId/rating", RatingController.CreateRating)
+		customerRoutes.PUT("/:photographerId/rating/:ratingId", RatingController.UpdateRating)
+		customerRoutes.DELETE("/:photographerId/rating/:ratingId", RatingController.DeleteRating)
+	}
+	photographerRoutes := userGroup.Group("", middleware.AllowRoles(models.Photographer))
+	{
+		photographerRoutes.POST("/busytime", userController.CreateUserBusyTime)
+		photographerRoutes.DELETE("/busytime/:busyTimeId", userController.DeleteUserBusyTime)
+	}
+	publicRoutes := userGroup.Group("")
+	{
+		publicRoutes.GET("/me", userController.GetUserJWT)
+
+		publicRoutes.GET("/profile", userController.GetUserProfile)
+		publicRoutes.GET("/profile/:id", userController.GetUserProfileByID)
+		publicRoutes.PATCH("/profile", userController.UpdateUserProfile)
+	}
+
 }

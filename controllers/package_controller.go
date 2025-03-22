@@ -1,10 +1,13 @@
 package controllers
 
 import (
+	"math"
 	"net/http"
+	"strconv"
 
 	"github.com/Bualoi-s-Dev/backend/dto"
 	"github.com/Bualoi-s-Dev/backend/middleware"
+	"github.com/Bualoi-s-Dev/backend/models"
 	"github.com/Bualoi-s-Dev/backend/services"
 	"github.com/gin-gonic/gin"
 )
@@ -23,12 +26,96 @@ func NewPackageController(service *services.PackageService, s3Service *services.
 // @Tags Package
 // @Summary Get a list of packages
 // @Description Retrieve all packages from the database
+// @Param search query string false "Filter by package title or owner (prefix filter)"
+// @Param type query string false "Filter by package type(prefix filter)"
+// @Param minPrice query int false "minimum price"
+// @Param maxPrice query int false "maximum price"
 // @Success 200 {object} []dto.PackageResponse
 // @Failure 400 {object} string "Bad Request"
 // @Router /package [get]
 // @x-order 1
 func (ctrl *PackageController) GetAllPackages(c *gin.Context) {
 	items, err := ctrl.Service.GetAll(c.Request.Context())
+	searchString, _ := c.GetQuery("search")
+	searchType_, _ := c.GetQuery("type")
+	searchType := models.PackageType(searchType_)
+
+	minPrice_, hasMinPrice := c.GetQuery("minPrice")
+	maxPrice_, hasMaxPrice := c.GetQuery("maxPrice")
+	var minPrice, maxPrice int
+
+	if hasMinPrice {
+		minPrice, err = strconv.Atoi(minPrice_)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid size parameter"})
+			return
+		}
+	} else {
+		minPrice = 0
+	}
+
+	if hasMaxPrice {
+		minPrice, err = strconv.Atoi(maxPrice_)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid size parameter"})
+			return
+		}
+	} else {
+		maxPrice = math.MaxInt32
+	}
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch items, " + err.Error()})
+		return
+	}
+
+	var res []dto.PackageResponse
+	for _, item := range items {
+		IsFiltered, err := ctrl.Service.FilterPackage(c.Request.Context(), &item, searchString, searchType)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to filter item, " + err.Error()})
+			return
+		}
+		if !IsFiltered {
+			continue
+		}
+
+		mappedItem, err := ctrl.Service.MappedToPackageResponse(c.Request.Context(), &item)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to map item, " + err.Error()})
+			return
+		}
+		IsFiltered, err = ctrl.Service.FilterPrice(c.Request.Context(), mappedItem, minPrice, maxPrice)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to filter price, " + err.Error()})
+			return
+		}
+		if !IsFiltered {
+			continue
+		}
+		res = append(res, *mappedItem)
+	}
+	c.JSON(http.StatusOK, res)
+}
+
+// GetRecommendedPackages godoc
+// @Tags Package
+// @Summary Get a list of recommended packages
+// @Description Retrieve recommended packages from the database by size
+// @Param size query int false "Recommended package size"
+// @Success 200 {object} []dto.PackageResponse
+// @Failure 400 {object} string "Bad Request"
+// @Router /package [get]
+// @x-order 6
+func (ctrl *PackageController) GetRecommendedPackages(c *gin.Context) {
+	size_ := c.Query("size")
+	size, err := strconv.Atoi(size_)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid size parameter"})
+		return
+	}
+
+	items, err := ctrl.Service.GetAllRecommended(c.Request.Context(), size)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch items, " + err.Error()})
 		return
@@ -43,6 +130,7 @@ func (ctrl *PackageController) GetAllPackages(c *gin.Context) {
 		}
 		res = append(res, *mappedItem)
 	}
+
 	c.JSON(http.StatusOK, res)
 }
 

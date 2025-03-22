@@ -1,8 +1,6 @@
 package models
 
 import (
-	"time"
-
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -39,17 +37,4 @@ var ValidAppointmentStatus = []struct {
 	{AppointmentRejected, string(AppointmentRejected)},
 	{AppointmentCanceled, string(AppointmentCanceled)},
 	{AppointmentCompleted, string(AppointmentCompleted)},
-}
-
-type AppointmentDetail struct {
-	ID               primitive.ObjectID `bson:"_id,omitempty" json:"id" ts_type:"string" example:"656e2b5e3f1a3c4d8b9e1234"`
-	PackageName      string             `bson:"package_name" json:"packageName" ts_type:"string" example:"Wedding Package"`
-	SubpackageName   string             `bson:"subpackage_name" json:"subpackageName" ts_type:"string" example:"Wedding Subpackage"`
-	CustomerName     string             `bson:"customer_name" json:"customerName" ts_type:"string" example:"John Doe"`
-	PhotographerName string             `bson:"photographer_name" json:"photographerName" ts_type:"string" example:"Jane Smith"`
-	Price            int                `bson:"price" json:"price" ts_type:"number" example:"1500"`
-	StartTime        time.Time          `bson:"start_time" json:"startTime" ts_type:"string" example:"2023-10-01T10:00:00Z"`
-	EndTime          time.Time          `bson:"end_time" json:"endTime" ts_type:"string" example:"2023-10-01T12:00:00Z"`
-	Status           AppointmentStatus  `bson:"status" json:"status" ts_type:"string" example:"Pending"`
-	Location         string             `bson:"location,omitempty" json:"location" ts_type:"string" example:"Bangkok, Thailand"`
 }

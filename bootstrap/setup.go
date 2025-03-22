@@ -55,6 +55,7 @@ func SetupServer(client *mongo.Database) (*gin.Engine, *ServerRepositories, *Ser
 	appointmentCollection := client.Collection("Appointment")
 	busyTimeCollection := client.Collection("BusyTime")
 	paymentCollection := client.Collection("Payment")
+	ratingCollection := client.Collection("Rating")
 
 	packageRepo := database.NewPackageRepository(packageCollection)
 	subpackageRepo := database.NewSubpackageRepository(subpackageCollection)
@@ -65,13 +66,15 @@ func SetupServer(client *mongo.Database) (*gin.Engine, *ServerRepositories, *Ser
 	firebaseRepo := firebase.NewFirebaseRepository(authClient)
 	paymentRepo := database.NewPaymentRepository(paymentCollection)
 	stripeRepo := stripeRepo.NewStripeRepository()
+	ratingRepo := database.NewRatingRepository(ratingCollection)
 
 	s3Service := services.NewS3Service(s3Repo)
 	firebaseService := services.NewFirebaseService(firebaseRepo)
 	subpackageService := services.NewSubpackageService(subpackageRepo, packageRepo, busyTimeRepo)
 	appointmentService := services.NewAppointmentService(appointmentRepo, packageRepo, subpackageRepo, busyTimeRepo, userRepo)
-	packageService := services.NewPackageService(packageRepo, s3Service, subpackageService)
-	userService := services.NewUserService(userRepo, s3Service, packageService, authClient)
+	packageService := services.NewPackageService(packageRepo, s3Service, subpackageService, userRepo)
+	ratingService := services.NewRatingService(ratingRepo)
+	userService := services.NewUserService(userRepo, s3Service, packageService, subpackageService, authClient, ratingService)
 	busyTimeService := services.NewBusyTimeService(busyTimeRepo, subpackageRepo, packageRepo)
 	paymentService := services.NewPaymentService(paymentRepo, userRepo, appointmentRepo, subpackageRepo, packageRepo, stripeRepo)
 
@@ -82,6 +85,7 @@ func SetupServer(client *mongo.Database) (*gin.Engine, *ServerRepositories, *Ser
 	BusyTimeController := controllers.NewBusyTimeController(busyTimeService)
 	internalController := controllers.NewInternalController(firebaseService, s3Service)
 	paymentController := controllers.NewPaymentController(paymentService)
+	RatingController := controllers.NewRatingController(ratingService, userService)
 
 	serverRepositories := &ServerRepositories{
 		packageRepo:     packageRepo,
@@ -111,7 +115,7 @@ func SetupServer(client *mongo.Database) (*gin.Engine, *ServerRepositories, *Ser
 
 	routes.PackageRoutes(r, packageController)
 	routes.SubpackageRoutes(r, subPackageController)
-	routes.UserRoutes(r, userController)
+	routes.UserRoutes(r, userController, RatingController)
 	routes.AppointmentRoutes(r, appointmentController)
 	routes.BusyTimeRoutes(r, BusyTimeController)
 	routes.PaymentRoutes(r, paymentController)

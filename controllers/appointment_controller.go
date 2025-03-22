@@ -3,6 +3,7 @@ package controllers
 import (
 	"fmt"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/Bualoi-s-Dev/backend/apperrors"
@@ -51,17 +52,54 @@ func getSubpackageIDFromParam(c *gin.Context) (primitive.ObjectID, error) {
 // @Tags Appointment
 // @Summary Get all available appointments
 // @Description Retrieve all available appointments that the user can see from the database
+// @Param status query string false "Status of appointment"
+// @Param availableStartDay query string false "Available start day of appointment"
+// @Param availableEndDay query string false "Available end day of appointment"
+// @Param name query string false "Name of package title or customer name"
+// @Param minPrice query string false "Minimum price of appointment"
+// @Param maxPrice query string false "Maximum price of appointment"
 // @Success 200 {array} dto.AppointmentResponse
 // @Failure 401 {object} string "Unauthorized"
 // @Router /appointment [get]
 func (a *AppointmentController) GetAllAppointment(c *gin.Context) {
+	// Get query parameters for filtering
+	filters := map[string]string{
+		"status":            c.Query("status"),
+		"availableStartDay": c.Query("availableStartDay"),
+		"availableEndDay":   c.Query("availableEndDay"),
+		"name":              c.Query("name"),
+		"minPrice":          c.Query("minPrice"),
+		"maxPrice":          c.Query("maxPrice"),
+	}
+
+	// Verify date format
+	dateFormat := "2006-01-02"
+	if filters["availableStartDay"] != "" {
+		if _, err := time.Parse(dateFormat, filters["availableStartDay"]); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid date format for availableStartDay. Use YYYY-MM-DD."})
+			return
+		}
+	}
+	if filters["availableEndDay"] != "" {
+		if _, err := time.Parse(dateFormat, filters["availableEndDay"]); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid date format for availableEndDay. Use YYYY-MM-DD."})
+			return
+		}
+	}
+
 	user := middleware.GetUserFromContext(c)
 
-	appointments, err := a.AppointmentService.GetAllAppointment(c.Request.Context(), user)
+	// Pagination parameters
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
+
+	// Retrieve and filter subpackages with pagination
+	appointments, err := a.AppointmentService.GetFilteredAppointments(c.Request.Context(), user, filters, page, limit)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch items, " + err.Error()})
 		return
 	}
+
 	c.JSON(http.StatusOK, appointments)
 }
 
@@ -80,6 +118,31 @@ func (a *AppointmentController) GetAllAppointmentDetail(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, appointmentDetails)
+}
+
+// GetAllAppointmentDetailById godoc
+// @Tags Appointment
+// @Summary Get an appointments with provided details by Id
+// @Description Retrieve all available appointments detail that the user can see from the database
+// @Param id path string true "Appointment ID"
+// @Success 200 {object} dto.AppointmentDetailResponse
+// @Failure 401 {object} string "Unauthorized"
+// @Router /appointment/detail/{id} [get]
+func (a *AppointmentController) GetAllAppointmentDetailById(c *gin.Context) {
+	user := middleware.GetUserFromContext(c)
+	appointmentId, err := getIDFromParam(c)
+	if err != nil {
+		apperrors.HandleError(c, err, "Cannot get appointmentId from param.")
+		return
+	}
+
+	appointment, err := a.AppointmentService.GetAppointmentById(c.Request.Context(), user, appointmentId)
+	appointmentDetail, err := a.AppointmentService.GetAppointmentDetailById(c, user, appointment)
+	if err != nil {
+		apperrors.HandleError(c, err, "Error while get all appointment detail")
+		return
+	}
+	c.JSON(http.StatusOK, appointmentDetail)
 }
 
 // GetAppointmentById godoc
@@ -168,104 +231,6 @@ func (a *AppointmentController) CreateAppointment(c *gin.Context) {
 
 	c.JSON(http.StatusCreated, bson.M{"appointment": appointment, "busyTime": busyTime})
 }
-
-/*
-// UpdateAppointment godoc
-// @Tags Appointment
-// @Summary Update appointment
-// @Description Update the time and location of a specific appointment by its ID
-// @Param id path string true "Appointment ID"
-// @Success 200 {object} dto.AppointmentResponse
-// @Failure 400 {object} string "Invalid appointment id"
-// @Failure 401 {object} string "Unauthorized"
-// @Failure 500 {object} string "Internal Server Error"
-// @Router /appointment/{id} [patch]
-func (a *AppointmentController) UpdateAppointment(c *gin.Context) {
-	// user
-	user := middleware.GetUserFromContext(c)
-
-	appointmentId, err := getIDFromParam(c)
-	if err != nil {
-		apperrors.HandleError(c, err, "Cannot get appointmentId from param")
-		return
-	}
-
-	appointment, err := a.AppointmentService.GetAppointmentById(c.Request.Context(), user, appointmentId)
-	if err != nil {
-		apperrors.HandleError(c, err, "Cannot get the appointment from this id")
-		return
-	}
-	if appointment.Status != "Pending" {
-		apperrors.HandleError(c, apperrors.ErrBadRequest, "Cannot update an appointment if its status is not Pending")
-		return
-	}
-
-	busyTime, err := a.BusyTimeService.GetById(c.Request.Context(), appointment.BusyTimeID.Hex())
-	if err != nil {
-		apperrors.HandleError(c, err, "Cannot get the busyTime from this busyTimeId")
-		return
-	}
-	if busyTime.IsValid { // status is pending and current busyTime is valid => impossible
-		apperrors.HandleError(c, apperrors.ErrInternalServer, "busyTime cannot be valid if current appointment status is pending")
-		return
-	}
-
-	// req
-	var req dto.AppointmentRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Bad request, " + err.Error()})
-		return
-	}
-
-	// update time => need to update busy time too
-	if req.StartTime != nil {
-		if err := a.BusyTimeService.Delete(c, busyTime.ID.Hex()); err != nil {
-			apperrors.HandleError(c, err, "(Update Status) Could not delete appointment before update")
-		}
-
-		// calculate endTime from busyTime and startTime
-		loc, _ := time.LoadLocation("Asia/Bangkok")
-		currentTime := time.Now().In(loc)
-		if req.StartTime.Before(currentTime) {
-			apperrors.HandleError(c, apperrors.ErrBadRequest, "Cannot channge appointment start time before current Time: "+currentTime.String())
-			return
-		}
-
-		// calculate duration Endtime - StartTime (from appointment)
-		duration := busyTime.EndTime.Sub(busyTime.StartTime)
-		endTime := req.StartTime.Add(duration)
-
-		busyTimeReq := &dto.BusyTimeRequest{
-			Type:      &busyTime.Type,
-			StartTime: req.StartTime,
-			EndTime:   &endTime,
-			IsValid:   &busyTime.IsValid, // false
-		}
-
-		if err := a.BusyTimeService.Create(c, busyTimeReq, appointment.PhotographerID); err != nil {
-			// Error becuase the new startTime is conflict with the photgrapher's BusyTime
-			busyTimeReq.StartTime = &busyTime.StartTime
-			busyTimeReq.EndTime = &busyTime.EndTime
-			if err := a.BusyTimeService.Create(c, busyTimeReq, appointment.PhotographerID); err != nil {
-				apperrors.HandleError(c, apperrors.ErrInternalServer, "(On update status) Can't recreate the same busyTime after deleted") // shouldn't happen
-				return
-			}
-			apperrors.HandleError(c, err, "(Update Status) Could not re-create appointment")
-			return
-		}
-		// } ENDTODO:
-
-	}
-
-	updatedAppointment, err := a.AppointmentService.UpdateAppointment(c.Request.Context(), user, appointment, &req)
-	if err != nil {
-		apperrors.HandleError(c, err, "Cannot update this appointment")
-		return
-	}
-
-	c.JSON(http.StatusOK, updatedAppointment)
-}
-*/
 
 // UpdateAppointmentStatus godoc
 // @Tags Appointment

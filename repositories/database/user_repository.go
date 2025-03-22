@@ -73,3 +73,15 @@ func (repo *UserRepository) ReplaceUser(ctx context.Context, userId primitive.Ob
 	}
 	return res, nil
 }
+
+func (repo *UserRepository) FindPhotographers(ctx context.Context) ([]models.User, error) {
+	var users []models.User
+	cursor, err := repo.Collection.Find(ctx, bson.M{"role": models.UserRole("Photographer")})
+	if err != nil {
+		return nil, err
+	}
+	if err = cursor.All(ctx, &users); err != nil {
+		return nil, err
+	}
+	return users, nil
+}
