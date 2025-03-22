@@ -60,27 +60,24 @@ func (ctrl *PaymentController) WebhookListener(c *gin.Context) {
 	}
 
 	switch event.Type {
-	case "payment_intent.succeeded":
-		var paymentIntent stripe.PaymentIntent
-		if err := json.Unmarshal(event.Data.Raw, &paymentIntent); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Error parsing payment intent JSON"})
-			return
-		}
-		// Handle the successful payment intent
-	case "payment_method.attached":
-		var paymentMethod stripe.PaymentMethod
-		if err := json.Unmarshal(event.Data.Raw, &paymentMethod); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Error parsing payment method JSON"})
-			return
-		}
-		// Handle the successful attachment of a PaymentMethod
 	case "checkout.session.completed":
 		var session stripe.CheckoutSession
 		if err := json.Unmarshal(event.Data.Raw, &session); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Error parsing checkout session JSON"})
 			return
 		}
+		fmt.Printf("Checkout session %s completed", session.ID)
 		// Handle the successful session completed
+		ctrl.Service.UpdateCustomerPaid(c.Request.Context(), session)
+	case "payout.paid":
+		var payout stripe.Payout
+		if err := json.Unmarshal(event.Data.Raw, &payout); err == nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Error parsing payout JSON"})
+			return
+		}
+		fmt.Printf("Payout %s paid", payout.ID)
+		// Handle the successful payout paid
+		ctrl.Service.UpdatePaidPhotographer(c.Request.Context(), payout)
 	default:
 		fmt.Printf("Unhandled event type: %s\n", event.Type)
 	}

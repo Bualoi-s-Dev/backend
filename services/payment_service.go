@@ -206,9 +206,9 @@ func (service *PaymentService) UpdateCustomerPaid(ctx context.Context, checkoutS
 	return err
 }
 
-func (service *PaymentService) UpdatePhotographerPayment(ctx context.Context, payoutId string) error {
+func (service *PaymentService) UpdatePaidPhotographer(ctx context.Context, payout stripe.Payout) error {
 	// Get payment by payout id
-	payment, err := service.DatabaseRepository.GetByPayoutID(ctx, payoutId)
+	payment, err := service.DatabaseRepository.GetByPayoutID(ctx, payout.ID)
 	if err != nil {
 		return err
 	}
