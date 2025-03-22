@@ -16,11 +16,13 @@ import (
 )
 
 type PaymentController struct {
-	Service *services.PaymentService
+	Service            *services.PaymentService
+	AppointmentService *services.AppointmentService
+	PackageService     *services.PackageService
 }
 
-func NewPaymentController(service *services.PaymentService) *PaymentController {
-	return &PaymentController{Service: service}
+func NewPaymentController(service *services.PaymentService, appointmentService *services.AppointmentService, packageService *services.PackageService) *PaymentController {
+	return &PaymentController{Service: service, AppointmentService: appointmentService, PackageService: packageService}
 }
 
 // GetAllOwnedPayments godoc
@@ -144,16 +146,22 @@ func (ctrl *PaymentController) Test(c *gin.Context) {
 }
 
 func (ctrl *PaymentController) mapToPaymentResponse(ctx context.Context, payment models.Payment) (*dto.PaymentResponse, error) {
-	appointment, err := ctrl.Service.AppointmentDatabaseRepository.GetById(ctx, payment.AppointmentID)
+	appointment, err := ctrl.AppointmentService.AppointmentRepo.GetById(ctx, payment.AppointmentID)
 	if err != nil {
 		return nil, err
 	}
-	appointmentDetail, err := ctrl.Service.AppointmentService.GetAppointmentDetailById(ctx, nil, appointment)
+	appointmentDetail, err := ctrl.AppointmentService.GetAppointmentDetailById(ctx, nil, appointment)
 	if err != nil {
 		return nil, err
 	}
+	pkg, err := ctrl.PackageService.GetById(ctx, appointment.PackageID.Hex())
+	if err != nil {
+		return nil, err
+	}
+	pkgResponse, err := ctrl.PackageService.MappedToPackageResponse(ctx, pkg)
 	return &dto.PaymentResponse{
 		Payment:     payment,
 		Appointment: *appointmentDetail,
+		Package:     *pkgResponse,
 	}, nil
 }
