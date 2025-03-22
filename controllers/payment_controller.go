@@ -67,6 +67,10 @@ func (ctrl *PaymentController) GetPaymentById(c *gin.Context) {
 
 	payment, err := ctrl.Service.GetPaymentById(c.Request.Context(), id)
 	if err != nil {
+		if err.Error() == "mongo: no documents in result" {
+			c.JSON(404, gin.H{"error": "Payment not found"})
+			return
+		}
 		c.JSON(500, gin.H{"error": err.Error()})
 		return
 	}
