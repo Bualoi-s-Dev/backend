@@ -115,6 +115,15 @@ func (repo *PaymentRepository) GetByCheckoutID(ctx context.Context, checkoutID s
 	return &item, nil
 }
 
+func (repo *PaymentRepository) GetByPayoutID(ctx context.Context, payoutID string) (*models.Payment, error) {
+	var item models.Payment
+	err := repo.Collection.FindOne(ctx, bson.M{"photographer.payout_id": payoutID}).Decode(&item)
+	if err != nil {
+		return nil, err
+	}
+	return &item, nil
+}
+
 func (repo *PaymentRepository) Replace(ctx context.Context, id string, payment *models.Payment) error {
 	_, err := repo.Collection.ReplaceOne(ctx, bson.M{"_id": id}, payment)
 	return err

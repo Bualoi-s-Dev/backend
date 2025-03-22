@@ -206,6 +206,16 @@ func (service *PaymentService) UpdateCustomerPaid(ctx context.Context, checkoutS
 	return err
 }
 
-func (service *PaymentService) UpdatePhotographerPayment(ctx context.Context, id primitive.ObjectID, photographer models.PhotographerPayment) error {
-	return service.DatabaseRepository.UpdatePhotographerPayment(ctx, id.Hex(), &photographer)
+func (service *PaymentService) UpdatePhotographerPayment(ctx context.Context, payoutId string) error {
+	// Get payment by payout id
+	payment, err := service.DatabaseRepository.GetByPayoutID(ctx, payoutId)
+	if err != nil {
+		return err
+	}
+
+	// Update photographer payment status
+	payment.Photographer.Status = models.Paid
+
+	// Update payment in database
+	return service.DatabaseRepository.Replace(ctx, payment.ID.Hex(), payment)
 }
