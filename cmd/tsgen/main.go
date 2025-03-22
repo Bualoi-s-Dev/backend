@@ -37,10 +37,14 @@ func main() {
 		Add(dto.AppointmentStrictRequest{}).
 		Add(dto.AppointmentUpdateStatusRequest{}).
 		Add(dto.AppointmentResponse{}).
+		Add(dto.AppointmentDetail{}).
+		Add(dto.CreateAppointmentResponse{}).
 		AddEnum(models.ValidAppointmentStatus)
 	converter.
 		Add(dto.RatingRequest{}).
 		Add(dto.RatingResponse{})
+	converter.
+		Add(dto.PaymentResponse{})
 
 	// Change to interface
 	converter.CreateInterface = true
