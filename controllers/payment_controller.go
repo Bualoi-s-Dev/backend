@@ -13,6 +13,7 @@ import (
 	"github.com/Bualoi-s-Dev/backend/services"
 	"github.com/gin-gonic/gin"
 	"github.com/stripe/stripe-go/v81"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type PaymentController struct {
@@ -91,6 +92,36 @@ func (ctrl *PaymentController) GetPaymentById(c *gin.Context) {
 	c.JSON(200, response)
 }
 
+// CreatePayment godoc
+// @Tags Payment
+// @Summary Create a payment for the appointment, this usually called after the appointment is completed
+// @Description Create a payment for the appointment
+// @Param id path string true "Appointment ID"
+// @Success 200 {object} dto.PaymentResponse
+// @Failure 400 {object} string "Bad Request"
+// @Router /payment/charge/{appointmentId} [post]
+func (ctrl *PaymentController) CreatePayment(c *gin.Context) {
+	id := c.Param("appointmentId")
+
+	appointmentId, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		c.JSON(400, gin.H{"error": "Invalid appointment ID format"})
+		return
+	}
+
+	payment, err := ctrl.Service.CreatePayment(c.Request.Context(), appointmentId)
+	if err != nil {
+		c.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
+	response, err := ctrl.mapToPaymentResponse(c, *payment)
+	if err != nil {
+		c.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(200, response)
+}
+
 func (ctrl *PaymentController) WebhookListener(c *gin.Context) {
 	const MaxBodyBytes = int64(65536)
 	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, MaxBodyBytes)
@@ -159,6 +190,9 @@ func (ctrl *PaymentController) mapToPaymentResponse(ctx context.Context, payment
 		return nil, err
 	}
 	pkgResponse, err := ctrl.PackageService.MappedToPackageResponse(ctx, pkg)
+	if err != nil {
+		return nil, err
+	}
 	return &dto.PaymentResponse{
 		Payment:     payment,
 		Appointment: *appointmentDetail,

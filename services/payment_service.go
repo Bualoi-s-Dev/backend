@@ -82,26 +82,26 @@ func (service *PaymentService) RegisterConnectedAccount(ctx context.Context, use
 	return account, nil
 }
 
-func (service *PaymentService) CreatePayment(ctx context.Context, appointmentId primitive.ObjectID) error {
+func (service *PaymentService) CreatePayment(ctx context.Context, appointmentId primitive.ObjectID) (*models.Payment, error) {
 	// Get customer from appointment
 	appointment, err := service.AppointmentDatabaseRepository.GetById(ctx, appointmentId)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	customer, err := service.UserDatabaseRepository.FindUserByID(ctx, appointment.CustomerID)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// Get customer stripe id, if not exist create new stripe customer
 	if customer.Role != models.Customer {
-		return errors.New("user is not a customer")
+		return nil, errors.New("user is not a customer")
 	}
 	var stripeCustomerId string
 	if customer.StripeCustomerID == nil {
 		stripeCustomer, err := service.RegisterCustomer(ctx, *customer)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		stripeCustomerId = stripeCustomer.ID
 	} else {
@@ -111,11 +111,11 @@ func (service *PaymentService) CreatePayment(ctx context.Context, appointmentId 
 	// Create checkout session
 	subpackage, err := service.SubpackageDatabaseRepository.GetById(ctx, appointment.SubpackageID.Hex())
 	if err != nil {
-		return err
+		return nil, err
 	}
 	checkoutSession, err := service.CreateCheckoutSession(stripeCustomerId, subpackage.Title, int64(appointment.Price))
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// Create payment
@@ -129,7 +129,7 @@ func (service *PaymentService) CreatePayment(ctx context.Context, appointmentId 
 			Status: models.Unpaid,
 		},
 	}
-	return service.DatabaseRepository.Create(ctx, payment)
+	return payment, service.DatabaseRepository.Create(ctx, payment)
 }
 
 func (service *PaymentService) CreateCheckoutSession(customerId string, productName string, amount int64) (*stripe.CheckoutSession, error) {
