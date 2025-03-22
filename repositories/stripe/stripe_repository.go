@@ -18,8 +18,16 @@ func NewStripeRepository() *StripeRepository {
 
 func (s *StripeRepository) CreateConnectedAccount(email string) (*stripe.Account, error) {
 	params := &stripe.AccountParams{
-		Type:  stripe.String("standard"), // Can also be "express" or "custom"
+		Type:  stripe.String("custom"), // Can be "standard", "express" or "custom"
 		Email: stripe.String(email),
+		Capabilities: &stripe.AccountCapabilitiesParams{
+			CardPayments: &stripe.AccountCapabilitiesCardPaymentsParams{
+				Requested: stripe.Bool(true),
+			},
+			Transfers: &stripe.AccountCapabilitiesTransfersParams{
+				Requested: stripe.Bool(true),
+			},
+		},
 	}
 	acc, err := account.New(params)
 	if err != nil {

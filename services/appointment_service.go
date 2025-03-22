@@ -59,7 +59,7 @@ func (s *AppointmentService) GetAppointmentDetailById(ctx context.Context, user 
 		return nil, err
 	}
 	var customerName, photographerName string
-	if user.Role == models.Customer {
+	if user != nil && user.Role == models.Customer {
 		customerName = user.Name
 		photographer, err := s.UserRepo.FindUserByID(ctx, appointment.PhotographerID)
 		if err != nil {
@@ -67,7 +67,7 @@ func (s *AppointmentService) GetAppointmentDetailById(ctx context.Context, user 
 			return nil, err
 		}
 		photographerName = photographer.Name
-	} else if user.Role == models.Photographer {
+	} else if user != nil && user.Role == models.Photographer {
 		photographerName = user.Name
 		customer, err := s.UserRepo.FindUserByID(ctx, appointment.CustomerID)
 		if err != nil {

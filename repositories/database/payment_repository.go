@@ -7,6 +7,7 @@ import (
 
 	"github.com/Bualoi-s-Dev/backend/models"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -124,12 +125,21 @@ func (repo *PaymentRepository) GetByPayoutID(ctx context.Context, payoutID strin
 	return &item, nil
 }
 
-func (repo *PaymentRepository) Replace(ctx context.Context, id string, payment *models.Payment) error {
+func (repo *PaymentRepository) GetByPaymentIntentID(ctx context.Context, paymentIntentID string) (*models.Payment, error) {
+	var item models.Payment
+	err := repo.Collection.FindOne(ctx, bson.M{"customer.payment_intent_id": paymentIntentID}).Decode(&item)
+	if err != nil {
+		return nil, err
+	}
+	return &item, nil
+}
+
+func (repo *PaymentRepository) Replace(ctx context.Context, id primitive.ObjectID, payment *models.Payment) error {
 	_, err := repo.Collection.ReplaceOne(ctx, bson.M{"_id": id}, payment)
 	return err
 }
 
-func (repo *PaymentRepository) Delete(ctx context.Context, id string) error {
+func (repo *PaymentRepository) Delete(ctx context.Context, id primitive.ObjectID) error {
 	_, err := repo.Collection.DeleteOne(ctx, bson.M{"_id": id})
 	return err
 }

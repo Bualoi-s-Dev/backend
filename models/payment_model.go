@@ -10,8 +10,9 @@ type Payment struct {
 }
 
 type CustomerPayment struct {
-	Status     PaymentStatus `bson:"status" json:"status" binding:"omitempty,payment_status" example:"Paid"`
-	CheckoutID *string       `bson:"checkout_id" json:"checkoutId" ts_type:"string" example:"12345678abcd"`
+	Status          PaymentStatus `bson:"status" json:"status" binding:"omitempty,payment_status" example:"Paid"`
+	CheckoutID      *string       `bson:"checkout_id" json:"checkoutId" ts_type:"string" example:"12345678abcd"`
+	PaymentIntentID *string       `bson:"payment_intent_id" json:"paymentIntentId" ts_type:"string" example:"12345678abcd"`
 }
 
 type PhotographerPayment struct {

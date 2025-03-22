@@ -144,8 +144,12 @@ func (ctrl *PaymentController) WebhookListener(c *gin.Context) {
 		// If "My Account" verification fails, try with "Connected Account" secret
 		event, err = webhook.ConstructEvent(payload, signatureHeader, connectedAccountSecret)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Error verifying webhook signature"})
-			return
+
+			event, err = webhook.ConstructEvent(payload, signatureHeader, "whsec_23653db1a6da8747be47ec03ee0ea92942cb479248811f6b3b3ae2b3d91bf85f")
+			if err != nil {
+				c.JSON(http.StatusBadRequest, gin.H{"error": "Error verifying webhook signature"})
+				return
+			}
 		}
 	}
 
@@ -160,6 +164,18 @@ func (ctrl *PaymentController) WebhookListener(c *gin.Context) {
 		fmt.Printf("Checkout session %s completed\n", session.ID)
 		// Handle the successful session completed
 		ctrl.Service.UpdateCustomerPaid(c.Request.Context(), session)
+	case "charge.updated":
+		var charge stripe.Charge
+		if err := json.Unmarshal(event.Data.Raw, &charge); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Error parsing charge JSON"})
+			return
+		}
+		fmt.Printf("Charge %s updated\n", charge.ID)
+		// Handle the successful charge updated
+		err := ctrl.Service.PaidPhotographer(c.Request.Context(), charge)
+		if err != nil {
+			fmt.Println("Error updating photographer payment status: ", err)
+		}
 	case "payout.paid":
 		var payout stripe.Payout
 		if err := json.Unmarshal(event.Data.Raw, &payout); err == nil {
@@ -168,7 +184,7 @@ func (ctrl *PaymentController) WebhookListener(c *gin.Context) {
 		}
 		fmt.Printf("Payout %s paid\n", payout.ID)
 		// Handle the successful payout paid
-		ctrl.Service.UpdatePaidPhotographer(c.Request.Context(), payout)
+		ctrl.Service.UpdateSuccessPaidPhotographer(c.Request.Context(), payout)
 	default:
 		fmt.Printf("Unhandled event type: %s\n", event.Type)
 	}

@@ -3,14 +3,12 @@ package services
 import (
 	"context"
 	"errors"
-	"log"
+	"fmt"
 
 	"github.com/Bualoi-s-Dev/backend/models"
 	databaseRepo "github.com/Bualoi-s-Dev/backend/repositories/database"
 	stripeRepo "github.com/Bualoi-s-Dev/backend/repositories/stripe"
 	"github.com/stripe/stripe-go/v81"
-	"github.com/stripe/stripe-go/v81/balancetransaction"
-	"github.com/stripe/stripe-go/v81/charge"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -63,12 +61,14 @@ func (service *PaymentService) RegisterCustomer(ctx context.Context, user models
 func (service *PaymentService) RegisterConnectedAccount(ctx context.Context, user models.User) (*stripe.Account, error) {
 	// Create stripe connected account
 	account, err := service.StripeRepository.CreateConnectedAccount(user.Email)
+	fmt.Println("Create account", account, err)
 	if err != nil {
 		return nil, err
 	}
 
 	// Attach bank account
 	err = service.StripeRepository.AttachBankAccount(account.ID, "TH", "thb", user.BankAccount)
+	fmt.Println("Attach bank account", err)
 	if err != nil {
 		return nil, err
 	}
@@ -120,6 +120,7 @@ func (service *PaymentService) CreatePayment(ctx context.Context, appointmentId 
 
 	// Create payment
 	payment := &models.Payment{
+		ID:            primitive.NewObjectID(),
 		AppointmentID: appointmentId,
 		Customer: models.CustomerPayment{
 			Status:     models.Unpaid,
@@ -148,6 +149,15 @@ func (service *PaymentService) CreatePayout(accountId string, amount int64) (*st
 	return payout, nil
 }
 
+func (service *PaymentService) UpdateBankAccount(ctx context.Context, user models.User) error {
+	// Re-Attach bank account
+	err := service.StripeRepository.AttachBankAccount(*user.StripeAccountID, "TH", "thb", user.BankAccount)
+	if err != nil {
+		return err
+	}
+	return err
+}
+
 func (service *PaymentService) UpdateCustomerPaid(ctx context.Context, checkoutSession stripe.CheckoutSession) error {
 	// Get checkout session from payment
 	payment, err := service.DatabaseRepository.GetByCheckoutID(ctx, checkoutSession.ID)
@@ -157,7 +167,25 @@ func (service *PaymentService) UpdateCustomerPaid(ctx context.Context, checkoutS
 
 	// Update customer payment status
 	payment.Customer.Status = models.Paid
+	payment.Customer.PaymentIntentID = &checkoutSession.PaymentIntent.ID
 
+	// Update payment in database
+	err = service.DatabaseRepository.Replace(ctx, payment.ID, payment)
+	return err
+}
+
+func (service *PaymentService) PaidPhotographer(ctx context.Context, charge stripe.Charge) error {
+	// Get payment by payment intent id
+	payment, err := service.DatabaseRepository.GetByPaymentIntentID(ctx, charge.PaymentIntent.ID)
+	if err != nil {
+		return err
+	}
+	if payment.Photographer.Status != models.Unpaid {
+		return nil // Already paid
+	}
+
+	// Get stripe account id, if not exist create new stripe account
+	var stripeAccountId string
 	appointment, err := service.AppointmentDatabaseRepository.GetById(ctx, payment.AppointmentID)
 	if err != nil {
 		return err
@@ -166,28 +194,6 @@ func (service *PaymentService) UpdateCustomerPaid(ctx context.Context, checkoutS
 	if err != nil {
 		return err
 	}
-
-	// Get net charge from payment intent in checkout session
-	params := &stripe.ChargeListParams{}
-	params.Filters.AddFilter("payment_intent", "", checkoutSession.PaymentIntent.ID) // Filter by PaymentIntent ID
-	chargeIter := charge.List(params)
-
-	var balanceTransactionID string
-
-	if chargeIter.Next() {
-		ch := chargeIter.Charge()
-		balanceTransactionID = ch.BalanceTransaction.ID
-	} else {
-		log.Fatalf("No charges found for PaymentIntent")
-	}
-
-	bt, err := balancetransaction.Get(balanceTransactionID, nil)
-	if err != nil {
-		log.Fatalf("Error retrieving balance transaction: %v", err)
-	}
-
-	// Get stripe account id, if not exist create new stripe account
-	var stripeAccountId string
 	if photographer.StripeAccountID == nil {
 		stripeAccount, err := service.RegisterConnectedAccount(ctx, *photographer)
 		if err != nil {
@@ -198,8 +204,14 @@ func (service *PaymentService) UpdateCustomerPaid(ctx context.Context, checkoutS
 		stripeAccountId = *photographer.StripeCustomerID
 	}
 
+	// Update photographer bank account
+	err = service.UpdateBankAccount(ctx, *photographer)
+	if err != nil {
+		return err
+	}
+
 	// Create payout
-	payout, err := service.CreatePayout(stripeAccountId, bt.Net)
+	payout, err := service.CreatePayout(stripeAccountId, charge.BalanceTransaction.Net)
 	if err != nil {
 		return err
 	}
@@ -209,11 +221,11 @@ func (service *PaymentService) UpdateCustomerPaid(ctx context.Context, checkoutS
 	payment.Photographer.Status = models.InTransit
 
 	// Update payment in database
-	err = service.DatabaseRepository.Replace(ctx, payment.ID.Hex(), payment)
+	err = service.DatabaseRepository.Replace(ctx, payment.ID, payment)
 	return err
 }
 
-func (service *PaymentService) UpdatePaidPhotographer(ctx context.Context, payout stripe.Payout) error {
+func (service *PaymentService) UpdateSuccessPaidPhotographer(ctx context.Context, payout stripe.Payout) error {
 	// Get payment by payout id
 	payment, err := service.DatabaseRepository.GetByPayoutID(ctx, payout.ID)
 	if err != nil {
@@ -224,5 +236,5 @@ func (service *PaymentService) UpdatePaidPhotographer(ctx context.Context, payou
 	payment.Photographer.Status = models.Paid
 
 	// Update payment in database
-	return service.DatabaseRepository.Replace(ctx, payment.ID.Hex(), payment)
+	return service.DatabaseRepository.Replace(ctx, payment.ID, payment)
 }
