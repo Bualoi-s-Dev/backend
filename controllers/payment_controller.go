@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"os"
 
 	"github.com/Bualoi-s-Dev/backend/dto"
 	"github.com/Bualoi-s-Dev/backend/middleware"
@@ -13,6 +14,7 @@ import (
 	"github.com/Bualoi-s-Dev/backend/services"
 	"github.com/gin-gonic/gin"
 	"github.com/stripe/stripe-go/v81"
+	"github.com/stripe/stripe-go/v81/webhook"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -131,11 +133,20 @@ func (ctrl *PaymentController) WebhookListener(c *gin.Context) {
 		return
 	}
 
-	event := stripe.Event{}
+	myAccountSecret := os.Getenv("STRIPE_WEBHOOK_MY_ACCOUNT_SECRET")
+	connectedAccountSecret := os.Getenv("STRIPE_WEBHOOK_CONNECTED_ACCOUNT_SECRET")
+	signatureHeader := c.Request.Header.Get("Stripe-Signature")
 
-	if err := json.Unmarshal(payload, &event); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to parse webhook JSON"})
-		return
+	var event stripe.Event
+	// Try to verify with "My Account" secret
+	event, err = webhook.ConstructEvent(payload, signatureHeader, myAccountSecret)
+	if err != nil {
+		// If "My Account" verification fails, try with "Connected Account" secret
+		event, err = webhook.ConstructEvent(payload, signatureHeader, connectedAccountSecret)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Error verifying webhook signature"})
+			return
+		}
 	}
 
 	fmt.Println("Received event: ", event.Type)
