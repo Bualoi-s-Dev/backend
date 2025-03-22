@@ -17,6 +17,12 @@ import (
 
 func FirebaseAuthMiddleware(authClient *auth.Client, userCollection *mongo.Collection, userService *services.UserService) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		// Skip authentication for Stripe webhooks
+		if c.Request.URL.Path == "/payment/webhook" {
+			c.Next() // Allow webhook requests
+			return
+		}
+
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
 			log.Println("[ERROR] Missing Authorization header")
