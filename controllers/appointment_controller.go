@@ -137,6 +137,10 @@ func (a *AppointmentController) GetAllAppointmentDetailById(c *gin.Context) {
 	}
 
 	appointment, err := a.AppointmentService.GetAppointmentById(c.Request.Context(), user, appointmentId)
+	if err != nil {
+		apperrors.HandleError(c, err, "Cannot get the appointment from this id")
+		return
+	}
 	appointmentDetail, err := a.AppointmentService.GetAppointmentDetailById(c, user, appointment)
 	if err != nil {
 		apperrors.HandleError(c, err, "Error while get all appointment detail")
