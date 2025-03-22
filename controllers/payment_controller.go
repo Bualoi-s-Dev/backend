@@ -100,6 +100,7 @@ func (ctrl *PaymentController) WebhookListener(c *gin.Context) {
 		return
 	}
 
+	fmt.Println("Received event: ", event.Type)
 	switch event.Type {
 	case "checkout.session.completed":
 		var session stripe.CheckoutSession
@@ -107,7 +108,7 @@ func (ctrl *PaymentController) WebhookListener(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Error parsing checkout session JSON"})
 			return
 		}
-		fmt.Printf("Checkout session %s completed", session.ID)
+		fmt.Printf("Checkout session %s completed\n", session.ID)
 		// Handle the successful session completed
 		ctrl.Service.UpdateCustomerPaid(c.Request.Context(), session)
 	case "payout.paid":
@@ -116,7 +117,7 @@ func (ctrl *PaymentController) WebhookListener(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Error parsing payout JSON"})
 			return
 		}
-		fmt.Printf("Payout %s paid", payout.ID)
+		fmt.Printf("Payout %s paid\n", payout.ID)
 		// Handle the successful payout paid
 		ctrl.Service.UpdatePaidPhotographer(c.Request.Context(), payout)
 	default:
