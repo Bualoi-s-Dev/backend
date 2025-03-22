@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"net/http"
 
+	"github.com/Bualoi-s-Dev/backend/dto"
 	"github.com/Bualoi-s-Dev/backend/middleware"
 	"github.com/Bualoi-s-Dev/backend/services"
 	"github.com/gin-gonic/gin"
@@ -21,6 +22,13 @@ func NewPaymentController(service *services.PaymentService) *PaymentController {
 	return &PaymentController{Service: service}
 }
 
+// GetAllOwnedPayments godoc
+// @Tags Payment
+// @Summary Get a list of payment owned by the user
+// @Description Retrieve all payments owned by the user in the jwt
+// @Success 200 {object} []dto.PaymentResponse
+// @Failure 400 {object} string "Bad Request"
+// @Router /payment [get]
 func (ctrl *PaymentController) GetAllOwnedPayments(c *gin.Context) {
 	user := middleware.GetUserFromContext(c)
 
@@ -29,18 +37,51 @@ func (ctrl *PaymentController) GetAllOwnedPayments(c *gin.Context) {
 		c.JSON(500, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(200, payments)
+
+	var response []dto.PaymentResponse
+	for _, payment := range payments {
+		dto, err := ctrl.Service.MappaymentToPaymentResponse(payment)
+		if err != nil {
+			c.JSON(500, gin.H{"error": err.Error()})
+			return
+		}
+		response = append(response, *dto)
+	}
+	if response == nil {
+		response = []dto.PaymentResponse{}
+	}
+	c.JSON(200, response)
 }
 
+// GetPaymentById godoc
+// @Tags Payment
+// @Summary Get a payment by id
+// @Description Retrieve a payment from given id which is owned by the user in the jwt
+// @Param id path string true "Payment ID"
+// @Success 200 {object} dto.PaymentResponse
+// @Failure 400 {object} string "Bad Request"
+// @Router /payment/{id} [get]
 func (ctrl *PaymentController) GetPaymentById(c *gin.Context) {
 	id := c.Param("id")
+	user := middleware.GetUserFromContext(c)
 
 	payment, err := ctrl.Service.GetPaymentById(c.Request.Context(), id)
 	if err != nil {
 		c.JSON(500, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(200, payment)
+
+	response, err := ctrl.Service.MappaymentToPaymentResponse(*payment)
+	if err != nil {
+		c.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
+
+	if response.Appointment.CustomerID != user.ID && response.Appointment.PhotographerID != user.ID {
+		c.JSON(403, gin.H{"error": "You are not authorized to view this payment"})
+		return
+	}
+	c.JSON(200, response)
 }
 
 func (ctrl *PaymentController) WebhookListener(c *gin.Context) {

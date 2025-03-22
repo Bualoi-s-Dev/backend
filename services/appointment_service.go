@@ -71,6 +71,17 @@ func (s *AppointmentService) GetAppointmentDetailById(ctx context.Context, user 
 			return nil, err
 		}
 		customerName = customer.Name
+	} else {
+		photographer, err := s.UserRepo.FindUserByID(ctx, appointment.PhotographerID)
+		if err != nil {
+			return nil, err
+		}
+		customer, err := s.UserRepo.FindUserByID(ctx, appointment.CustomerID)
+		if err != nil {
+			return nil, err
+		}
+		customerName = customer.Name
+		photographerName = photographer.Name
 	}
 
 	detail := &dto.AppointmentDetail{
