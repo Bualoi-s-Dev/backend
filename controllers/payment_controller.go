@@ -193,6 +193,7 @@ func (ctrl *PaymentController) WebhookListener(c *gin.Context) {
 
 	myAccountSecret := os.Getenv("STRIPE_WEBHOOK_MY_ACCOUNT_SECRET")
 	connectedAccountSecret := os.Getenv("STRIPE_WEBHOOK_CONNECTED_ACCOUNT_SECRET")
+	localSecret := os.Getenv("STRIPE_WEBHOOK_LOCAL_SECRET")
 	signatureHeader := c.Request.Header.Get("Stripe-Signature")
 
 	var event stripe.Event
@@ -203,7 +204,7 @@ func (ctrl *PaymentController) WebhookListener(c *gin.Context) {
 		event, err = webhook.ConstructEvent(payload, signatureHeader, connectedAccountSecret)
 		if err != nil {
 
-			event, err = webhook.ConstructEvent(payload, signatureHeader, "whsec_23653db1a6da8747be47ec03ee0ea92942cb479248811f6b3b3ae2b3d91bf85f")
+			event, err = webhook.ConstructEvent(payload, signatureHeader, localSecret)
 			if err != nil {
 				c.JSON(http.StatusBadRequest, gin.H{"error": "Error verifying webhook signature"})
 				return
