@@ -71,6 +71,8 @@ func (uc *UserController) GetUserProfile(c *gin.Context) {
 // @Param location query string false "Photographer location"
 // @Param minPrice query string false "Minimum price"
 // @Param maxPrice query string false "Maximum price"
+// @Param page query int false "Page number, default is 1"
+// @Param limit query int false "Limit number of items per page, default is 10"
 // @Param type query string false "Package type"
 // @Success 200 {object} []dto.UserResponse
 // @Failure 400 {object} string "Bad Request"

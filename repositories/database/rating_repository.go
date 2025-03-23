@@ -85,7 +85,7 @@ func (r *RatingRepository) GetByPhotographerIdAndRating(ctx context.Context, pho
 	var items []models.Rating
 	cursor, err := r.Collection.Find(ctx, bson.M{
 		"photographer_id": photographerId,
-		"rating": rating,
+		"rating":          rating,
 	})
 	if err != nil {
 		return nil, err
@@ -133,8 +133,8 @@ func (r *RatingRepository) CustomerHasReviewedPhotographer(ctx context.Context, 
 
 func (r *RatingRepository) IsCustomerRatingOwner(ctx context.Context, customerId, ratingId primitive.ObjectID) (bool, error) {
 	filter := bson.M{
-		"customer_id":     customerId,
-		"_id": ratingId,
+		"customer_id": customerId,
+		"_id":         ratingId,
 	}
 
 	count, err := r.Collection.CountDocuments(ctx, filter)
@@ -147,8 +147,8 @@ func (r *RatingRepository) IsCustomerRatingOwner(ctx context.Context, customerId
 
 func (r *RatingRepository) IsPhotographerRatingOwner(ctx context.Context, photographerId, ratingId primitive.ObjectID) (bool, error) {
 	filter := bson.M{
-		"photographer_id":     photographerId,
-		"_id": ratingId,
+		"photographer_id": photographerId,
+		"_id":             ratingId,
 	}
 
 	count, err := r.Collection.CountDocuments(ctx, filter)
@@ -158,4 +158,3 @@ func (r *RatingRepository) IsPhotographerRatingOwner(ctx context.Context, photog
 
 	return count > 0, nil
 }
-
