@@ -16,8 +16,8 @@ type PaymentRepository struct {
 	AppointmentCollection *mongo.Collection
 }
 
-func NewPaymentRepository(collection *mongo.Collection) *PaymentRepository {
-	return &PaymentRepository{Collection: collection, AppointmentCollection: collection}
+func NewPaymentRepository(collection *mongo.Collection, appointmentCollection *mongo.Collection) *PaymentRepository {
+	return &PaymentRepository{Collection: collection, AppointmentCollection: appointmentCollection}
 }
 
 func (repo *PaymentRepository) Create(ctx context.Context, payment *models.Payment) error {

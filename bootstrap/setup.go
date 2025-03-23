@@ -64,7 +64,7 @@ func SetupServer(client *mongo.Database) (*gin.Engine, *ServerRepositories, *Ser
 	busyTimeRepo := database.NewBusyTimeRepository(busyTimeCollection)
 	s3Repo := s3.NewS3Repository()
 	firebaseRepo := firebase.NewFirebaseRepository(authClient)
-	paymentRepo := database.NewPaymentRepository(paymentCollection)
+	paymentRepo := database.NewPaymentRepository(paymentCollection, appointmentCollection)
 	stripeRepo := stripeRepo.NewStripeRepository()
 	ratingRepo := database.NewRatingRepository(ratingCollection)
 
