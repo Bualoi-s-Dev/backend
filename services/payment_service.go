@@ -9,6 +9,7 @@ import (
 	databaseRepo "github.com/Bualoi-s-Dev/backend/repositories/database"
 	stripeRepo "github.com/Bualoi-s-Dev/backend/repositories/stripe"
 	"github.com/stripe/stripe-go/v81"
+	"github.com/stripe/stripe-go/v81/balancetransaction"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -73,6 +74,13 @@ func (service *PaymentService) RegisterConnectedAccount(ctx context.Context, use
 		return nil, err
 	}
 
+	// Attach account setting
+	err = service.StripeRepository.AttachAccountSetting(account.ID)
+	fmt.Println("Attach account setting", err)
+	if err != nil {
+		return nil, err
+	}
+
 	// Update stripe account id in user
 	user.StripeAccountID = &account.ID
 	_, err = service.UserDatabaseRepository.ReplaceUser(ctx, user.ID, &user)
@@ -83,12 +91,16 @@ func (service *PaymentService) RegisterConnectedAccount(ctx context.Context, use
 }
 
 func (service *PaymentService) CreatePayment(ctx context.Context, appointmentId primitive.ObjectID) (*models.Payment, error) {
-	// Get customer from appointment
+	// Get customer and photographer from appointment
 	appointment, err := service.AppointmentDatabaseRepository.GetById(ctx, appointmentId)
 	if err != nil {
 		return nil, err
 	}
 	customer, err := service.UserDatabaseRepository.FindUserByID(ctx, appointment.CustomerID)
+	if err != nil {
+		return nil, err
+	}
+	photographer, err := service.UserDatabaseRepository.FindUserByID(ctx, appointment.PhotographerID)
 	if err != nil {
 		return nil, err
 	}
@@ -108,12 +120,27 @@ func (service *PaymentService) CreatePayment(ctx context.Context, appointmentId 
 		stripeCustomerId = *customer.StripeCustomerID
 	}
 
-	// Create checkout session
+	// Create photographer stripe account, if not exist create new stripe account
+	if photographer.Role != models.Photographer {
+		return nil, errors.New("user is not a photographer")
+	}
+	var stripeAccountId string
+	if photographer.StripeAccountID == nil {
+		stripeAccount, err := service.RegisterConnectedAccount(ctx, *photographer)
+		if err != nil {
+			return nil, err
+		}
+		stripeAccountId = stripeAccount.ID
+	} else {
+		stripeAccountId = *photographer.StripeAccountID
+	}
+
+	// Create checkout session for customer into photographer account
 	subpackage, err := service.SubpackageDatabaseRepository.GetById(ctx, appointment.SubpackageID.Hex())
 	if err != nil {
 		return nil, err
 	}
-	checkoutSession, err := service.CreateCheckoutSession(stripeCustomerId, subpackage.Title, int64(appointment.Price))
+	checkoutSession, err := service.CreateCheckoutSession(stripeCustomerId, stripeAccountId, subpackage.Title, int64(appointment.Price))
 	if err != nil {
 		return nil, err
 	}
@@ -133,32 +160,27 @@ func (service *PaymentService) CreatePayment(ctx context.Context, appointmentId 
 	return payment, service.DatabaseRepository.Create(ctx, payment)
 }
 
-func (service *PaymentService) CreateCheckoutSession(customerId string, productName string, amount int64) (*stripe.CheckoutSession, error) {
-	stripeCheckout, err := service.StripeRepository.CreateCheckoutSession(customerId, productName, amount*100, 1, "thb")
+func (service *PaymentService) CreateCheckoutSession(customerId string, sellerAccountId string, productName string, amount int64) (*stripe.CheckoutSession, error) {
+	stripeCheckout, err := service.StripeRepository.CreateCheckoutSession(customerId, sellerAccountId, productName, amount*100, 1, "thb")
 	if err != nil {
 		return nil, err
 	}
 	return stripeCheckout, nil
 }
 
-func (service *PaymentService) CreatePayout(accountId string, amount int64) (*stripe.Payout, error) {
-	payout, err := service.StripeRepository.CreatePayout(accountId, amount, "thb")
-	if err != nil {
-		return nil, err
-	}
-	return payout, nil
-}
-
-func (service *PaymentService) UpdateBankAccount(ctx context.Context, user models.User) error {
+func (service *PaymentService) UpdateAccount(ctx context.Context, user models.User) error {
 	// Re-Attach bank account
 	err := service.StripeRepository.AttachBankAccount(*user.StripeAccountID, "TH", "thb", user.BankAccount)
 	if err != nil {
 		return err
 	}
+
+	// Re-Attach account setting
+	err = service.StripeRepository.AttachAccountSetting(*user.StripeAccountID)
 	return err
 }
 
-func (service *PaymentService) UpdateCustomerPaid(ctx context.Context, checkoutSession stripe.CheckoutSession) error {
+func (service *PaymentService) UpdateCheckoutCompleted(ctx context.Context, checkoutSession stripe.CheckoutSession) error {
 	// Get checkout session from payment
 	payment, err := service.DatabaseRepository.GetByCheckoutID(ctx, checkoutSession.ID)
 	if err != nil {
@@ -175,7 +197,7 @@ func (service *PaymentService) UpdateCustomerPaid(ctx context.Context, checkoutS
 }
 
 func (service *PaymentService) PaidPhotographer(ctx context.Context, charge stripe.Charge) error {
-	// Get payment by payment intent id
+	// // Get payment by payment intent id
 	payment, err := service.DatabaseRepository.GetByPaymentIntentID(ctx, charge.PaymentIntent.ID)
 	if err != nil {
 		return err
@@ -184,40 +206,8 @@ func (service *PaymentService) PaidPhotographer(ctx context.Context, charge stri
 		return nil // Already paid
 	}
 
-	// Get stripe account id, if not exist create new stripe account
-	var stripeAccountId string
-	appointment, err := service.AppointmentDatabaseRepository.GetById(ctx, payment.AppointmentID)
-	if err != nil {
-		return err
-	}
-	photographer, err := service.UserDatabaseRepository.FindUserByID(ctx, appointment.PhotographerID)
-	if err != nil {
-		return err
-	}
-	if photographer.StripeAccountID == nil {
-		stripeAccount, err := service.RegisterConnectedAccount(ctx, *photographer)
-		if err != nil {
-			return err
-		}
-		stripeAccountId = stripeAccount.ID
-	} else {
-		stripeAccountId = *photographer.StripeCustomerID
-	}
-
-	// Update photographer bank account
-	err = service.UpdateBankAccount(ctx, *photographer)
-	if err != nil {
-		return err
-	}
-
-	// Create payout
-	payout, err := service.CreatePayout(stripeAccountId, charge.BalanceTransaction.Net)
-	if err != nil {
-		return err
-	}
-
 	// Update photographer payout and status in payment
-	payment.Photographer.PayoutID = &payout.ID
+	payment.Photographer.BalanceTransactionID = &charge.BalanceTransaction.ID
 	payment.Photographer.Status = models.InTransit
 
 	// Update payment in database
@@ -225,16 +215,28 @@ func (service *PaymentService) PaidPhotographer(ctx context.Context, charge stri
 	return err
 }
 
-func (service *PaymentService) UpdateSuccessPaidPhotographer(ctx context.Context, payout stripe.Payout) error {
-	// Get payment by payout id
-	payment, err := service.DatabaseRepository.GetByPayoutID(ctx, payout.ID)
-	if err != nil {
-		return err
+func (service *PaymentService) UpdateSuccessPayoutPhotographer(ctx context.Context, payout stripe.Payout) error {
+	// Get transaction list from payout
+	params := &stripe.BalanceTransactionListParams{
+		Payout: stripe.String(payout.ID),
 	}
 
-	// Update photographer payment status
-	payment.Photographer.Status = models.Paid
+	i := balancetransaction.List(params)
+	for i.Next() {
+		tx := i.BalanceTransaction()
 
-	// Update payment in database
-	return service.DatabaseRepository.Replace(ctx, payment.ID, payment)
+		// Get payment by balance transaction id
+		payment, err := service.DatabaseRepository.GetByBalanceTransactionID(ctx, tx.ID)
+		if err != nil {
+			return err
+		}
+
+		// Update photographer payment status
+		payment.Photographer.Status = models.Paid
+		err = service.DatabaseRepository.Replace(ctx, payment.ID, payment)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }

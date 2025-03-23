@@ -16,18 +16,19 @@ func NewStripeRepository() *StripeRepository {
 	return &StripeRepository{}
 }
 
+// TODO: {"status":400,"message":"Platforms in TH cannot create accounts where the platform is loss-liable, due to risk control measures. Please refer to our guide (https://support.stripe.com/questions/stripe-thailand-support-for-marketplaces) for more details.","request_id":"req_YqPlgTCvJiVNzw","request_log_url":"https://dashboard.stripe.com/test/logs/req_YqPlgTCvJiVNzw?t=1742682891","type":"invalid_request_error"}
 func (s *StripeRepository) CreateConnectedAccount(email string) (*stripe.Account, error) {
 	params := &stripe.AccountParams{
-		Type:  stripe.String("custom"), // Can be "standard", "express" or "custom"
+		Type:  stripe.String("standard"), // Can be "standard", "express" or "custom"
 		Email: stripe.String(email),
-		Capabilities: &stripe.AccountCapabilitiesParams{
-			CardPayments: &stripe.AccountCapabilitiesCardPaymentsParams{
-				Requested: stripe.Bool(true),
-			},
-			Transfers: &stripe.AccountCapabilitiesTransfersParams{
-				Requested: stripe.Bool(true),
-			},
-		},
+		// Capabilities: &stripe.AccountCapabilitiesParams{
+		// 	CardPayments: &stripe.AccountCapabilitiesCardPaymentsParams{
+		// 		Requested: stripe.Bool(true),
+		// 	},
+		// 	Transfers: &stripe.AccountCapabilitiesTransfersParams{
+		// 		Requested: stripe.Bool(true),
+		// 	},
+		// },
 	}
 	acc, err := account.New(params)
 	if err != nil {
@@ -88,6 +89,20 @@ func (s *StripeRepository) AttachBankAccount(accountID, country, currency, accou
 	return err
 }
 
+func (s *StripeRepository) AttachAccountSetting(accountID string) error {
+	params := &stripe.AccountParams{
+		Settings: &stripe.AccountSettingsParams{
+			Payouts: &stripe.AccountSettingsPayoutsParams{
+				Schedule: &stripe.AccountSettingsPayoutsScheduleParams{
+					Interval: stripe.String("daily"), // Options: "daily", "weekly", "monthly", "manual"
+				},
+			},
+		},
+	}
+	_, err := account.Update(accountID, params)
+	return err
+}
+
 // func CreateInvoice(customerID string, amount int64, currency string) (*stripe.Invoice, error) {
 // 	// Step 1: Add an invoice item (the charge)
 // 	_, err := invoiceitem.New(&stripe.InvoiceItemParams{
@@ -111,7 +126,7 @@ func (s *StripeRepository) AttachBankAccount(accountID, country, currency, accou
 // 	return inv, nil
 // }
 
-func (s *StripeRepository) CreateCheckoutSession(customerId string, productName string, amount int64, quantity int64, currency string) (*stripe.CheckoutSession, error) {
+func (s *StripeRepository) CreateCheckoutSession(customerId string, sellerAccountId string, productName string, amount int64, quantity int64, currency string) (*stripe.CheckoutSession, error) {
 	params := &stripe.CheckoutSessionParams{
 		Customer:           stripe.String(customerId),
 		Mode:               stripe.String(string(stripe.CheckoutSessionModePayment)),
@@ -128,6 +143,13 @@ func (s *StripeRepository) CreateCheckoutSession(customerId string, productName 
 					UnitAmount: stripe.Int64(amount),
 				},
 				Quantity: stripe.Int64(quantity),
+			},
+		},
+		PaymentIntentData: &stripe.CheckoutSessionPaymentIntentDataParams{
+			OnBehalfOf:           stripe.String(sellerAccountId), // Seller's connected account ID
+			ApplicationFeeAmount: stripe.Int64(500),              // Platform fee (5 THB)
+			TransferData: &stripe.CheckoutSessionPaymentIntentDataTransferDataParams{
+				Destination: stripe.String(sellerAccountId), // Seller's connected account ID
 			},
 		},
 	}

@@ -16,8 +16,8 @@ type CustomerPayment struct {
 }
 
 type PhotographerPayment struct {
-	Status   PaymentStatus `bson:"status" json:"status" binding:"omitempty,payment_status" example:"Paid"`
-	PayoutID *string       `bson:"payout_id" json:"payoutId" ts_type:"string" example:"12345678abcd"`
+	Status               PaymentStatus `bson:"status" json:"status" binding:"omitempty,payment_status" example:"Paid"`
+	BalanceTransactionID *string       `bson:"balance_transaction_id" json:"balanceTransactionId" ts_type:"string" example:"12345678abcd"`
 }
 
 type PaymentStatus string

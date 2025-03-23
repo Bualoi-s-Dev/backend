@@ -163,7 +163,7 @@ func (ctrl *PaymentController) WebhookListener(c *gin.Context) {
 		}
 		fmt.Printf("Checkout session %s completed\n", session.ID)
 		// Handle the successful session completed
-		ctrl.Service.UpdateCustomerPaid(c.Request.Context(), session)
+		ctrl.Service.UpdateCheckoutCompleted(c.Request.Context(), session)
 	case "charge.updated":
 		var charge stripe.Charge
 		if err := json.Unmarshal(event.Data.Raw, &charge); err != nil {
@@ -184,7 +184,7 @@ func (ctrl *PaymentController) WebhookListener(c *gin.Context) {
 		}
 		fmt.Printf("Payout %s paid\n", payout.ID)
 		// Handle the successful payout paid
-		ctrl.Service.UpdateSuccessPaidPhotographer(c.Request.Context(), payout)
+		ctrl.Service.UpdateSuccessPayoutPhotographer(c.Request.Context(), payout)
 	default:
 		fmt.Printf("Unhandled event type: %s\n", event.Type)
 	}
@@ -203,6 +203,7 @@ func (ctrl *PaymentController) Test(c *gin.Context) {
 	// ctrl.Service.CreatePayment(c.Request.Context(), objectID, *user)
 }
 
+// it need to be here because of the circular dependency
 func (ctrl *PaymentController) mapToPaymentResponse(ctx context.Context, payment models.Payment) (*dto.PaymentResponse, error) {
 	appointment, err := ctrl.AppointmentService.AppointmentRepo.GetById(ctx, payment.AppointmentID)
 	if err != nil {

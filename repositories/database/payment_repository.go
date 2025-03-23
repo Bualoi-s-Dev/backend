@@ -116,9 +116,9 @@ func (repo *PaymentRepository) GetByCheckoutID(ctx context.Context, checkoutID s
 	return &item, nil
 }
 
-func (repo *PaymentRepository) GetByPayoutID(ctx context.Context, payoutID string) (*models.Payment, error) {
+func (repo *PaymentRepository) GetByBalanceTransactionID(ctx context.Context, balanceTransactionID string) (*models.Payment, error) {
 	var item models.Payment
-	err := repo.Collection.FindOne(ctx, bson.M{"photographer.payout_id": payoutID}).Decode(&item)
+	err := repo.Collection.FindOne(ctx, bson.M{"photographer.balance_transaction_id": balanceTransactionID}).Decode(&item)
 	if err != nil {
 		return nil, err
 	}
