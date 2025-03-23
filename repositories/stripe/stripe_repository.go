@@ -145,6 +145,13 @@ func (s *StripeRepository) CreateAccountSession(accountID string) (*stripe.Accou
 	return accountsession.New(params)
 }
 
+func (s *StripeRepository) CreateLoginLink(accountID string) (*stripe.LoginLink, error) {
+	params := &stripe.LoginLinkParams{
+		Account: stripe.String(accountID),
+	}
+	return loginlink.New(params)
+}
+
 func (s *StripeRepository) AttachAccountSetting(accountID string) error {
 	params := &stripe.AccountParams{
 		Settings: &stripe.AccountSettingsParams{

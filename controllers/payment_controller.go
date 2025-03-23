@@ -154,6 +154,29 @@ func (ctrl *PaymentController) GetOnBoardAccountURL(c *gin.Context) {
 	c.JSON(200, accountLink)
 }
 
+// GetLoginLinkAccountURL godoc
+// @Tags Payment
+// @Summary Create stripe login account URL for photographer
+// @Description Create stripe login account URL for photographer
+// @Success 200 {object} stripe.LoginLink
+// @Failure 400 {object} string "Bad Request"
+// @Router /payment/onboardingURL [get]
+func (ctrl *PaymentController) GetLoginLinkAccountURL(c *gin.Context) {
+	user := middleware.GetUserFromContext(c)
+
+	if user.StripeAccountID == nil {
+		c.JSON(400, gin.H{"error": "User does not have stripe account yet"})
+		return
+	}
+
+	accountLink, err := ctrl.Service.CreateAccountLink(c.Request.Context(), *user.StripeAccountID)
+	if err != nil {
+		c.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(200, accountLink)
+}
+
 func (ctrl *PaymentController) WebhookListener(c *gin.Context) {
 	const MaxBodyBytes = int64(65536)
 	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, MaxBodyBytes)

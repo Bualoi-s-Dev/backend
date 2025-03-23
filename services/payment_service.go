@@ -164,6 +164,10 @@ func (service *PaymentService) CreateAccountLink(ctx context.Context, accountId 
 	return service.StripeRepository.CreateAccountLink(accountId)
 }
 
+func (service *PaymentService) CreateLoginLink(ctx context.Context, accountId string) (*stripe.LoginLink, error) {
+	return service.StripeRepository.CreateLoginLink(accountId)
+}
+
 func (service *PaymentService) CreateCheckoutSession(customerId string, sellerAccountId string, productName string, amount int64) (*stripe.CheckoutSession, error) {
 	stripeCheckout, err := service.StripeRepository.CreateCheckoutSession(customerId, sellerAccountId, productName, amount*100, 1, "thb")
 	if err != nil {

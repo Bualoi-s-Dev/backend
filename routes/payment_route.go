@@ -17,6 +17,7 @@ func PaymentRoutes(router *gin.Engine, ctrl *controllers.PaymentController) {
 	photographerRoutes := paymentRoutes.Group("", middleware.AllowRoles(models.Photographer))
 	{
 		photographerRoutes.GET("/onboardingURL", ctrl.GetOnBoardAccountURL)
+		photographerRoutes.GET("/loginDashboard", ctrl.GetLoginLinkAccountURL)
 	}
 	paymentRoutes.POST("/charge/:appointmentId", ctrl.CreatePayment)
 	paymentRoutes.POST("/webhook", ctrl.WebhookListener)
