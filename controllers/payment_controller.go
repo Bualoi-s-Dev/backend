@@ -129,7 +129,7 @@ func (ctrl *PaymentController) CreatePayment(c *gin.Context) {
 // @Tags Payment
 // @Summary Create stripe onboarding account URL for photographer
 // @Description Create stripe onboarding account URL for photographer
-// @Success 200 {object} stripe.AccountLink
+// @Success 200 {object} dto.PaymentURL
 // @Failure 400 {object} string "Bad Request"
 // @Router /payment/onboardingURL [get]
 func (ctrl *PaymentController) GetOnBoardAccountURL(c *gin.Context) {
@@ -152,31 +152,35 @@ func (ctrl *PaymentController) GetOnBoardAccountURL(c *gin.Context) {
 		c.JSON(500, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(200, accountLink)
+
+	res := dto.PaymentURL{URL: accountLink.URL}
+	c.JSON(200, res)
 }
 
-// GetLoginLinkAccountURL godoc
-// @Tags Payment
-// @Summary Create stripe login account URL for photographer
-// @Description Create stripe login account URL for photographer
-// @Success 200 {object} stripe.LoginLink
-// @Failure 400 {object} string "Bad Request"
-// @Router /payment/onboardingURL [get]
-func (ctrl *PaymentController) GetLoginLinkAccountURL(c *gin.Context) {
-	user := middleware.GetUserFromContext(c)
+// // GetLoginLinkAccountURL godoc
+// // @Tags Payment
+// // @Summary Create stripe login account URL for photographer
+// // @Description Create stripe login account URL for photographer
+// // @Success 200 {object} dto.PaymentURL
+// // @Failure 400 {object} string "Bad Request"
+// // @Router /payment/loginDashboardURL [get]
+// func (ctrl *PaymentController) GetLoginLinkAccountURL(c *gin.Context) {
+// 	user := middleware.GetUserFromContext(c)
 
-	if user.StripeAccountID == nil {
-		c.JSON(400, gin.H{"error": "User does not have stripe account yet"})
-		return
-	}
+// 	if user.StripeAccountID == nil {
+// 		c.JSON(400, gin.H{"error": "User does not have stripe account yet"})
+// 		return
+// 	}
 
-	accountLink, err := ctrl.Service.CreateAccountLink(c.Request.Context(), *user.StripeAccountID)
-	if err != nil {
-		c.JSON(500, gin.H{"error": err.Error()})
-		return
-	}
-	c.JSON(200, accountLink)
-}
+// 	loginLink, err := ctrl.Service.CreateLoginLink(c.Request.Context(), *user.StripeAccountID)
+// 	if err != nil {
+// 		c.JSON(500, gin.H{"error": err.Error()})
+// 		return
+// 	}
+
+// 	res := dto.PaymentURL{URL: loginLink.URL}
+// 	c.JSON(200, res)
+// }
 
 func (ctrl *PaymentController) WebhookListener(c *gin.Context) {
 	const MaxBodyBytes = int64(65536)

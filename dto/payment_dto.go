@@ -7,3 +7,7 @@ type PaymentResponse struct {
 	Appointment AppointmentDetail `json:"appointment"`
 	Package     PackageResponse   `json:"package"`
 }
+
+type PaymentURL struct {
+	URL string `json:"url" example:"https://stripe.com"`
+}
