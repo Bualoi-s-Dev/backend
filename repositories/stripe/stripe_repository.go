@@ -1,13 +1,14 @@
 package stripe
 
 import (
-	"fmt"
-
 	stripe "github.com/stripe/stripe-go/v81"
 	"github.com/stripe/stripe-go/v81/account"
+	"github.com/stripe/stripe-go/v81/accountlink"
+	"github.com/stripe/stripe-go/v81/accountsession"
 	"github.com/stripe/stripe-go/v81/bankaccount"
 	"github.com/stripe/stripe-go/v81/checkout/session"
 	"github.com/stripe/stripe-go/v81/customer"
+	"github.com/stripe/stripe-go/v81/loginlink"
 	"github.com/stripe/stripe-go/v81/payout"
 )
 
@@ -111,6 +112,39 @@ func (s *StripeRepository) UpdateBankAccount(accountID, accountNumber string) er
 	return err
 }
 
+func (s *StripeRepository) CreateAccountLink(accountID string) (*stripe.AccountLink, error) {
+	params := &stripe.AccountLinkParams{
+		Account: stripe.String(accountID),
+		// TODO: Change the URL
+		RefreshURL: stripe.String("https://example.com/reauth"),
+		ReturnURL:  stripe.String("https://example.com/return"),
+		Type:       stripe.String("account_onboarding"),
+		Collect:    stripe.String("eventually_due"),
+	}
+	return accountlink.New(params)
+}
+
+func (s *StripeRepository) CreateAccountSession(accountID string) (*stripe.AccountSession, error) {
+	params := &stripe.AccountSessionParams{
+		Account: stripe.String(accountID),
+		Components: &stripe.AccountSessionComponentsParams{
+			AccountOnboarding: &stripe.AccountSessionComponentsAccountOnboardingParams{
+				Enabled: stripe.Bool(true),
+			},
+			Payments: &stripe.AccountSessionComponentsPaymentsParams{
+				Enabled: stripe.Bool(true),
+			},
+			Payouts: &stripe.AccountSessionComponentsPayoutsParams{
+				Enabled: stripe.Bool(true),
+			},
+			Balances: &stripe.AccountSessionComponentsBalancesParams{
+				Enabled: stripe.Bool(true),
+			},
+		},
+	}
+	return accountsession.New(params)
+}
+
 func (s *StripeRepository) AttachAccountSetting(accountID string) error {
 	params := &stripe.AccountParams{
 		Settings: &stripe.AccountSettingsParams{
@@ -130,8 +164,9 @@ func (s *StripeRepository) CreateCheckoutSession(customerId string, sellerAccoun
 		Customer:           stripe.String(customerId),
 		Mode:               stripe.String(string(stripe.CheckoutSessionModePayment)),
 		PaymentMethodTypes: stripe.StringSlice([]string{"card", "promptpay"}),
-		SuccessURL:         stripe.String("https://your-website.com/success"),
-		CancelURL:          stripe.String("https://your-website.com/cancel"),
+		// TODO: Change the URLs
+		SuccessURL: stripe.String("https://your-website.com/success"),
+		CancelURL:  stripe.String("https://your-website.com/cancel"),
 		LineItems: []*stripe.CheckoutSessionLineItemParams{
 			{
 				PriceData: &stripe.CheckoutSessionLineItemPriceDataParams{
@@ -145,8 +180,9 @@ func (s *StripeRepository) CreateCheckoutSession(customerId string, sellerAccoun
 			},
 		},
 		PaymentIntentData: &stripe.CheckoutSessionPaymentIntentDataParams{
-			OnBehalfOf:           stripe.String(sellerAccountId), // Seller's connected account ID
-			ApplicationFeeAmount: stripe.Int64(500),              // Platform fee (5 THB)
+			OnBehalfOf: stripe.String(sellerAccountId), // Seller's connected account ID
+			// TODO: Change the application fee amount
+			ApplicationFeeAmount: stripe.Int64(500), // Platform fee (5 THB)
 			TransferData: &stripe.CheckoutSessionPaymentIntentDataTransferDataParams{
 				Destination: stripe.String(sellerAccountId), // Seller's connected account ID
 			},

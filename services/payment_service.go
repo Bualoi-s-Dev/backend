@@ -68,11 +68,11 @@ func (service *PaymentService) RegisterConnectedAccount(ctx context.Context, use
 	}
 
 	// Attach bank account
-	err = service.StripeRepository.AttachBankAccount(account.ID, "TH", "thb", user.BankAccount)
-	fmt.Println("Attach bank account", err)
-	if err != nil {
-		return nil, err
-	}
+	// err = service.StripeRepository.AttachBankAccount(account.ID, "TH", "thb", user.BankAccount)
+	// fmt.Println("Attach bank account", err)
+	// if err != nil {
+	// 	return nil, err
+	// }
 
 	// Attach account setting
 	err = service.StripeRepository.AttachAccountSetting(account.ID)
@@ -158,6 +158,10 @@ func (service *PaymentService) CreatePayment(ctx context.Context, appointmentId 
 		},
 	}
 	return payment, service.DatabaseRepository.Create(ctx, payment)
+}
+
+func (service *PaymentService) CreateAccountLink(ctx context.Context, accountId string) (*stripe.AccountLink, error) {
+	return service.StripeRepository.CreateAccountLink(accountId)
 }
 
 func (service *PaymentService) CreateCheckoutSession(customerId string, sellerAccountId string, productName string, amount int64) (*stripe.CheckoutSession, error) {
