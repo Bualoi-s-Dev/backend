@@ -42,7 +42,7 @@ func (repo *PaymentRepository) GetAll(ctx context.Context) ([]models.Payment, er
 	return items, nil
 }
 
-func (repo *PaymentRepository) GetById(ctx context.Context, id string) (*models.Payment, error) {
+func (repo *PaymentRepository) GetById(ctx context.Context, id primitive.ObjectID) (*models.Payment, error) {
 	var item models.Payment
 	err := repo.Collection.FindOne(ctx, bson.M{"_id": id}).Decode(&item)
 	if err != nil {
@@ -60,7 +60,7 @@ func (repo *PaymentRepository) GetByAppointmentID(ctx context.Context, appointme
 	return &item, nil
 }
 
-func (repo *PaymentRepository) GetByUserIDAndRole(ctx context.Context, role models.UserRole, userId string) ([]models.Payment, error) {
+func (repo *PaymentRepository) GetByUserIDAndRole(ctx context.Context, role models.UserRole, userId primitive.ObjectID) ([]models.Payment, error) {
 	var items []models.Payment
 	var fieldToFind string
 	if role == models.Photographer {

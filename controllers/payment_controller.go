@@ -71,7 +71,8 @@ func (ctrl *PaymentController) GetPaymentById(c *gin.Context) {
 	id := c.Param("id")
 	user := middleware.GetUserFromContext(c)
 
-	payment, err := ctrl.Service.GetPaymentById(c.Request.Context(), id)
+	oid, _ := primitive.ObjectIDFromHex(id)
+	payment, err := ctrl.Service.GetPaymentById(c.Request.Context(), oid)
 	if err != nil {
 		if err.Error() == "mongo: no documents in result" {
 			c.JSON(404, gin.H{"error": "Payment not found"})

@@ -36,10 +36,10 @@ func NewPaymentService(databaseRepository *databaseRepo.PaymentRepository, userR
 }
 
 func (service *PaymentService) GetAllOwnedPayments(ctx context.Context, user models.User) ([]models.Payment, error) {
-	return service.DatabaseRepository.GetByUserIDAndRole(ctx, user.Role, user.ID.Hex())
+	return service.DatabaseRepository.GetByUserIDAndRole(ctx, user.Role, user.ID)
 }
 
-func (service *PaymentService) GetPaymentById(ctx context.Context, id string) (*models.Payment, error) {
+func (service *PaymentService) GetPaymentById(ctx context.Context, id primitive.ObjectID) (*models.Payment, error) {
 	return service.DatabaseRepository.GetById(ctx, id)
 }
 
