@@ -170,7 +170,7 @@ func (service *PaymentService) CreateCheckoutSession(customerId string, sellerAc
 
 func (service *PaymentService) UpdateAccount(ctx context.Context, user models.User) error {
 	// Re-Attach bank account
-	err := service.StripeRepository.AttachBankAccount(*user.StripeAccountID, "TH", "thb", user.BankAccount)
+	err := service.StripeRepository.UpdateBankAccount(*user.StripeAccountID, user.BankAccount)
 	if err != nil {
 		return err
 	}

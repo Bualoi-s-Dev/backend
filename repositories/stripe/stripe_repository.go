@@ -1,6 +1,8 @@
 package stripe
 
 import (
+	"fmt"
+
 	stripe "github.com/stripe/stripe-go/v81"
 	"github.com/stripe/stripe-go/v81/account"
 	"github.com/stripe/stripe-go/v81/bankaccount"
@@ -83,9 +85,29 @@ func (s *StripeRepository) AttachBankAccount(accountID, country, currency, accou
 		Country:       stripe.String(country),
 		Currency:      stripe.String(currency),
 		AccountNumber: stripe.String(accountNumber),
+		Account:       stripe.String(accountID),
 	}
-	params.SetStripeAccount(accountID)
 	_, err := bankaccount.New(params)
+	return err
+}
+
+func (s *StripeRepository) UpdateBankAccount(accountID, accountNumber string) error {
+	// Delete all bank accounts in the account
+	params := &stripe.BankAccountListParams{}
+	params.SetStripeAccount(accountID)
+
+	iter := bankaccount.List(params)
+	for iter.Next() {
+		ba := iter.BankAccount()
+
+		_, err := bankaccount.Del(ba.ID, &stripe.BankAccountParams{Account: stripe.String(accountID)})
+		if err != nil {
+			return err
+		}
+	}
+
+	// Attach new bank account
+	err := s.AttachBankAccount(accountID, "TH", "thb", accountNumber)
 	return err
 }
 
@@ -102,29 +124,6 @@ func (s *StripeRepository) AttachAccountSetting(accountID string) error {
 	_, err := account.Update(accountID, params)
 	return err
 }
-
-// func CreateInvoice(customerID string, amount int64, currency string) (*stripe.Invoice, error) {
-// 	// Step 1: Add an invoice item (the charge)
-// 	_, err := invoiceitem.New(&stripe.InvoiceItemParams{
-// 		Customer: stripe.String(customerID),
-// 		Amount:   stripe.Int64(amount),
-// 		Currency: stripe.String(currency),
-// 	})
-// 	if err != nil {
-// 		return nil, err
-// 	}
-
-// 	// Step 2: Create the invoice
-// 	inv, err := invoice.New(&stripe.InvoiceParams{
-// 		Customer:    stripe.String(customerID),
-// 		AutoAdvance: stripe.Bool(true), // Automatically finalize invoice
-// 	})
-// 	if err != nil {
-// 		return nil, err
-// 	}
-
-// 	return inv, nil
-// }
 
 func (s *StripeRepository) CreateCheckoutSession(customerId string, sellerAccountId string, productName string, amount int64, quantity int64, currency string) (*stripe.CheckoutSession, error) {
 	params := &stripe.CheckoutSessionParams{
