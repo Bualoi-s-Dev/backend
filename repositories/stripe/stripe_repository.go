@@ -117,7 +117,7 @@ func (s *StripeRepository) CreateAccountLink(accountID string) (*stripe.AccountL
 		Account: stripe.String(accountID),
 		// TODO: Change the URL
 		RefreshURL: stripe.String("https://example.com/reauth"),
-		ReturnURL:  stripe.String("https://example.com/return"),
+		ReturnURL:  stripe.String("https://dashboard.stripe.com"),
 		Type:       stripe.String("account_onboarding"),
 		Collect:    stripe.String("eventually_due"),
 	}
