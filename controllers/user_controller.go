@@ -71,7 +71,7 @@ func (uc *UserController) GetUserProfile(c *gin.Context) {
 // @Param location query string false "Photographer location"
 // @Param minPrice query string false "Minimum price"
 // @Param maxPrice query string false "Maximum price"
-// @Param type query string false "Photographer type"
+// @Param type query string false "Package type"
 // @Success 200 {object} dto.UserResponse
 // @Failure 400 {object} string "Bad Request"
 // @Router /user/photographer [get]
