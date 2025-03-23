@@ -74,7 +74,7 @@ func (uc *UserController) GetUserProfile(c *gin.Context) {
 // @Param type query string false "Package type"
 // @Success 200 {object} []dto.UserResponse
 // @Failure 400 {object} string "Bad Request"
-// @Router /user/photographer [get]
+// @Router /user/photographers [get]
 func (uc UserController) GetPhotographers(c *gin.Context) {
 	// Get query parameters for filtering
 	filters := map[string]string{
