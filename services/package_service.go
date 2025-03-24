@@ -213,6 +213,7 @@ func (s *PackageService) FilterPackage(ctx context.Context, item *models.Package
 		if strings.HasPrefix(strings.ToLower(ownerUser.Name), strings.ToLower(searchString)) {
 			return true, nil
 		}
+		return false, nil
 	}
 	return true, nil
 }
