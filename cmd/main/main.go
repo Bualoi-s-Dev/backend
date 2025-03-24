@@ -32,10 +32,10 @@ func main() {
 	client := configs.ConnectMongoDB().Database(databaseName)
 
 	// Setup server
-	r, serverRepositories, _ := bootstrap.SetupServer(client)
+	r, _, serverService := bootstrap.SetupServer(client)
 
 	// Auto update go routine
-	go bootstrap.AutoUpdate(context.TODO(), serverRepositories)
+	go bootstrap.AutoUpdate(context.TODO(), serverService)
 
 	// Run server
 	port := configs.GetEnv("PORT")

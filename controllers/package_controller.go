@@ -105,7 +105,7 @@ func (ctrl *PackageController) GetAllPackages(c *gin.Context) {
 // @Param size query int false "Recommended package size"
 // @Success 200 {object} []dto.PackageResponse
 // @Failure 400 {object} string "Bad Request"
-// @Router /package [get]
+// @Router /package/recommend [get]
 // @x-order 6
 func (ctrl *PackageController) GetRecommendedPackages(c *gin.Context) {
 	size_ := c.Query("size")

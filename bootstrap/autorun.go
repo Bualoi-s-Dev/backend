@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-func AutoUpdate(ctx context.Context, serverRepositories *ServerRepositories) error {
+func AutoUpdate(ctx context.Context, serverService *ServerServices) error {
 	var tickerTime time.Duration
 	if os.Getenv("APP_MODE") == "development" {
 		// tickerTime = 1 * time.Minute
@@ -19,6 +19,6 @@ func AutoUpdate(ctx context.Context, serverRepositories *ServerRepositories) err
 
 	for {
 		<-ticker.C
-		go serverRepositories.appointmentRepo.AutoUpdateAppointmentStatus(ctx)
+		go serverService.appointmentService.AutoUpdateAppointmentStatus(ctx)
 	}
 }

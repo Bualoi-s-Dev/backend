@@ -20,6 +20,10 @@ type User struct {
 	Facebook         string               `bson:"facebook,omitempty" json:"facebook" example:"Meen"`
 	Instagram        string               `bson:"instagram,omitempty" json:"instagram" example:"Meen"`
 	ShowcasePackages []primitive.ObjectID `bson:"showcase_packages,omitempty" json:"showcasePackages" ts_type:"string[]" example:"12345678abcd,12345678abcd"`
+
+	// Payment Info
+	StripeCustomerID *string `bson:"stripe_customer_id,omitempty" json:"stripeCustomerId" example:"12345678abcd"`
+	StripeAccountID  *string `bson:"stripe_account_id,omitempty" json:"stripeAccountId" example:"12345678abcd"`
 }
 
 func NewUser(email string) *User {

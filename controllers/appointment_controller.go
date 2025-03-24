@@ -58,6 +58,8 @@ func getSubpackageIDFromParam(c *gin.Context) (primitive.ObjectID, error) {
 // @Param name query string false "Name of package title or customer name"
 // @Param minPrice query string false "Minimum price of appointment"
 // @Param maxPrice query string false "Maximum price of appointment"
+// @Param page query int false "Page number, default is 1"
+// @Param limit query int false "Limit number of items per page, default is 10"
 // @Success 200 {array} dto.AppointmentResponse
 // @Failure 401 {object} string "Unauthorized"
 // @Router /appointment [get]
@@ -107,7 +109,7 @@ func (a *AppointmentController) GetAllAppointment(c *gin.Context) {
 // @Tags Appointment
 // @Summary Get all available appointments with provided details
 // @Description Retrieve all available appointments detail that the user can see from the database
-// @Success 200 {array} dto.AppointmentDetailResponse
+// @Success 200 {array} dto.AppointmentDetail
 // @Failure 401 {object} string "Unauthorized"
 // @Router /appointment/detail [get]
 func (a *AppointmentController) GetAllAppointmentDetail(c *gin.Context) {
@@ -125,7 +127,7 @@ func (a *AppointmentController) GetAllAppointmentDetail(c *gin.Context) {
 // @Summary Get an appointments with provided details by Id
 // @Description Retrieve all available appointments detail that the user can see from the database
 // @Param id path string true "Appointment ID"
-// @Success 200 {object} dto.AppointmentDetailResponse
+// @Success 200 {object} dto.AppointmentDetail
 // @Failure 401 {object} string "Unauthorized"
 // @Router /appointment/detail/{id} [get]
 func (a *AppointmentController) GetAllAppointmentDetailById(c *gin.Context) {
@@ -137,6 +139,10 @@ func (a *AppointmentController) GetAllAppointmentDetailById(c *gin.Context) {
 	}
 
 	appointment, err := a.AppointmentService.GetAppointmentById(c.Request.Context(), user, appointmentId)
+	if err != nil {
+		apperrors.HandleError(c, err, "Cannot get the appointment from this id")
+		return
+	}
 	appointmentDetail, err := a.AppointmentService.GetAppointmentDetailById(c, user, appointment)
 	if err != nil {
 		apperrors.HandleError(c, err, "Error while get all appointment detail")

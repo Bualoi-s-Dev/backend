@@ -6,6 +6,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/Bualoi-s-Dev/backend/apperrors"
 
@@ -21,17 +22,20 @@ type AppointmentService struct {
 	SubpackageRepo  *repositories.SubpackageRepository
 	BusyTimeRepo    *repositories.BusyTimeRepository
 	UserRepo        *repositories.UserRepository
+	PaymentService  *PaymentService
 }
 
 // literally just getbyID and check if the user is authorized
 
-func NewAppointmentService(appointmentRepo *repositories.AppointmentRepository, packageRepo *repositories.PackageRepository, subpackageRepo *repositories.SubpackageRepository, busyTimeRepo *repositories.BusyTimeRepository, userRepo *repositories.UserRepository) *AppointmentService {
+func NewAppointmentService(appointmentRepo *repositories.AppointmentRepository, packageRepo *repositories.PackageRepository, subpackageRepo *repositories.SubpackageRepository,
+	busyTimeRepo *repositories.BusyTimeRepository, userRepo *repositories.UserRepository, paymentService *PaymentService) *AppointmentService {
 	return &AppointmentService{
 		AppointmentRepo: appointmentRepo,
 		PackageRepo:     packageRepo,
 		SubpackageRepo:  subpackageRepo,
 		BusyTimeRepo:    busyTimeRepo,
 		UserRepo:        userRepo,
+		PaymentService:  paymentService,
 	}
 }
 
@@ -55,7 +59,7 @@ func (s *AppointmentService) GetAppointmentDetailById(ctx context.Context, user 
 		return nil, err
 	}
 	var customerName, photographerName string
-	if user.Role == models.Customer {
+	if user != nil && user.Role == models.Customer {
 		customerName = user.Name
 		photographer, err := s.UserRepo.FindUserByID(ctx, appointment.PhotographerID)
 		if err != nil {
@@ -63,7 +67,7 @@ func (s *AppointmentService) GetAppointmentDetailById(ctx context.Context, user 
 			return nil, err
 		}
 		photographerName = photographer.Name
-	} else if user.Role == models.Photographer {
+	} else if user != nil && user.Role == models.Photographer {
 		photographerName = user.Name
 		customer, err := s.UserRepo.FindUserByID(ctx, appointment.CustomerID)
 		if err != nil {
@@ -71,6 +75,17 @@ func (s *AppointmentService) GetAppointmentDetailById(ctx context.Context, user 
 			return nil, err
 		}
 		customerName = customer.Name
+	} else {
+		photographer, err := s.UserRepo.FindUserByID(ctx, appointment.PhotographerID)
+		if err != nil {
+			return nil, err
+		}
+		customer, err := s.UserRepo.FindUserByID(ctx, appointment.CustomerID)
+		if err != nil {
+			return nil, err
+		}
+		customerName = customer.Name
+		photographerName = photographer.Name
 	}
 
 	detail := &dto.AppointmentDetail{
@@ -203,7 +218,7 @@ func (s *AppointmentService) GetAllAppointmentDetail(ctx context.Context, user *
 }
 
 func (s *AppointmentService) GetAppointmentById(ctx context.Context, user *models.User, appointmentId primitive.ObjectID) (*models.Appointment, error) {
-	appointment, err := s.AppointmentRepo.GetById(ctx, appointmentId, user.ID, user.Role)
+	appointment, err := s.AppointmentRepo.GetById(ctx, appointmentId)
 	if err != nil {
 		return nil, apperrors.ErrBadRequest
 	}
@@ -239,4 +254,34 @@ func (s *AppointmentService) DeleteAppointment(ctx context.Context, appointmentI
 		return err
 	}
 	return s.AppointmentRepo.DeleteAppointment(ctx, appointmentId)
+}
+
+func (s *AppointmentService) AutoUpdateAppointmentStatus(ctx context.Context) error {
+
+	fmt.Println("Running scheduled update...")
+
+	// filter only start_time is grater than current time and status is "Pending"
+	// TODO: Fix this curse later
+	loc, _ := time.LoadLocation("Asia/Bangkok")
+	t := time.Now().In(loc)
+	currentTime := time.Date(
+		t.Year(), t.Month(), t.Day(),
+		t.Hour(), t.Minute(), t.Second(),
+		t.Nanosecond(), time.UTC,
+	)
+
+	go func() {
+		s.AppointmentRepo.UpdateCanceledAppointment(ctx, currentTime)
+	}()
+
+	// filter only end_time is less than current time and status is "Accepted"
+	// TODO: Maybe Mapped this two go routine into loop or function call
+	go func() {
+		updatedIds, _ := s.AppointmentRepo.UpdateCompletedAppointment(ctx, currentTime)
+		for _, id := range updatedIds {
+			s.PaymentService.CreatePayment(ctx, id)
+		}
+	}()
+
+	return nil
 }

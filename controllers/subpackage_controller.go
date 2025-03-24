@@ -32,6 +32,8 @@ func NewSubpackageController(service *services.SubpackageService, packageService
 // @Param availableStartDay query string false "Available start day of subpackage"
 // @Param availableEndDay query string false "Available end day of subpackage"
 // @Param repeatedDay query []string false "Repeated day of subpackage"
+// @Param page query int false "Page number, default is 1"
+// @Param limit query int false "Limit number of items per page, default is 10"
 // @Tags Subpackage
 // @Success 200 {object} []dto.SubpackageResponse
 // @Failure 400 {object} string "Bad Request"
