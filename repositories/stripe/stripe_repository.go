@@ -1,6 +1,7 @@
 package stripe
 
 import (
+	"github.com/Bualoi-s-Dev/backend/utils"
 	stripe "github.com/stripe/stripe-go/v81"
 	"github.com/stripe/stripe-go/v81/account"
 	"github.com/stripe/stripe-go/v81/accountlink"
@@ -19,7 +20,7 @@ func NewStripeRepository() *StripeRepository {
 	return &StripeRepository{}
 }
 
-// TODO: {"status":400,"message":"Platforms in TH cannot create accounts where the platform is loss-liable, due to risk control measures. Please refer to our guide (https://support.stripe.com/questions/stripe-thailand-support-for-marketplaces) for more details.","request_id":"req_YqPlgTCvJiVNzw","request_log_url":"https://dashboard.stripe.com/test/logs/req_YqPlgTCvJiVNzw?t=1742682891","type":"invalid_request_error"}
+// {"status":400,"message":"Platforms in TH cannot create accounts where the platform is loss-liable, due to risk control measures. Please refer to our guide (https://support.stripe.com/questions/stripe-thailand-support-for-marketplaces) for more details.","request_id":"req_YqPlgTCvJiVNzw","request_log_url":"https://dashboard.stripe.com/test/logs/req_YqPlgTCvJiVNzw?t=1742682891","type":"invalid_request_error"}
 func (s *StripeRepository) CreateConnectedAccount(email string) (*stripe.Account, error) {
 	params := &stripe.AccountParams{
 		Type:  stripe.String("standard"), // Can be "standard", "express" or "custom"
@@ -113,10 +114,10 @@ func (s *StripeRepository) UpdateBankAccount(accountID, accountNumber string) er
 }
 
 func (s *StripeRepository) CreateAccountLink(accountID string) (*stripe.AccountLink, error) {
+	frontendURL := utils.GetFrontendURL()
 	params := &stripe.AccountLinkParams{
-		Account: stripe.String(accountID),
-		// TODO: Change the URL
-		RefreshURL: stripe.String("https://example.com/reauth"),
+		Account:    stripe.String(accountID),
+		RefreshURL: stripe.String(frontendURL + "/profile"),
 		ReturnURL:  stripe.String("https://dashboard.stripe.com"),
 		Type:       stripe.String("account_onboarding"),
 		Collect:    stripe.String("eventually_due"),
@@ -167,13 +168,13 @@ func (s *StripeRepository) AttachAccountSetting(accountID string) error {
 }
 
 func (s *StripeRepository) CreateCheckoutSession(customerId string, sellerAccountId string, productName string, amount int64, quantity int64, currency string) (*stripe.CheckoutSession, error) {
+	frontendURL := utils.GetFrontendURL()
 	params := &stripe.CheckoutSessionParams{
 		Customer:           stripe.String(customerId),
 		Mode:               stripe.String(string(stripe.CheckoutSessionModePayment)),
 		PaymentMethodTypes: stripe.StringSlice([]string{"card", "promptpay"}),
-		// TODO: Change the URLs
-		SuccessURL: stripe.String("https://your-website.com/success"),
-		CancelURL:  stripe.String("https://your-website.com/cancel"),
+		SuccessURL:         stripe.String(frontendURL + "/payment/order/success"),
+		CancelURL:          stripe.String(frontendURL + "/payment/topay"),
 		LineItems: []*stripe.CheckoutSessionLineItemParams{
 			{
 				PriceData: &stripe.CheckoutSessionLineItemPriceDataParams{
