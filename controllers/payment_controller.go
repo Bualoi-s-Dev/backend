@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"os"
 
@@ -185,7 +185,7 @@ func (ctrl *PaymentController) GetOnBoardAccountURL(c *gin.Context) {
 func (ctrl *PaymentController) WebhookListener(c *gin.Context) {
 	const MaxBodyBytes = int64(65536)
 	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, MaxBodyBytes)
-	payload, err := ioutil.ReadAll(c.Request.Body)
+	payload, err := io.ReadAll(c.Request.Body)
 	if err != nil {
 		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "Error reading request body"})
 		return
