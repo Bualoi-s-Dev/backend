@@ -48,12 +48,6 @@ type AuthUserCredentials struct {
 	Password string `json:"password" binding:"required" example:"12345678"`
 }
 
-type Pagination struct {
-	Page    int `json:"page"`
-	Limit   int `json:"limit"`
-	MaxPage int `json:"maxPage"`
-	Total   int `json:"total"`
-}
 type FilteredUserPhotographerResponse struct {
 	Photographers []UserResponse `json:"photographers" `
 	Pagination    Pagination     `json:"pagination"`
