@@ -55,7 +55,7 @@ func getSubpackageIDFromParam(c *gin.Context) (primitive.ObjectID, error) {
 // @Param status query string false "Status of appointment"
 // @Param availableStartDay query string false "Available start day of appointment"
 // @Param availableEndDay query string false "Available end day of appointment"
-// @Param name query string false "Name of package title or customer name"
+// @Param name query string false "Name of package title or customer"
 // @Param minPrice query string false "Minimum price of appointment"
 // @Param maxPrice query string false "Maximum price of appointment"
 // @Param page query int false "Page number, default is 1"
@@ -96,13 +96,26 @@ func (a *AppointmentController) GetAllAppointment(c *gin.Context) {
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
 
 	// Retrieve and filter subpackages with pagination
-	appointments, err := a.AppointmentService.GetFilteredAppointments(c.Request.Context(), user, filters, page, limit)
+	appointments, totalCount, err := a.AppointmentService.GetFilteredAppointments(c.Request.Context(), user, filters, page, limit)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch items, " + err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, appointments)
+	// Calculate max pages
+	maxPage := (totalCount + limit - 1) / limit // Equivalent to ceil(totalCount / limit)
+
+	response := dto.FilteredAppointmentResponse{
+		Appointments: appointments,
+		Pagination: dto.Pagination{
+			Page:    page,
+			Limit:   limit,
+			MaxPage: maxPage,
+			Total:   totalCount,
+		},
+	}
+
+	c.JSON(http.StatusOK, response)
 }
 
 // GetAllAppointmentDetail godoc

@@ -106,13 +106,14 @@ func (s *AppointmentService) GetAppointmentDetailById(ctx context.Context, user 
 	}
 	return detail, nil
 }
-func (s *AppointmentService) GetFilteredAppointments(ctx context.Context, user *models.User, filters map[string]string, page, limit int) ([]models.Appointment, error) {
+func (s *AppointmentService) GetFilteredAppointments(ctx context.Context, user *models.User, filters map[string]string, page, limit int) ([]dto.AppointmentResponse, int, error) {
 	items, err := s.AppointmentRepo.GetAll(ctx, user.ID, user.Role)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
-	var appointments []models.Appointment
+	var totalCount int
+	var appointments []dto.AppointmentResponse
 	startIdx := (page - 1) * limit
 	endIdx := startIdx + limit
 
@@ -123,7 +124,7 @@ func (s *AppointmentService) GetFilteredAppointments(ctx context.Context, user *
 		if parsedMinPrice, err := strconv.Atoi(filters["minPrice"]); err == nil {
 			minPrice = parsedMinPrice
 		} else {
-			return nil, fmt.Errorf("invalid minPrice filter: %v", err)
+			return nil, 0, fmt.Errorf("invalid minPrice filter: %v", err)
 		}
 	}
 
@@ -131,7 +132,7 @@ func (s *AppointmentService) GetFilteredAppointments(ctx context.Context, user *
 		if parsedMaxPrice, err := strconv.Atoi(filters["maxPrice"]); err == nil {
 			maxPrice = parsedMaxPrice
 		} else {
-			return nil, fmt.Errorf("invalid maxPrice filter: %v", err)
+			return nil, 0, fmt.Errorf("invalid maxPrice filter: %v", err)
 		}
 	}
 
@@ -146,7 +147,7 @@ func (s *AppointmentService) GetFilteredAppointments(ctx context.Context, user *
 		subPkg, err := s.SubpackageRepo.GetById(ctx, item.SubpackageID.Hex())
 		if err != nil {
 			fmt.Println("(GetFilteredAppointments) Error while getting subpackage")
-			return nil, err
+			return nil, 0, err
 		}
 		if !s.passesFilters(subPkg, filters) {
 			continue
@@ -156,31 +157,45 @@ func (s *AppointmentService) GetFilteredAppointments(ctx context.Context, user *
 			pkg, err := s.PackageRepo.GetById(ctx, item.PackageID.Hex())
 			if err != nil {
 				fmt.Println("(GetFilteredAppointments) Error while getting package")
-				return nil, err
+				return nil, 0, err
 			}
 
 			ctm, err := s.UserRepo.FindUserByID(ctx, item.CustomerID)
 			if err != nil {
 				fmt.Println("(GetFilteredAppointments) Error while getting customer")
-				return nil, err
+				return nil, 0, err
 			}
 
-			if !strings.HasPrefix(filters["name"], pkg.Title) && !strings.HasPrefix(filters["name"], ctm.Name) {
+			if !strings.HasPrefix(pkg.Title, filters["name"]) && !strings.HasPrefix(ctm.Name, filters["name"]) {
 				continue
 			}
 		}
 
-		appointments = append(appointments, item)
+		appointmentResponse := dto.AppointmentResponse{
+			ID:             item.ID,
+			CustomerID:     item.CustomerID,
+			PhotographerID: item.PhotographerID,
+			PackageID:      item.PackageID,
+			SubpackageID:   item.SubpackageID,
+			BusyTimeID:     item.BusyTimeID,
+			Status:         item.Status,
+			Location:       item.Location,
+			Price:          item.Price,
+		}
+
+		appointments = append(appointments, appointmentResponse)
 	}
 
+	totalCount = len(appointments)
+
 	// Apply pagination
-	if startIdx > len(appointments) {
-		return []models.Appointment{}, nil
+	if startIdx > totalCount {
+		return []dto.AppointmentResponse{}, totalCount, nil
 	}
-	if endIdx > len(appointments) {
-		endIdx = len(appointments)
+	if endIdx > totalCount {
+		endIdx = totalCount
 	}
-	return appointments[startIdx:endIdx], nil
+	return appointments[startIdx:endIdx], totalCount, nil
 }
 
 func (s *AppointmentService) passesFilters(subPkg *models.Subpackage, filters map[string]string) bool {

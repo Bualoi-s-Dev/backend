@@ -69,3 +69,8 @@ func (req *AppointmentStrictRequest) ToModel(user *models.User, pkg *models.Pack
 		Price:          subpackage.Price,
 	}
 }
+
+type FilteredAppointmentResponse struct {
+	Appointments []AppointmentResponse `json:"appointments"`
+	Pagination   Pagination            `json:"pagination"`
+}

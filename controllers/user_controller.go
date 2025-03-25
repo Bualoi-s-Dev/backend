@@ -74,7 +74,7 @@ func (uc *UserController) GetUserProfile(c *gin.Context) {
 // @Param page query int false "Page number, default is 1"
 // @Param limit query int false "Limit number of items per page, default is 10"
 // @Param type query string false "Package type"
-// @Success 200 {object} []dto.UserResponse
+// @Success 200 {object} dto.UserPhotographerResponse
 // @Failure 400 {object} string "Bad Request"
 // @Router /user/photographers [get]
 func (uc UserController) GetPhotographers(c *gin.Context) {
@@ -92,14 +92,28 @@ func (uc UserController) GetPhotographers(c *gin.Context) {
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
 
 	// Call the service to get the user's profile picture URL
-	photographers, err := uc.Service.GetFilteredPhotographers(c.Request.Context(), filters, page, limit)
+	photographers, totalCount, err := uc.Service.GetFilteredPhotographers(c.Request.Context(), filters, page, limit)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get photographers, " + err.Error()})
 		return
 	}
 
 	//Return the profile picture URL
-	c.JSON(http.StatusOK, photographers)
+	// Calculate max pages
+	maxPage := (totalCount + limit - 1) / limit // Equivalent to ceil(totalCount / limit)
+
+	// Construct response
+	response := dto.FilteredUserPhotographerResponse{
+		Photographers: photographers,
+		Pagination: dto.Pagination{
+			Page:    page,
+			Limit:   limit,
+			MaxPage: maxPage,
+			Total:   totalCount,
+		},
+	}
+
+	c.JSON(http.StatusOK, response)
 }
 
 // GetUserProfileByID godoc
