@@ -190,7 +190,7 @@ func (s *StripeRepository) CreateCheckoutSession(customerId string, sellerAccoun
 		PaymentIntentData: &stripe.CheckoutSessionPaymentIntentDataParams{
 			OnBehalfOf: stripe.String(sellerAccountId), // Seller's connected account ID
 			// TODO: Change the application fee amount
-			ApplicationFeeAmount: stripe.Int64(500), // Platform fee (5 THB)
+			ApplicationFeeAmount: stripe.Int64(500), // Platform fee, currently 5 THB
 			TransferData: &stripe.CheckoutSessionPaymentIntentDataTransferDataParams{
 				Destination: stripe.String(sellerAccountId), // Seller's connected account ID
 			},
