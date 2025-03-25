@@ -60,7 +60,7 @@ func getSubpackageIDFromParam(c *gin.Context) (primitive.ObjectID, error) {
 // @Param maxPrice query string false "Maximum price of appointment"
 // @Param page query int false "Page number, default is 1"
 // @Param limit query int false "Limit number of items per page, default is 10"
-// @Success 200 {array} []dto.AppointmentResponse
+// @Success 200 {array} []dto.FilteredAppointmentResponse
 // @Failure 401 {object} string "Unauthorized"
 // @Router /appointment [get]
 func (a *AppointmentController) GetAllAppointment(c *gin.Context) {

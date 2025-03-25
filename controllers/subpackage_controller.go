@@ -35,7 +35,7 @@ func NewSubpackageController(service *services.SubpackageService, packageService
 // @Param page query int false "Page number, default is 1"
 // @Param limit query int false "Limit number of items per page, default is 10"
 // @Tags Subpackage
-// @Success 200 {object} []dto.SubpackageResponse
+// @Success 200 {object} []dto.FilteredSubpackageResponse
 // @Failure 400 {object} string "Bad Request"
 // @Router /subpackage [GET]
 func (ctrl *SubpackageController) GetAllSubpackages(c *gin.Context) {
