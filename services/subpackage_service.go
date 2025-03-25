@@ -27,12 +27,13 @@ func (s *SubpackageService) GetAll(ctx context.Context) ([]models.Subpackage, er
 	return s.Repository.GetAll(ctx)
 }
 
-func (s *SubpackageService) GetFilteredSubpackages(ctx context.Context, filters map[string]string, page, limit int) ([]dto.SubpackageResponse, error) {
+func (s *SubpackageService) GetFilteredSubpackages(ctx context.Context, filters map[string]string, page, limit int) ([]dto.SubpackageResponse, int, error) {
 	items, err := s.Repository.GetAll(ctx)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
+	var totalCount int
 	var responses []dto.SubpackageResponse
 	startIdx := (page - 1) * limit
 	endIdx := startIdx + limit
@@ -40,7 +41,7 @@ func (s *SubpackageService) GetFilteredSubpackages(ctx context.Context, filters 
 	for _, item := range items {
 		pkg, err := s.PackageRepository.GetById(ctx, item.PackageID.Hex())
 		if err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 		if !s.passesFilters(pkg, item, filters) {
 			continue
@@ -48,20 +49,22 @@ func (s *SubpackageService) GetFilteredSubpackages(ctx context.Context, filters 
 
 		res, err := s.MappedToSubpackageResponse(ctx, &item)
 		if err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 		responses = append(responses, *res)
 	}
 
+	totalCount = len(responses)
+
 	// Apply pagination
-	if startIdx > len(responses) {
-		return []dto.SubpackageResponse{}, nil
+	if startIdx > totalCount {
+		return []dto.SubpackageResponse{}, totalCount, nil
 	}
-	if endIdx > len(responses) {
-		endIdx = len(responses)
+	if endIdx > totalCount {
+		endIdx = totalCount
 	}
 
-	return responses[startIdx:endIdx], nil
+	return responses[startIdx:endIdx], totalCount, nil
 }
 
 func (s *SubpackageService) passesFilters(pkg *models.Package, item models.Subpackage, filters map[string]string) bool {

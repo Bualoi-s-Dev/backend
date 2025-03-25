@@ -71,12 +71,13 @@ func (s *UserService) GetPhotographers(ctx context.Context) ([]dto.UserResponse,
 	return res, nil
 }
 
-func (s *UserService) GetFilteredPhotographers(ctx context.Context, filters map[string]string, page, limit int) ([]dto.UserResponse, error) {
+func (s *UserService) GetFilteredPhotographers(ctx context.Context, filters map[string]string, page, limit int) ([]dto.UserResponse, int, error) {
 	photographers, err := s.Repo.FindPhotographers(ctx)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
+	var totalCount int
 	var res []dto.UserResponse
 	startIdx := (page - 1) * limit
 	endIdx := startIdx + limit
@@ -86,7 +87,7 @@ func (s *UserService) GetFilteredPhotographers(ctx context.Context, filters map[
 	if filters["minPrice"] != "" {
 		minPrice, err = strconv.Atoi(filters["minPrice"])
 		if err != nil {
-			return nil, fmt.Errorf("invalid minPrice filter: %v", err)
+			return nil, 0, fmt.Errorf("invalid minPrice filter: %v", err)
 		}
 	} else {
 		minPrice = 0 // Default to 0 if not provided
@@ -95,17 +96,17 @@ func (s *UserService) GetFilteredPhotographers(ctx context.Context, filters map[
 	if filters["maxPrice"] != "" {
 		maxPrice, err = strconv.Atoi(filters["maxPrice"])
 		if err != nil {
-			return nil, fmt.Errorf("invalid maxPrice filter: %v", err)
+			return nil, 0, fmt.Errorf("invalid maxPrice filter: %v", err)
 		}
 	} else {
 		maxPrice = int(^uint(0) >> 1) // Default to max int if not provided
 	}
 
 	for _, photographer := range photographers {
-		if filters["name"] != "" && !strings.HasPrefix(filters["name"], photographer.Name) {
+		if filters["name"] != "" && !strings.HasPrefix(photographer.Name, filters["name"]) {
 			continue
 		}
-		if filters["location"] != "" && !strings.HasPrefix(filters["location"], photographer.Location) {
+		if filters["location"] != "" && !strings.HasPrefix(photographer.Location, filters["location"]) {
 			continue
 		}
 
@@ -113,7 +114,7 @@ func (s *UserService) GetFilteredPhotographers(ctx context.Context, filters map[
 
 		pkgs, err := s.PackageService.GetByOwnerId(ctx, photographer.ID)
 		if err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 
 		for _, pkg := range pkgs {
@@ -128,7 +129,7 @@ func (s *UserService) GetFilteredPhotographers(ctx context.Context, filters map[
 			if filters["minPrice"] != "" || filters["maxPrice"] != "" {
 				subPkgs, err := s.SubpackageService.GetByPackageId(ctx, pkg.ID)
 				if err != nil {
-					return nil, err
+					return nil, 0, err
 				}
 
 				if subPkgs == nil {
@@ -151,20 +152,22 @@ func (s *UserService) GetFilteredPhotographers(ctx context.Context, filters map[
 
 		userRes, err := s.mappedToUserResponse(ctx, &photographer)
 		if err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 
 		res = append(res, *userRes)
 	}
 
+	totalCount = len(res)
+
 	// Apply pagination
-	if startIdx >= len(res) {
-		return []dto.UserResponse{}, nil
+	if startIdx >= totalCount {
+		return []dto.UserResponse{}, totalCount, nil
 	}
-	if endIdx > len(res) {
-		endIdx = len(res)
+	if endIdx > totalCount {
+		endIdx = totalCount
 	}
-	return res[startIdx:endIdx], nil
+	return res[startIdx:endIdx], totalCount, nil
 }
 
 func matchesPriceFilter(minPrice int, maxPrice int, subPkgs []models.Subpackage) bool {
