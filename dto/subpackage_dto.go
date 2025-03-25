@@ -66,3 +66,8 @@ func (item *SubpackageRequest) ToModel() *models.Subpackage {
 		AvailableEndDay:    utils.SafeString(availableEndDay),
 	}
 }
+
+type FilteredSubpackageResponse struct {
+	Subpackages []SubpackageResponse `json:"subpackages" `
+	Pagination  Pagination           `json:"pagination"`
+}

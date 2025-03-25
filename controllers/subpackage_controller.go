@@ -35,7 +35,7 @@ func NewSubpackageController(service *services.SubpackageService, packageService
 // @Param page query int false "Page number, default is 1"
 // @Param limit query int false "Limit number of items per page, default is 10"
 // @Tags Subpackage
-// @Success 200 {object} []dto.SubpackageResponse
+// @Success 200 {object} []dto.FilteredSubpackageResponse
 // @Failure 400 {object} string "Bad Request"
 // @Router /subpackage [GET]
 func (ctrl *SubpackageController) GetAllSubpackages(c *gin.Context) {
@@ -99,13 +99,26 @@ func (ctrl *SubpackageController) GetAllSubpackages(c *gin.Context) {
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
 
 	// Retrieve and filter subpackages with pagination
-	responses, err := ctrl.Service.GetFilteredSubpackages(c.Request.Context(), filters, page, limit)
+	subpackages, totalCount, err := ctrl.Service.GetFilteredSubpackages(c.Request.Context(), filters, page, limit)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch items, " + err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, responses)
+	// Calculate max pages
+	maxPage := (totalCount + limit - 1) / limit // Equivalent to ceil(totalCount / limit)
+
+	response := dto.FilteredSubpackageResponse{
+		Subpackages: subpackages,
+		Pagination: dto.Pagination{
+			Page:    page,
+			Limit:   limit,
+			MaxPage: maxPage,
+			Total:   totalCount,
+		},
+	}
+
+	c.JSON(http.StatusOK, response)
 }
 
 // GetByIdSubpackages godoc

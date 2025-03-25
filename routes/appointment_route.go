@@ -14,6 +14,7 @@ func AppointmentRoutes(router *gin.Engine, ctrl *controllers.AppointmentControll
 		commonRoutes.GET("", ctrl.GetAllAppointment)
 		commonRoutes.GET("/:id", ctrl.GetAppointmentById)
 		commonRoutes.GET("/detail", ctrl.GetAllAppointmentDetail)
+		commonRoutes.GET("/detail/:id", ctrl.GetAppointmentDetailById)
 		commonRoutes.PATCH("/status/:id", ctrl.UpdateAppointmentStatus)
 	}
 	customerRoutes := appointmentGroup.Group("", middleware.AllowRoles(models.Customer))

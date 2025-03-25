@@ -40,10 +40,15 @@ type UserResponse struct {
 	Instagram        string            `bson:"instagram,omitempty" json:"instagram" example:"Meen"`
 	ShowcasePackages []PackageResponse `bson:"showcase_packages,omitempty" json:"showcasePackages" ts_type:"PackageResponse[]"`
 	Packages         []PackageResponse `bson:"photographer_packages,omitempty" json:"photographerPackages" ts_type:"PackageResponse[]"`
-	Ratings			 []RatingResponse  `bson:"ratings,omitempty" json:"photographerRatings" ts_type:"RatingResponse[]"`
+	Ratings          []RatingResponse  `bson:"ratings,omitempty" json:"photographerRatings" ts_type:"RatingResponse[]"`
 }
 
 type AuthUserCredentials struct {
 	Email    string `json:"email" binding:"required" example:"meen@gmail.com"`
 	Password string `json:"password" binding:"required" example:"12345678"`
+}
+
+type FilteredUserPhotographerResponse struct {
+	Photographers []UserResponse `json:"photographers" `
+	Pagination    Pagination     `json:"pagination"`
 }

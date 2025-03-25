@@ -312,13 +312,16 @@ func (s *SubpackageScenario) theSubpackageIsDeleted() error {
 		return fmt.Errorf("failed to delete subpackage, status code: %d", res.StatusCode)
 	}
 
-	var subPackages []models.Subpackage
-	if err := json.NewDecoder(res.Body).Decode(&subPackages); err != nil {
-		return err
+	// Decode the response
+	var response dto.FilteredSubpackageResponse
+	if err := json.NewDecoder(res.Body).Decode(&response); err != nil {
+		return fmt.Errorf("failed to decode response body: %w", err)
 	}
-	for _, subPackage := range subPackages {
+
+	// Check if the deleted subpackage still exists
+	for _, subPackage := range response.Subpackages {
 		if subPackage.ID.Hex() == s.Subpackage.ID.Hex() {
-			return fmt.Errorf("subpackage still exists")
+			return fmt.Errorf("subpackage still exists with ID: %s", subPackage.ID.Hex())
 		}
 	}
 	return nil
