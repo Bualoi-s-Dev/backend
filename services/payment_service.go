@@ -154,7 +154,7 @@ func (service *PaymentService) CreatePayment(ctx context.Context, appointmentId 
 			CheckoutID: &checkoutSession.ID,
 		},
 		Photographer: models.PhotographerPayment{
-			Status: models.Unpaid,
+			Status: models.Wait,
 		},
 	}
 	return payment, service.DatabaseRepository.Create(ctx, payment)
@@ -216,7 +216,7 @@ func (service *PaymentService) PaidPhotographer(ctx context.Context, charge stri
 
 	// Update photographer payout and status in payment
 	payment.Photographer.BalanceTransactionID = &charge.BalanceTransaction.ID
-	payment.Photographer.Status = models.InTransit
+	payment.Photographer.Status = models.InProcess
 
 	// Update payment in database
 	err = service.DatabaseRepository.Replace(ctx, payment.ID, payment)
@@ -240,7 +240,7 @@ func (service *PaymentService) UpdateSuccessPayoutPhotographer(ctx context.Conte
 		}
 
 		// Update photographer payment status
-		payment.Photographer.Status = models.Paid
+		payment.Photographer.Status = models.Completed
 		err = service.DatabaseRepository.Replace(ctx, payment.ID, payment)
 		if err != nil {
 			return err

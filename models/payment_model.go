@@ -10,7 +10,7 @@ type Payment struct {
 }
 
 type CustomerPayment struct {
-	Status          PaymentStatus `bson:"status" json:"status" binding:"omitempty,payment_status" example:"Paid"`
+	Status          PaymentStatus `bson:"status" json:"status"  binding:"omitempty,payment_status" example:"Paid"`
 	CheckoutID      *string       `bson:"checkout_id" json:"checkoutId" ts_type:"string" example:"12345678abcd"`
 	PaymentIntentID *string       `bson:"payment_intent_id" json:"paymentIntentId" ts_type:"string" example:"12345678abcd"`
 }
@@ -24,6 +24,19 @@ type PaymentStatus string
 
 const (
 	Unpaid    PaymentStatus = "Unpaid"
-	InTransit PaymentStatus = "InTransit"
+	Wait      PaymentStatus = "Wait"
+	InProcess PaymentStatus = "InProcess"
 	Paid      PaymentStatus = "Paid"
+	Completed PaymentStatus = "Completed"
 )
+
+var ValidPaymentStatus = []struct {
+	Value  PaymentStatus
+	TSName string
+}{
+	{Unpaid, string(Unpaid)},
+	{Wait, string(Wait)},
+	{InProcess, string(InProcess)},
+	{Paid, string(Paid)},
+	{Completed, string(Completed)},
+}

@@ -44,7 +44,8 @@ func main() {
 		Add(dto.RatingRequest{}).
 		Add(dto.RatingResponse{})
 	converter.
-		Add(dto.PaymentResponse{})
+		Add(dto.PaymentResponse{}).
+		AddEnum(models.ValidPaymentStatus)
 
 	// Change to interface
 	converter.CreateInterface = true
