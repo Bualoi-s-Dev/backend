@@ -55,7 +55,7 @@ func (ctrl *PackageController) GetAllPackages(c *gin.Context) {
 	}
 
 	if hasMaxPrice {
-		minPrice, err = strconv.Atoi(maxPrice_)
+		maxPrice, err = strconv.Atoi(maxPrice_)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid size parameter"})
 			return
