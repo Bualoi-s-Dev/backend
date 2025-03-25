@@ -122,7 +122,7 @@ func (a *AppointmentController) GetAllAppointmentDetail(c *gin.Context) {
 	c.JSON(http.StatusOK, appointmentDetails)
 }
 
-// GetAllAppointmentDetailById godoc
+// GetAppointmentDetailById godoc
 // @Tags Appointment
 // @Summary Get an appointments with provided details by Id
 // @Description Retrieve all available appointments detail that the user can see from the database
@@ -130,7 +130,7 @@ func (a *AppointmentController) GetAllAppointmentDetail(c *gin.Context) {
 // @Success 200 {object} dto.AppointmentDetail
 // @Failure 401 {object} string "Unauthorized"
 // @Router /appointment/detail/{id} [get]
-func (a *AppointmentController) GetAllAppointmentDetailById(c *gin.Context) {
+func (a *AppointmentController) GetAppointmentDetailById(c *gin.Context) {
 	user := middleware.GetUserFromContext(c)
 	appointmentId, err := getIDFromParam(c)
 	if err != nil {
