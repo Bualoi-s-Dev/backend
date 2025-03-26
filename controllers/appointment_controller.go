@@ -122,14 +122,47 @@ func (a *AppointmentController) GetAllAppointment(c *gin.Context) {
 // @Tags Appointment
 // @Summary Get all available appointments with provided details
 // @Description Retrieve all available appointments detail that the user can see from the database
+// @Param status query string false "Status of appointment"
+// @Param packageName query string false "Name of package title"
+// @Param subpackageName query string false "Name of subpackage title"
+// @Param customerName query string false "Name of customer"
+// @Param photographerName query string false "Name of photographer"
+// @Param minPrice query string false "Minimum price of appointment, default is 0"
+// @Param maxPrice query string false "Maximum price of appointment, default is MAXuINT"
+// @Param startTime query string false "Start time of appointment with RFC format as 2023-10-01T12:00:00Z"
+// @Param endTime query string false "End time of appointment with RFC format as 2023-10-01T12:00:00Z"
+// @Param location query string false "Location of appointment"
 // @Success 200 {array} dto.AppointmentDetail
 // @Failure 401 {object} string "Unauthorized"
 // @Router /appointment/detail [get]
 func (a *AppointmentController) GetAllAppointmentDetail(c *gin.Context) {
+	filters := map[string]string{
+		"status":           c.Query("status"),
+		"packageName":      c.Query("packageName"),
+		"subpackageName":   c.Query("subpackageName"),
+		"customerName":     c.Query("customerName"),
+		"photographerName": c.Query("photographerName"),
+		"minPrice":         c.Query("minPrice"),
+		"maxPrice":         c.Query("maxPrice"),
+		"startTime":        c.Query("startTime"),
+		"endTime":          c.Query("endTime"),
+		"location":         c.Query("location"),
+	}
+
+	// Validate time format for startTime and endTime
+	for _, key := range []string{"startTime", "endTime"} {
+		if filters[key] != "" {
+			if _, err := time.Parse(time.RFC3339, filters[key]); err != nil {
+				c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("Invalid format for %s. Use ISO 8601 (e.g., 2023-10-01T12:00:00Z)", key)})
+				return
+			}
+		}
+	}
+
 	user := middleware.GetUserFromContext(c)
-	appointmentDetails, err := a.AppointmentService.GetAllAppointmentDetail(c, user)
+	appointmentDetails, err := a.AppointmentService.GetFilteredAppointmentDetail(c, user, filters)
 	if err != nil {
-		apperrors.HandleError(c, err, "Error while get all appointment detail")
+		apperrors.HandleError(c, err, "Error while fetching filtered appointment details")
 		return
 	}
 	c.JSON(http.StatusOK, appointmentDetails)
