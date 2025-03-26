@@ -118,7 +118,7 @@ func (s *StripeRepository) CreateAccountLink(accountID string) (*stripe.AccountL
 	params := &stripe.AccountLinkParams{
 		Account:    stripe.String(accountID),
 		RefreshURL: stripe.String(frontendURL + "/profile"),
-		ReturnURL:  stripe.String("https://dashboard.stripe.com"),
+		ReturnURL:  stripe.String(frontendURL + ""),
 		Type:       stripe.String("account_onboarding"),
 		Collect:    stripe.String("eventually_due"),
 	}
