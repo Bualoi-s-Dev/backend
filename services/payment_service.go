@@ -210,7 +210,7 @@ func (service *PaymentService) PaidPhotographer(ctx context.Context, charge stri
 	if err != nil {
 		return err
 	}
-	if payment.Photographer.Status != models.Unpaid {
+	if payment.Photographer.Status != models.Wait {
 		return nil // Already paid
 	}
 
