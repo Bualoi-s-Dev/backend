@@ -203,20 +203,24 @@ func (s *AppointmentService) passesFilters(subPkg *models.Subpackage, filters ma
 		(filters["availableEndDay"] == "" || subPkg.AvailableEndDay <= filters["availableEndDay"])
 }
 
-func (s *AppointmentService) GetAllAppointmentDetail(ctx context.Context, user *models.User) ([]dto.AppointmentDetail, error) {
-	allAppointment, err := s.AppointmentRepo.GetAll(ctx, user.ID, user.Role)
+func (s *AppointmentService) GetFilteredAppointmentDetail(ctx context.Context, user *models.User, filters map[string]string) ([]dto.AppointmentDetail, error) {
+	allAppointments, err := s.AppointmentRepo.GetAll(ctx, user.ID, user.Role)
 	if err != nil {
 		return nil, apperrors.ErrBadRequest
 	}
-	var appointmentDetails []dto.AppointmentDetail
-	for _, appointment := range allAppointment {
+
+	var filteredAppointments []dto.AppointmentDetail
+	for _, appointment := range allAppointments {
 		detail, err := s.GetAppointmentDetailById(ctx, user, &appointment)
 		if err != nil {
 			return nil, err
 		}
-		appointmentDetails = append(appointmentDetails, *detail)
+		if matchesFilters(detail, filters) {
+			filteredAppointments = append(filteredAppointments, *detail)
+		}
 	}
-	sort.Slice(appointmentDetails, func(i, j int) bool {
+
+	sort.Slice(filteredAppointments, func(i, j int) bool {
 		statusOrder := map[string]int{
 			"Pending":   1,
 			"Accepted":  2,
@@ -224,12 +228,72 @@ func (s *AppointmentService) GetAllAppointmentDetail(ctx context.Context, user *
 			"Rejected":  4,
 			"Canceled":  5,
 		}
-		if statusOrder[string(appointmentDetails[i].Status)] != statusOrder[string(appointmentDetails[j].Status)] {
-			return statusOrder[string(appointmentDetails[i].Status)] < statusOrder[string(appointmentDetails[j].Status)]
+		if statusOrder[string(filteredAppointments[i].Status)] != statusOrder[string(filteredAppointments[j].Status)] {
+			return statusOrder[string(filteredAppointments[i].Status)] < statusOrder[string(filteredAppointments[j].Status)]
 		}
-		return appointmentDetails[i].StartTime.Before(appointmentDetails[j].StartTime)
+		return filteredAppointments[i].StartTime.Before(filteredAppointments[j].StartTime)
 	})
-	return appointmentDetails, nil
+
+	return filteredAppointments, nil
+}
+
+func matchesFilters(detail *dto.AppointmentDetail, filters map[string]string) bool {
+	stringFilters := map[string]string{
+		"status": string(detail.Status),
+	}
+	for key, value := range stringFilters {
+		if filters[key] != "" && filters[key] != value {
+			return false
+		}
+	}
+
+	if filters["packageName"] != "" && !strings.HasPrefix(detail.PackageName, filters["packageName"]) {
+		return false
+	}
+	if filters["subpackageName"] != "" && !strings.HasPrefix(detail.SubpackageName, filters["subpackageName"]) {
+		return false
+	}
+	if filters["customerName"] != "" && !strings.HasPrefix(detail.CustomerName, filters["customerName"]) {
+		return false
+	}
+	if filters["photographerName"] != "" && !strings.HasPrefix(detail.PhotographerName, filters["photographerName"]) {
+		return false
+	}
+	if filters["location"] != "" && !strings.HasPrefix(detail.Location, filters["location"]) {
+		return false
+	}
+
+	minPrice, maxPrice := 0, int(^uint(0)>>1)
+	if filters["minPrice"] != "" {
+		if parsedMinPrice, err := strconv.Atoi(filters["minPrice"]); err == nil {
+			minPrice = parsedMinPrice
+		} else {
+			return false
+		}
+	}
+	if filters["maxPrice"] != "" {
+		if parsedMaxPrice, err := strconv.Atoi(filters["maxPrice"]); err == nil {
+			maxPrice = parsedMaxPrice
+		} else {
+			return false
+		}
+	}
+	if detail.Price < minPrice || detail.Price > maxPrice {
+		return false
+	}
+
+	for _, key := range []string{"startTime", "endTime"} {
+		if filters[key] != "" {
+			if parsedTime, err := time.Parse(time.RFC3339, filters[key]); err == nil {
+				if (key == "startTime" && detail.StartTime.Before(parsedTime)) || (key == "endTime" && detail.StartTime.After(parsedTime)) {
+					return false
+				}
+			} else {
+				return false
+			}
+		}
+	}
+	return true
 }
 
 func (s *AppointmentService) GetAppointmentById(ctx context.Context, user *models.User, appointmentId primitive.ObjectID) (*models.Appointment, error) {
