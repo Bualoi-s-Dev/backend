@@ -26,8 +26,8 @@ type AppointmentResponse struct {
 	ID             primitive.ObjectID       `bson:"_id,omitempty" json:"id" ts_type:"string" example:"656e2b5e3f1a3c4d8b9e1234"`
 	CustomerID     primitive.ObjectID       `bson:"customer_id" json:"customerId" ts_type:"string" example:"656e2b5e3f1a3c4d8b9e1238"`
 	PhotographerID primitive.ObjectID       `bson:"photographer_id" json:"photographerId" ts_type:"string" example:"656e2b5e3f1a324d8b9e1236"`
-	PackageID      primitive.ObjectID       `bson:"package_id" json:"packageId" ts_type:"string" example:"656e2b5e3f1a3c4d8b9e1235"`
-	SubpackageID   primitive.ObjectID       `bson:"sub_package_id" json:"subpackageId" ts_type:"string" example:"656e2b5e3f1a3c4d8b9e9999"`
+	Package        models.Package           `bson:"package" json:"package" ts_type:"models.Package" example:"{}"`
+	Subpackage     models.Subpackage        `bson:"sub_package" json:"subpackage" ts_type:"models.Subpackage" example:"{}"`
 	BusyTimeID     primitive.ObjectID       `bson:"busy_time_id" json:"busyTimeId" ts_type:"string" example:"656e2b5e3f1a3c4d8b9e7877"`
 	Status         models.AppointmentStatus `bson:"status" json:"status" binding:"appointment_status" ts_type:"string" example:"pending"`
 	Location       string                   `bson:"location,omitempty" json:"location" ts_type:"string" example:"Bangkok, Thailand"`
@@ -36,8 +36,8 @@ type AppointmentResponse struct {
 
 type AppointmentDetail struct {
 	ID               primitive.ObjectID       `bson:"_id" json:"id" ts_type:"string" example:"656e2b5e3f1a3c4d8b9e1234"`
-	PackageID        primitive.ObjectID       `bson:"package_id" json:"packageId" ts_type:"string" example:"656e2b5e3f1a3c4d8b9e1234"`
-	SubpackageID     primitive.ObjectID       `bson:"subpackage_id" json:"subpackageId" ts_type:"string" example:"656e2b5e3f1a3c4d8b9e1234"`
+	Package          models.Package           `bson:"package" json:"package" ts_type:"models.Package" example:"{}"`
+	Subpackage       models.Subpackage        `bson:"subpackage" json:"subpackage" ts_type:"model.Subpackage" example:"{}"`
 	CustomerID       primitive.ObjectID       `bson:"customer_id" json:"customerId" ts_type:"string" example:"656e2b5e3f1a3c4d8b9e1234"`
 	PhotographerID   primitive.ObjectID       `bson:"photographer_id" json:"photographerId" ts_type:"string" example:"656e2b5e3f1a3c4d8b9e1234"`
 	PackageName      string                   `bson:"package_name" json:"packageName" ts_type:"string" example:"Wedding Package"`

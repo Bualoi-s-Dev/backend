@@ -43,7 +43,7 @@ func (s *AppointmentService) GetAllAppointment(ctx context.Context, user *models
 	return s.AppointmentRepo.GetAll(ctx, user.ID, user.Role)
 }
 func (s *AppointmentService) GetAppointmentDetailById(ctx context.Context, user *models.User, appointment *models.Appointment) (*dto.AppointmentDetail, error) {
-	pkg := appointment.Subpackage
+	pkg := appointment.Package
 	subpackage := appointment.Subpackage
 
 	busyTime, err := s.BusyTimeRepo.GetById(ctx, appointment.BusyTimeID.Hex())
@@ -83,8 +83,8 @@ func (s *AppointmentService) GetAppointmentDetailById(ctx context.Context, user 
 
 	detail := &dto.AppointmentDetail{
 		ID:               appointment.ID,
-		PackageID:        pkg.ID,
-		SubpackageID:     subpackage.ID,
+		Package:          pkg,
+		Subpackage:       subpackage,
 		PhotographerID:   appointment.PhotographerID,
 		CustomerID:       appointment.CustomerID,
 		PackageName:      pkg.Title,
@@ -160,8 +160,8 @@ func (s *AppointmentService) GetFilteredAppointments(ctx context.Context, user *
 			ID:             item.ID,
 			CustomerID:     item.CustomerID,
 			PhotographerID: item.PhotographerID,
-			PackageID:      item.Package.ID,
-			SubpackageID:   item.Subpackage.ID,
+			Package:        item.Package,
+			Subpackage:     item.Subpackage,
 			BusyTimeID:     item.BusyTimeID,
 			Status:         item.Status,
 			Location:       item.Location,
