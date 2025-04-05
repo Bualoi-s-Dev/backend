@@ -58,7 +58,7 @@ type AppointmentResponse struct {
 type AppointmentDetail struct {
 	ID               primitive.ObjectID       `bson:"_id" json:"id" ts_type:"string" example:"656e2b5e3f1a3c4d8b9e1234"`
 	Package          models.Package           `bson:"package" json:"package" ts_type:"models.Package"`
-	Subpackage       models.Subpackage        `bson:"subpackage" json:"subpackage" ts_type:"model.Subpackage"`
+	Subpackage       models.Subpackage        `bson:"subpackage" json:"subpackage" ts_type:"models.Subpackage"`
 	CustomerID       primitive.ObjectID       `bson:"customer_id" json:"customerId" ts_type:"string" example:"656e2b5e3f1a3c4d8b9e1234"`
 	PhotographerID   primitive.ObjectID       `bson:"photographer_id" json:"photographerId" ts_type:"string" example:"656e2b5e3f1a3c4d8b9e1234"`
 	PackageName      string                   `bson:"package_name" json:"packageName" ts_type:"string" example:"Wedding Package"`
