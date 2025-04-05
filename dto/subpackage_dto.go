@@ -66,6 +66,24 @@ func (item *SubpackageRequest) ToModel() *models.Subpackage {
 		AvailableEndDay:    utils.SafeString(availableEndDay),
 	}
 }
+func (item *SubpackageResponse) ToModel() *models.Subpackage {
+	return &models.Subpackage{
+		ID:          item.ID,
+		PackageID:   item.PackageID,
+		Title:       item.Title,
+		Description: item.Description,
+		Price:       item.Price,
+
+		Duration:           item.Duration,
+		IsInf:              item.IsInf,
+		RepeatedDay:        item.RepeatedDay,
+		AvailableStartTime: item.AvailableStartTime,
+		AvailableEndTime:   item.AvailableEndTime,
+
+		AvailableStartDay: utils.SafeString(&item.AvailableStartDay),
+		AvailableEndDay:   utils.SafeString(&item.AvailableEndDay),
+	}
+}
 
 type FilteredSubpackageResponse struct {
 	Subpackages []SubpackageResponse `json:"subpackages" `

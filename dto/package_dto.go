@@ -27,3 +27,13 @@ func (item *PackageRequest) ToModel(ownerId primitive.ObjectID) *models.Package 
 		Type:    *item.Type,
 	}
 }
+
+func (item *PackageResponse) ToModel() *models.Package {
+	return &models.Package{
+		ID:        item.ID,
+		OwnerID:   item.OwnerID,
+		Title:     item.Title,
+		Type:      item.Type,
+		PhotoUrls: item.PhotoUrls,
+	}
+}

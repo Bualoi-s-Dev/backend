@@ -43,16 +43,9 @@ func (s *AppointmentService) GetAllAppointment(ctx context.Context, user *models
 	return s.AppointmentRepo.GetAll(ctx, user.ID, user.Role)
 }
 func (s *AppointmentService) GetAppointmentDetailById(ctx context.Context, user *models.User, appointment *models.Appointment) (*dto.AppointmentDetail, error) {
-	pkg, err := s.PackageRepo.GetById(ctx, appointment.PackageID.Hex())
-	if err != nil {
-		fmt.Println("(GetAllAppointmentDetail) Error while getting package")
-		return nil, err
-	}
-	subpackage, err := s.SubpackageRepo.GetById(ctx, appointment.SubpackageID.Hex())
-	if err != nil {
-		fmt.Println("(GetAllAppointmentDetail) Error while getting subpackage")
-		return nil, err
-	}
+	pkg := appointment.Subpackage
+	subpackage := appointment.Subpackage
+
 	busyTime, err := s.BusyTimeRepo.GetById(ctx, appointment.BusyTimeID.Hex())
 	if err != nil {
 		fmt.Println("(GetAllAppointmentDetail) Error while getting busyTime")
@@ -144,21 +137,13 @@ func (s *AppointmentService) GetFilteredAppointments(ctx context.Context, user *
 			continue
 		}
 
-		subPkg, err := s.SubpackageRepo.GetById(ctx, item.SubpackageID.Hex())
-		if err != nil {
-			fmt.Println("(GetFilteredAppointments) Error while getting subpackage")
-			return nil, 0, err
-		}
+		subPkg := &item.Subpackage
 		if !s.passesFilters(subPkg, filters) {
 			continue
 		}
 
 		if filters["name"] != "" {
-			pkg, err := s.PackageRepo.GetById(ctx, item.PackageID.Hex())
-			if err != nil {
-				fmt.Println("(GetFilteredAppointments) Error while getting package")
-				return nil, 0, err
-			}
+			pkg := &item.Package
 
 			ctm, err := s.UserRepo.FindUserByID(ctx, item.CustomerID)
 			if err != nil {
@@ -175,8 +160,8 @@ func (s *AppointmentService) GetFilteredAppointments(ctx context.Context, user *
 			ID:             item.ID,
 			CustomerID:     item.CustomerID,
 			PhotographerID: item.PhotographerID,
-			PackageID:      item.PackageID,
-			SubpackageID:   item.SubpackageID,
+			PackageID:      item.Package.ID,
+			SubpackageID:   item.Subpackage.ID,
 			BusyTimeID:     item.BusyTimeID,
 			Status:         item.Status,
 			Location:       item.Location,
