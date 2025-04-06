@@ -16,6 +16,7 @@ func main() {
 
 	// Add models
 	converter.
+		Add(models.Package{}).
 		Add(dto.PackageRequest{}).
 		Add(dto.PackageResponse{}).
 		AddEnum(models.ValidPackageTypes)

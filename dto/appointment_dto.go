@@ -22,33 +22,12 @@ type AppointmentStrictRequest struct {
 	Location string `bson:"location" json:"location" example:"Bangkok, Thailand"`
 }
 
-// AppointmentResponse represents an appointment
-//
-// @Description Appointment Response DTO
-//
-//	@Example {
-//	  "id": "656e2b5e3f1a3c4d8b9e1234",
-//	  "customerId": "656e2b5e3f1a3c4d8b9e1238",
-//	  "photographerId": "656e2b5e3f1a324d8b9e1236",
-//	  "package": {
-//	    "id": "12345678abcd",
-//	    "ownerId": "12345678abcd",
-//	    "title": "Wedding Bliss Package",
-//	    "type": "WEDDING_BLISS",
-//	    "photoUrls": ["/package/12345678abcd_1", "/package/12345678abcd_2"]
-//	  },
-//	  "subpackage": { },
-//	  "busyTimeId": "656e2b5e3f1a3c4d8b9e7877",
-//	  "status": "pending",
-//	  "location": "Bangkok, Thailand",
-//	  "price": 1500
-//	}
 type AppointmentResponse struct {
 	ID             primitive.ObjectID       `bson:"_id,omitempty" json:"id" ts_type:"string" example:"656e2b5e3f1a3c4d8b9e1234"`
 	CustomerID     primitive.ObjectID       `bson:"customer_id" json:"customerId" ts_type:"string" example:"656e2b5e3f1a3c4d8b9e1238"`
 	PhotographerID primitive.ObjectID       `bson:"photographer_id" json:"photographerId" ts_type:"string" example:"656e2b5e3f1a324d8b9e1236"`
-	Package        models.Package           `bson:"package" json:"package" ts_type:"models.Package"`
-	Subpackage     models.Subpackage        `bson:"sub_package" json:"subpackage" ts_type:"models.Subpackage"`
+	Package        models.Package           `bson:"package" json:"package" ts_type:"Package"`
+	Subpackage     models.Subpackage        `bson:"sub_package" json:"subpackage" ts_type:"Subpackage"`
 	BusyTimeID     primitive.ObjectID       `bson:"busy_time_id" json:"busyTimeId" ts_type:"string" example:"656e2b5e3f1a3c4d8b9e7877"`
 	Status         models.AppointmentStatus `bson:"status" json:"status" binding:"appointment_status" ts_type:"string" example:"pending"`
 	Location       string                   `bson:"location,omitempty" json:"location" ts_type:"string" example:"Bangkok, Thailand"`
@@ -57,8 +36,8 @@ type AppointmentResponse struct {
 
 type AppointmentDetail struct {
 	ID               primitive.ObjectID       `bson:"_id" json:"id" ts_type:"string" example:"656e2b5e3f1a3c4d8b9e1234"`
-	Package          models.Package           `bson:"package" json:"package" ts_type:"models.Package"`
-	Subpackage       models.Subpackage        `bson:"subpackage" json:"subpackage" ts_type:"models.Subpackage"`
+	Package          models.Package           `bson:"package" json:"package" ts_type:"Package"`
+	Subpackage       models.Subpackage        `bson:"subpackage" json:"subpackage" ts_type:"Subpackage"`
 	CustomerID       primitive.ObjectID       `bson:"customer_id" json:"customerId" ts_type:"string" example:"656e2b5e3f1a3c4d8b9e1234"`
 	PhotographerID   primitive.ObjectID       `bson:"photographer_id" json:"photographerId" ts_type:"string" example:"656e2b5e3f1a3c4d8b9e1234"`
 	PackageName      string                   `bson:"package_name" json:"packageName" ts_type:"string" example:"Wedding Package"`
