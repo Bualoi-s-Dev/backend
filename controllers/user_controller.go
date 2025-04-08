@@ -98,6 +98,10 @@ func (uc UserController) GetPhotographers(c *gin.Context) {
 		return
 	}
 
+	if len(photographers) == 0 {
+		photographers = []dto.UserResponse{}
+	}
+
 	//Return the profile picture URL
 	// Calculate max pages
 	maxPage := (totalCount + limit - 1) / limit // Equivalent to ceil(totalCount / limit)

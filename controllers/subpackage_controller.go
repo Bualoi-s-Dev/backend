@@ -105,6 +105,10 @@ func (ctrl *SubpackageController) GetAllSubpackages(c *gin.Context) {
 		return
 	}
 
+	if len(subpackages) == 0 {
+		subpackages = []dto.SubpackageResponse{}
+	}
+
 	// Calculate max pages
 	maxPage := (totalCount + limit - 1) / limit // Equivalent to ceil(totalCount / limit)
 

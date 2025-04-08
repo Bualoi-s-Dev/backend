@@ -105,6 +105,10 @@ func (a *AppointmentController) GetAllAppointment(c *gin.Context) {
 	// Calculate max pages
 	maxPage := (totalCount + limit - 1) / limit // Equivalent to ceil(totalCount / limit)
 
+	if appointments == nil {
+		appointments = []dto.AppointmentResponse{} // Change the type to []dto.FilteredAppointmentResponse
+	}
+
 	response := dto.FilteredAppointmentResponse{
 		Appointments: appointments,
 		Pagination: dto.Pagination{
@@ -129,6 +133,8 @@ func (a *AppointmentController) GetAllAppointment(c *gin.Context) {
 // @Param photographerName query string false "Name of photographer"
 // @Param minPrice query string false "Minimum price of appointment, default is 0"
 // @Param maxPrice query string false "Maximum price of appointment, default is MAXuINT"
+// @Param availableStartTime query string false "Available start time of appointment with format as HH:MM"
+// @Param availableEndTime query string false "Available end time of appointment with format as HH:MM"
 // @Param startTime query string false "Start time of appointment with RFC format as 2023-10-01T12:00:00Z"
 // @Param endTime query string false "End time of appointment with RFC format as 2023-10-01T12:00:00Z"
 // @Param location query string false "Location of appointment"
@@ -137,16 +143,18 @@ func (a *AppointmentController) GetAllAppointment(c *gin.Context) {
 // @Router /appointment/detail [get]
 func (a *AppointmentController) GetAllAppointmentDetail(c *gin.Context) {
 	filters := map[string]string{
-		"status":           c.Query("status"),
-		"packageName":      c.Query("packageName"),
-		"subpackageName":   c.Query("subpackageName"),
-		"customerName":     c.Query("customerName"),
-		"photographerName": c.Query("photographerName"),
-		"minPrice":         c.Query("minPrice"),
-		"maxPrice":         c.Query("maxPrice"),
-		"startTime":        c.Query("startTime"),
-		"endTime":          c.Query("endTime"),
-		"location":         c.Query("location"),
+		"status":             c.Query("status"),
+		"packageName":        c.Query("packageName"),
+		"subpackageName":     c.Query("subpackageName"),
+		"customerName":       c.Query("customerName"),
+		"photographerName":   c.Query("photographerName"),
+		"minPrice":           c.Query("minPrice"),
+		"maxPrice":           c.Query("maxPrice"),
+		"availableStartTime": c.Query("availableStartTime"),
+		"availableEndTime":   c.Query("availableEndTime"),
+		"startTime":          c.Query("startTime"),
+		"endTime":            c.Query("endTime"),
+		"location":           c.Query("location"),
 	}
 
 	// Validate time format for startTime and endTime
@@ -164,6 +172,9 @@ func (a *AppointmentController) GetAllAppointmentDetail(c *gin.Context) {
 	if err != nil {
 		apperrors.HandleError(c, err, "Error while fetching filtered appointment details")
 		return
+	}
+	if appointmentDetails == nil {
+		appointmentDetails = []dto.AppointmentDetail{}
 	}
 	c.JSON(http.StatusOK, appointmentDetails)
 }
