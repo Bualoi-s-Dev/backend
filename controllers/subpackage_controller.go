@@ -168,6 +168,11 @@ func (ctrl *SubpackageController) CreateSubpackage(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request model, " + err.Error()})
 		return
 	}
+	// Min price
+	if *itemRequest.Price < 20 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Price must be greater than 20"})
+		return
+	}
 
 	packageIdParam := c.Param("packageId")
 	packageId, err := primitive.ObjectIDFromHex(packageIdParam)
