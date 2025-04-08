@@ -136,10 +136,7 @@ func (service *PaymentService) CreatePayment(ctx context.Context, appointmentId 
 	}
 
 	// Create checkout session for customer into photographer account
-	subpackage, err := service.SubpackageDatabaseRepository.GetById(ctx, appointment.SubpackageID.Hex())
-	if err != nil {
-		return nil, err
-	}
+	subpackage := appointment.Subpackage
 	checkoutSession, err := service.CreateCheckoutSession(stripeCustomerId, stripeAccountId, subpackage.Title, int64(appointment.Price))
 	if err != nil {
 		return nil, err

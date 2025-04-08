@@ -247,8 +247,8 @@ func (s *AppointmentScenario) theAppointmentIsCreated() error {
 	expectAppointment := models.Appointment{
 		CustomerID:     s.CustomerID,
 		PhotographerID: s.PhotographerID,
-		PackageID:      s.Package.ID,
-		SubpackageID:   s.Subpackage.ID,
+		Package:        *s.Package.ToModel(),
+		Subpackage:     *s.Subpackage.ToModel(),
 		Price:          s.Subpackage.Price,
 		Status:         "Pending",
 		Location:       "Bangkok, Thailand",

@@ -272,7 +272,7 @@ func (ctrl *PaymentController) mapToPaymentResponse(ctx context.Context, payment
 	if err != nil {
 		return nil, err
 	}
-	pkg, err := ctrl.PackageService.GetById(ctx, appointment.PackageID.Hex())
+	pkg, err := ctrl.PackageService.GetById(ctx, appointment.Package.ID.Hex())
 	if err != nil {
 		return nil, err
 	}
