@@ -282,6 +282,33 @@ func matchesFilters(detail *dto.AppointmentDetail, filters map[string]string) bo
 		return false
 	}
 
+	for _, key := range []string{"availableStartTime", "availableEndTime"} {
+		if filters[key] != "" {
+			parsedTime, err := time.Parse("15:04", filters[key]) // hh:mm format
+			if err != nil {
+				return false
+			}
+
+			var apptTime time.Time
+			if key == "availableStartTime" {
+				apptTime = detail.StartTime
+			} else {
+				apptTime = detail.EndTime
+			}
+
+			apptMinutes := apptTime.Hour()*60 + apptTime.Minute()
+			filterMinutes := parsedTime.Hour()*60 + parsedTime.Minute()
+			fmt.Println(apptMinutes, filterMinutes)
+			if key == "availableStartTime" && apptMinutes < filterMinutes {
+				return false
+			}
+			if key == "availableEndTime" && apptMinutes > filterMinutes {
+
+				return false
+			}
+		}
+	}
+
 	for _, key := range []string{"startTime", "endTime"} {
 		if filters[key] != "" {
 			if parsedTime, err := time.Parse(time.RFC3339, filters[key]); err == nil {
