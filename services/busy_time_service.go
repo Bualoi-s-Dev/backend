@@ -59,6 +59,10 @@ func (s *BusyTimeService) CreateFromSubpackage(ctx context.Context, request *dto
 		return nil, err
 	}
 
+	//Add busy time name
+	Name := "Appointment - " + subpackage.Title
+	request.Name = Name
+
 	// subpackage.Duration // minute
 	// set end time = start time + duration(in minute)
 	EndTime := request.StartTime.Add(time.Duration(subpackage.Duration) * time.Minute)

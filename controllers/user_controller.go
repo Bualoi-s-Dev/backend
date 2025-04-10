@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"firebase.google.com/go/auth"
 	"github.com/Bualoi-s-Dev/backend/dto"
 	"github.com/Bualoi-s-Dev/backend/middleware"
 	"github.com/Bualoi-s-Dev/backend/models"
@@ -16,10 +17,11 @@ type UserController struct {
 	Service         *services.UserService
 	S3Service       *services.S3Service
 	BusyTimeService *services.BusyTimeService
+	AuthClient      *auth.Client
 }
 
-func NewUserController(service *services.UserService, s3Service *services.S3Service, busyTimeService *services.BusyTimeService) *UserController {
-	return &UserController{Service: service, S3Service: s3Service, BusyTimeService: busyTimeService}
+func NewUserController(service *services.UserService, s3Service *services.S3Service, busyTimeService *services.BusyTimeService, authClient *auth.Client) *UserController {
+	return &UserController{Service: service, S3Service: s3Service, BusyTimeService: busyTimeService, AuthClient: authClient}
 }
 
 // GetUserJWT godoc
@@ -263,7 +265,7 @@ func (uc *UserController) DeleteUserBusyTime(c *gin.Context) {
 // @Summary Check which provider is linked to an email
 // @Description Returns the auth provider(s) (e.g. Google, Facebook) associated with an email
 // @Param email query string true "Email to check"
-// @Success 200 {object} map[string]interface{}
+// @Success 200 {object} dto.CheckProviderResponse
 // @Failure 400 {object} string "Bad Request"
 // @Router /user/provider [get]
 func (uc *UserController) CheckProviderByEmail(c *gin.Context) {
@@ -273,11 +275,14 @@ func (uc *UserController) CheckProviderByEmail(c *gin.Context) {
 		return
 	}
 
-	providers, err := middleware.CheckProviderByEmail(email)
+	providers, err := middleware.CheckProviderByEmail(uc.AuthClient, email)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"email": email, "providers": providers})
+	c.JSON(http.StatusOK, dto.CheckProviderResponse{
+		Email:     email,
+		Providers: providers,
+	})
 }

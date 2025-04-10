@@ -273,7 +273,6 @@ func (a *AppointmentController) CreateAppointment(c *gin.Context) {
 
 	busyTimeType := models.TypeAppointment
 	busyTimeReq := &dto.BusyTimeStrictRequest{
-		Name:      "Appointment",
 		Type:      busyTimeType,
 		StartTime: req.StartTime,
 		IsValid:   false,

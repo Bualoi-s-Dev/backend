@@ -52,3 +52,8 @@ type FilteredUserPhotographerResponse struct {
 	Photographers []UserResponse `json:"photographers" `
 	Pagination    Pagination     `json:"pagination"`
 }
+
+type CheckProviderResponse struct {
+	Email     string   `json:"email" binding:"required" example:"kong@email.com"`
+	Providers []string `json:"providers" binding:"required" example:"google.com, password"`
+}

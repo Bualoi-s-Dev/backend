@@ -13,8 +13,8 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 
 	"firebase.google.com/go/auth"
-	firebase "firebase.google.com/go/v4"
-	"google.golang.org/api/option"
+	//firebase "firebase.google.com/go/v4"
+	//"google.golang.org/api/option"
 )
 
 func FirebaseAuthMiddleware(authClient *auth.Client, userCollection *mongo.Collection, userService *services.UserService) gin.HandlerFunc {
@@ -27,7 +27,7 @@ func FirebaseAuthMiddleware(authClient *auth.Client, userCollection *mongo.Colle
 
 		// Skip authentication for Provider checking
 		if c.Request.URL.Path == "/user/provider" {
-			c.Next() // Allow webhook requests
+			c.Next()
 			return
 		}
 
@@ -76,27 +76,7 @@ func FirebaseAuthMiddleware(authClient *auth.Client, userCollection *mongo.Colle
 			}
 
 			user = newUser
-
-			// Set Firebase Custom Claim for role
-			err = authClient.SetCustomUserClaims(ctx, token.UID, map[string]interface{}{
-				"role": string(models.Guest),
-			})
-			if err != nil {
-				log.Printf("[ERROR] Failed to set custom claims: %v", err)
-				c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Failed to set role"})
-				return
-			}
 		}
-
-		// Extract role from Firebase Custom Claims
-		role, exists := token.Claims["role"].(string)
-		if !exists {
-			// Set default role if not exists
-			role = string(models.Guest)
-		}
-
-		// Store user in context
-		user.Role = models.UserRole(role)
 		c.Set("user", user)
 		c.Next()
 	}
@@ -111,33 +91,18 @@ func GetUserFromContext(c *gin.Context) *models.User {
 	return user.(*models.User)
 }
 
-func GetUserRoleFromContext(c *gin.Context, userService *services.UserService) models.UserRole {
-	userRaw, exists := c.Get("user")
-	if !exists {
-		log.Println("[ERROR] User not found in context")
+func GetUserRoleFromContext(c *gin.Context) models.UserRole {
+	user := GetUserFromContext(c)
+	if user == nil {
+		log.Println("[ERROR] Role not found in context")
 		return models.Guest
 	}
-
-	user, ok := userRaw.(*models.User)
-	if !ok {
-		log.Println("[ERROR] Invalid user type in context")
-		return models.Guest
-	}
-
-	ctx := context.Background()
-	// Re-fetch user from DB to ensure latest role
-	latestUser, err := userService.FindUser(ctx, user.Email)
-	if err != nil {
-		log.Printf("[ERROR] Failed to fetch user from DB: %v", err)
-		return models.Guest
-	}
-
-	return latestUser.Role
+	return user.Role
 }
 
 func AllowRoles(userService *services.UserService, allowRoles ...models.UserRole) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		role := GetUserRoleFromContext(c, userService)
+		role := GetUserRoleFromContext(c)
 		for _, allowRole := range allowRoles {
 			if role == allowRole {
 				c.Next()
@@ -149,24 +114,11 @@ func AllowRoles(userService *services.UserService, allowRoles ...models.UserRole
 	}
 }
 
-func CheckProviderByEmail(email string) ([]string, error) {
+func CheckProviderByEmail(authClient *auth.Client, email string) ([]string, error) {
 	ctx := context.Background()
 
-	opt := option.WithCredentialsFile("./private_key.json")
-
-	app, err := firebase.NewApp(ctx, nil, opt)
+	user, err := authClient.GetUserByEmail(ctx, email)
 	if err != nil {
-		return nil, fmt.Errorf("failed to initialize Firebase app: %v", err)
-	}
-
-	client, err := app.Auth(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get Auth client: %v", err)
-	}
-
-	user, err := client.GetUserByEmail(ctx, email)
-	if err != nil {
-		//User not found, return empty providers instead of error
 		if auth.IsUserNotFound(err) || strings.Contains(err.Error(), "no user") {
 			return []string{}, nil
 		}
