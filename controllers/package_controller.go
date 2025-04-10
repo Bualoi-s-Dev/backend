@@ -304,6 +304,7 @@ func (ctrl *PackageController) DeleteOnePackage(c *gin.Context) {
 	}
 	if !isPackageDeletable {
 		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("Package cannot be deleted because subpackage %s is not deletable", errSubpackage.Title)})
+		return
 	}
 
 	if err := ctrl.Service.DeleteOne(c.Request.Context(), id); err != nil {
