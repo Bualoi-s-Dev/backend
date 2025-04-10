@@ -81,7 +81,7 @@ func SetupServer(client *mongo.Database) (*gin.Engine, *ServerRepositories, *Ser
 	packageController := controllers.NewPackageController(packageService, s3Service, userService)
 	subPackageController := controllers.NewSubpackageController(subpackageService, packageService)
 	appointmentController := controllers.NewAppointmentController(appointmentService, busyTimeService)
-	userController := controllers.NewUserController(userService, s3Service, busyTimeService)
+	userController := controllers.NewUserController(userService, s3Service, busyTimeService, authClient)
 	BusyTimeController := controllers.NewBusyTimeController(busyTimeService)
 	internalController := controllers.NewInternalController(firebaseService, s3Service)
 	paymentController := controllers.NewPaymentController(paymentService, appointmentService, packageService)
@@ -113,12 +113,12 @@ func SetupServer(client *mongo.Database) (*gin.Engine, *ServerRepositories, *Ser
 
 	r.Use(middleware.FirebaseAuthMiddleware(authClient, client.Collection("User"), userService))
 
-	routes.PackageRoutes(r, packageController)
-	routes.SubpackageRoutes(r, subPackageController)
-	routes.UserRoutes(r, userController, RatingController)
-	routes.AppointmentRoutes(r, appointmentController)
-	routes.BusyTimeRoutes(r, BusyTimeController)
-	routes.PaymentRoutes(r, paymentController)
+	routes.PackageRoutes(r, packageController, userService)
+	routes.SubpackageRoutes(r, subPackageController, userService)
+	routes.UserRoutes(r, userController, RatingController, userService)
+	routes.AppointmentRoutes(r, appointmentController, userService)
+	routes.BusyTimeRoutes(r, BusyTimeController, userService)
+	routes.PaymentRoutes(r, paymentController, userService)
 
 	return r, serverRepositories, serverServices
 }
