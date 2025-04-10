@@ -14,7 +14,7 @@ import (
 // @contact.name API Support
 // @contact.url http://www.example.com/support
 // @contact.email support@example.com
-// @host      localhost:8080
+// @host      https://api-photomatch-48034630822.asia-southeast1.run.app
 
 // @securityDefinitions.apikey Bearer
 // @in header

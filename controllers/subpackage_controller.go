@@ -249,6 +249,16 @@ func (ctrl *SubpackageController) DeleteSubpackage(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Failed to fetch item, " + err.Error()})
 		return
 	}
+	hexId, _ := primitive.ObjectIDFromHex(id)
+	deletable, err := ctrl.Service.IsSubpackageDeletable(c.Request.Context(), hexId)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to check if item is deletable, " + err.Error()})
+		return
+	}
+	if !deletable {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Subpackage is not deletable, some appointments in this subpackage are pending"})
+		return
+	}
 
 	if err := ctrl.Service.Delete(c.Request.Context(), id); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete item, " + err.Error()})

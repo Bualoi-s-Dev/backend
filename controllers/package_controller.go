@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"fmt"
 	"math"
 	"net/http"
 	"strconv"
@@ -10,16 +11,18 @@ import (
 	"github.com/Bualoi-s-Dev/backend/models"
 	"github.com/Bualoi-s-Dev/backend/services"
 	"github.com/gin-gonic/gin"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type PackageController struct {
-	Service     *services.PackageService
-	S3Service   *services.S3Service
-	UserService *services.UserService
+	Service           *services.PackageService
+	S3Service         *services.S3Service
+	UserService       *services.UserService
+	SubpackageService *services.SubpackageService
 }
 
-func NewPackageController(service *services.PackageService, s3Service *services.S3Service, userService *services.UserService) *PackageController {
-	return &PackageController{Service: service, S3Service: s3Service, UserService: userService}
+func NewPackageController(service *services.PackageService, s3Service *services.S3Service, userService *services.UserService, subpackageService *services.SubpackageService) *PackageController {
+	return &PackageController{Service: service, S3Service: s3Service, UserService: userService, SubpackageService: subpackageService}
 }
 
 // GetAllPackages godoc
@@ -278,9 +281,42 @@ func (ctrl *PackageController) DeleteOnePackage(c *gin.Context) {
 		return
 	}
 
+	isPackageDeletable := true
+	var errSubpackage models.Subpackage
+	hexId, _ := primitive.ObjectIDFromHex(id)
+	subpackages, err := ctrl.SubpackageService.GetByPackageId(c.Request.Context(), hexId)
+	fmt.Println("Subpackages: ", subpackages)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch subpackages, " + err.Error()})
+		return
+	}
+	for _, subpackage := range subpackages {
+		isSubpackageDeletable, err := ctrl.SubpackageService.IsSubpackageDeletable(c.Request.Context(), subpackage.ID)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to check subpackage deletable, " + err.Error()})
+			return
+		}
+		if !isSubpackageDeletable {
+			isPackageDeletable = false
+			errSubpackage = subpackage
+			break
+		}
+	}
+	if !isPackageDeletable {
+		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("Package is not deletable, subpackages name %s are not deletable", errSubpackage.Title)})
+		return
+	}
+
 	if err := ctrl.Service.DeleteOne(c.Request.Context(), id); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete item, " + err.Error()})
 		return
+	}
+	for _, subpackage := range subpackages {
+		err := ctrl.SubpackageService.Delete(c.Request.Context(), subpackage.ID.Hex())
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete subpackage, " + err.Error()})
+			return
+		}
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Item deleted successfully"})

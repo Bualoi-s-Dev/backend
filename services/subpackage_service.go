@@ -14,13 +14,14 @@ import (
 )
 
 type SubpackageService struct {
-	Repository         *repositories.SubpackageRepository
-	PackageRepository  *repositories.PackageRepository
-	BusyTimeRepository *repositories.BusyTimeRepository
+	Repository            *repositories.SubpackageRepository
+	PackageRepository     *repositories.PackageRepository
+	BusyTimeRepository    *repositories.BusyTimeRepository
+	AppointmentRepository *repositories.AppointmentRepository
 }
 
-func NewSubpackageService(repository *repositories.SubpackageRepository, packageRepository *repositories.PackageRepository, busyTimeRepository *repositories.BusyTimeRepository) *SubpackageService {
-	return &SubpackageService{Repository: repository, PackageRepository: packageRepository, BusyTimeRepository: busyTimeRepository}
+func NewSubpackageService(repository *repositories.SubpackageRepository, packageRepository *repositories.PackageRepository, busyTimeRepository *repositories.BusyTimeRepository, appointmentRepo *repositories.AppointmentRepository) *SubpackageService {
+	return &SubpackageService{Repository: repository, PackageRepository: packageRepository, BusyTimeRepository: busyTimeRepository, AppointmentRepository: appointmentRepo}
 }
 
 func (s *SubpackageService) GetAll(ctx context.Context) ([]models.Subpackage, error) {
@@ -309,4 +310,20 @@ func (s *SubpackageService) GetBusyTimeDateMap(ctx context.Context, subpackage m
 		}
 	}
 	return mapBusyTime, nil
+}
+
+func (s *SubpackageService) IsSubpackageDeletable(ctx context.Context, subpackageId primitive.ObjectID) (bool, error) {
+	appointments, err := s.AppointmentRepository.GetBySubpackageId(ctx, subpackageId)
+	if err != nil {
+		return false, err
+	}
+
+	var isDeletable bool = true
+	for _, appointment := range appointments {
+		if appointment.Status == models.AppointmentPending {
+			isDeletable = false
+			break
+		}
+	}
+	return isDeletable, nil
 }

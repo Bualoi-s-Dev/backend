@@ -199,6 +199,25 @@ func (repo *AppointmentRepository) GetById(ctx context.Context, appointmentID pr
 	return &item, nil
 }
 
+func (repo *AppointmentRepository) GetBySubpackageId(ctx context.Context, subpackageID primitive.ObjectID) ([]models.Appointment, error) {
+	var items []models.Appointment
+
+	cursor, err := repo.AppointmentCollection.Find(ctx, bson.M{"sub_package._id": subpackageID})
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+
+	if err := cursor.All(ctx, &items); err != nil {
+		return nil, err
+	}
+
+	if items == nil {
+		items = []models.Appointment{}
+	}
+	return items, nil
+}
+
 func (repo *AppointmentRepository) CreateAppointment(ctx context.Context, appointment *models.Appointment) (*models.Appointment, error) {
 	_, err := repo.AppointmentCollection.InsertOne(ctx, appointment)
 	return appointment, err
