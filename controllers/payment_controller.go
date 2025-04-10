@@ -261,14 +261,8 @@ func (ctrl *PaymentController) mapToPaymentResponse(ctx context.Context, payment
 	if err != nil {
 		return nil, err
 	}
-	pkg := appointmentDetail.Package
-	pkgResponse, err := ctrl.PackageService.MappedToPackageResponse(ctx, &pkg)
-	if err != nil {
-		return nil, err
-	}
 	return &dto.PaymentResponse{
 		Payment:     payment,
 		Appointment: *appointmentDetail,
-		Package:     *pkgResponse,
 	}, nil
 }
