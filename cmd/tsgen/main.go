@@ -23,6 +23,7 @@ func main() {
 	converter.
 		Add(dto.UserRequest{}).
 		Add(dto.UserResponse{}).
+		Add(dto.CheckProviderResponse{}).
 		AddEnum(models.ValidUserRoles).
 		AddEnum(models.ValidBankNames)
 	converter.
