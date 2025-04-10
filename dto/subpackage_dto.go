@@ -36,9 +36,6 @@ type SubpackageResponse struct {
 	AvailableEndDay    string           `bson:"available_end_day" json:"availableEndDay" binding:"omitempty,date_format" example:"2021-12-31"`
 
 	BusyTimes []models.BusyTime `bson:"busy_times" json:"busyTimes" binding:"omitempty"`
-
-	// TODO: remove this field
-	BusyTimeMap map[string][]models.BusyTime `bson:"busy_time_map" json:"busyTimeMap" binding:"omitempty"`
 }
 
 func (item *SubpackageRequest) ToModel() *models.Subpackage {

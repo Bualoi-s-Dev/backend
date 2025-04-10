@@ -158,7 +158,7 @@ func (s *SubpackageService) VerifyStrictRequest(ctx context.Context, subpackage 
 }
 
 func (s *SubpackageService) GetIntersectBusyTime(ctx context.Context, subpackage *models.Subpackage) ([]models.BusyTime, error) {
-	parentPackage, err := s.PackageRepository.GetById(ctx, subpackage.PackageID.Hex())
+	parentPackage, err := s.PackageRepository.GetById(ctx, subpackage.PackageID.Hex()) // ! Might be a problem
 	if err != nil {
 		return nil, err
 	}
@@ -218,7 +218,7 @@ func (s *SubpackageService) IsIntersect(ctx context.Context, subpackage *models.
 	// Iterate over each day in the busy period
 	for d := busyTime.StartTime; d.Before(busyTime.EndTime) || d.Equal(busyTime.EndTime); d = d.Add(24 * time.Hour) {
 		for _, day := range subpackage.RepeatedDay {
-			if string(day) == d.Weekday().String() {
+			if string(day) == strings.ToUpper(d.Weekday().String()[:3]) {
 				// Determine busy time range for this specific day
 				var busyDayStart time.Time
 				var busyDayEnd time.Time
@@ -257,10 +257,6 @@ func (s *SubpackageService) MappedToSubpackageResponse(ctx context.Context, subp
 	if err != nil {
 		return nil, err
 	}
-	busyTimeMap, err := s.GetBusyTimeDateMap(ctx, *subpackage, busyTime)
-	if err != nil {
-		return nil, err
-	}
 	return &dto.SubpackageResponse{
 		ID:                 subpackage.ID,
 		PackageID:          subpackage.PackageID,
@@ -274,41 +270,8 @@ func (s *SubpackageService) MappedToSubpackageResponse(ctx context.Context, subp
 		AvailableEndTime:   subpackage.AvailableEndTime,
 		AvailableStartDay:  subpackage.AvailableStartDay,
 		AvailableEndDay:    subpackage.AvailableEndDay,
-		// TODO: Change this to busyTimes
-		BusyTimes:   []models.BusyTime{},
-		BusyTimeMap: busyTimeMap,
+		BusyTimes:          busyTime,
 	}, nil
-}
-
-// TODO: Remove this temp function
-func (s *SubpackageService) GetBusyTimeDateMap(ctx context.Context, subpackage models.Subpackage, busyTimes []models.BusyTime) (map[string][]models.BusyTime, error) {
-	var mapBusyTime = make(map[string][]models.BusyTime)
-
-	var dayRange int
-	var startDate time.Time
-	if subpackage.IsInf {
-		dayRange = 30
-		startDate = time.Now()
-	} else {
-		startDate, _ = time.Parse("2006-01-02", subpackage.AvailableStartDay)
-		endDate, _ := time.Parse("2006-01-02", subpackage.AvailableEndDay)
-		dayRange = int(endDate.Sub(startDate).Hours()/24) + 1
-	}
-	for _, busyTime := range busyTimes {
-		for i := 0; i < dayRange; i++ {
-			date := startDate.AddDate(0, 0, i).Format("2006-01-02")
-
-			if !(busyTime.StartTime.Before(startDate) && busyTime.EndTime.After(startDate)) {
-				continue
-			}
-
-			if _, ok := mapBusyTime[date]; !ok {
-				mapBusyTime[date] = []models.BusyTime{}
-			}
-			mapBusyTime[date] = append(mapBusyTime[date], busyTime)
-		}
-	}
-	return mapBusyTime, nil
 }
 
 func (s *SubpackageService) IsSubpackageDeletable(ctx context.Context, subpackageId primitive.ObjectID) (bool, error) {
@@ -325,4 +288,33 @@ func (s *SubpackageService) IsSubpackageDeletable(ctx context.Context, subpackag
 		}
 	}
 	return isDeletable, nil
+}
+
+func (s *SubpackageService) CheckDate(ctx context.Context, subpackage *dto.SubpackageRequest) error {
+	parsedStartDate, err := time.Parse("2006-01-02", *subpackage.AvailableStartDay)
+	if err != nil {
+		return err
+	}
+	parsedEndDate, err := time.Parse("2006-01-02", *subpackage.AvailableEndDay)
+	if err != nil {
+		return err
+	}
+	now := time.Now()
+	if parsedStartDate.Before(now) || (parsedEndDate.Before(parsedStartDate)) {
+		return errors.New("start date must be after current date and end date must be after start date")
+	}
+
+	parsedStartTime, err := time.Parse("15:04", *subpackage.AvailableStartTime)
+	if err != nil {
+		return err
+	}
+	parsedEndTime, err := time.Parse("15:04", *subpackage.AvailableEndTime)
+	if err != nil {
+		return err
+	}
+	if parsedEndTime.Before(parsedStartTime) {
+		return errors.New("end time must be after start time")
+	}
+
+	return nil
 }

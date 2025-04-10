@@ -168,6 +168,11 @@ func (ctrl *SubpackageController) CreateSubpackage(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request model, " + err.Error()})
 		return
 	}
+	if err := ctrl.Service.CheckDate(c.Request.Context(), &itemRequest); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid date range, " + err.Error()})
+		return
+	}
+
 	// Min price
 	if *itemRequest.Price < 20 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Price must be greater than 20"})
@@ -213,6 +218,10 @@ func (ctrl *SubpackageController) UpdateSubpackage(c *gin.Context) {
 	var itemRequest dto.SubpackageRequest
 	if err := c.ShouldBindJSON(&itemRequest); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request, " + err.Error()})
+		return
+	}
+	if err := ctrl.Service.CheckDate(c.Request.Context(), &itemRequest); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid date range, " + err.Error()})
 		return
 	}
 
