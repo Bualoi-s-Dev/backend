@@ -30,4 +30,5 @@ func cleanUpAppointmentFeature() {
 	db.Collection("Appointment").Drop(ctx)
 	db.Collection("Subpackage").Drop(ctx)
 	db.Collection("Package").Drop(ctx)
+	db.Collection("BusyTime").Drop(ctx)
 }

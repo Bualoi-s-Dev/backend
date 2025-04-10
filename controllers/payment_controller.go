@@ -251,17 +251,6 @@ func (ctrl *PaymentController) WebhookListener(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"status": "received"})
 }
 
-func (ctrl *PaymentController) Test(c *gin.Context) {
-	// user := middleware.GetUserFromContext(c)
-	// id := "67d2497084553958bcfc0f4b"
-	// objectID, err := primitive.ObjectIDFromHex(id)
-	// if err != nil {
-	// 	c.JSON(400, gin.H{"error": "Invalid ID format"})
-	// 	return
-	// }
-	// ctrl.Service.CreatePayment(c.Request.Context(), objectID, *user)
-}
-
 // it need to be here because of the circular dependency
 func (ctrl *PaymentController) mapToPaymentResponse(ctx context.Context, payment models.Payment) (*dto.PaymentResponse, error) {
 	appointment, err := ctrl.AppointmentService.AppointmentRepo.GetById(ctx, payment.AppointmentID)
@@ -272,17 +261,8 @@ func (ctrl *PaymentController) mapToPaymentResponse(ctx context.Context, payment
 	if err != nil {
 		return nil, err
 	}
-	pkg, err := ctrl.PackageService.GetById(ctx, appointment.Package.ID.Hex())
-	if err != nil {
-		return nil, err
-	}
-	pkgResponse, err := ctrl.PackageService.MappedToPackageResponse(ctx, pkg)
-	if err != nil {
-		return nil, err
-	}
 	return &dto.PaymentResponse{
 		Payment:     payment,
 		Appointment: *appointmentDetail,
-		Package:     *pkgResponse,
 	}, nil
 }

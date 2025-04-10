@@ -22,5 +22,4 @@ func PaymentRoutes(router *gin.Engine, ctrl *controllers.PaymentController, user
 	}
 	paymentRoutes.POST("/charge/:appointmentId", ctrl.CreatePayment)
 	paymentRoutes.POST("/webhook", ctrl.WebhookListener)
-	paymentRoutes.GET("/test", ctrl.Test)
 }

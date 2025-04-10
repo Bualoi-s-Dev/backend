@@ -168,6 +168,16 @@ func (ctrl *SubpackageController) CreateSubpackage(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request model, " + err.Error()})
 		return
 	}
+	if err := ctrl.Service.CheckDate(c.Request.Context(), &itemRequest); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid date range, " + err.Error()})
+		return
+	}
+
+	// Min price
+	if *itemRequest.Price < 20 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Price must be greater than 20"})
+		return
+	}
 
 	packageIdParam := c.Param("packageId")
 	packageId, err := primitive.ObjectIDFromHex(packageIdParam)
@@ -211,6 +221,30 @@ func (ctrl *SubpackageController) UpdateSubpackage(c *gin.Context) {
 		return
 	}
 
+	oldSubpackage, err := ctrl.Service.GetById(c.Request.Context(), id)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Failed to fetch item, " + err.Error()})
+		return
+	}
+
+	// Fill these value for check date
+	if itemRequest.AvailableStartTime == nil {
+		itemRequest.AvailableStartTime = &oldSubpackage.AvailableStartTime
+	}
+	if itemRequest.AvailableEndTime == nil {
+		itemRequest.AvailableEndTime = &oldSubpackage.AvailableEndTime
+	}
+	if itemRequest.AvailableStartDay == nil {
+		itemRequest.AvailableStartDay = &oldSubpackage.AvailableStartDay
+	}
+	if itemRequest.AvailableEndDay == nil {
+		itemRequest.AvailableEndDay = &oldSubpackage.AvailableEndDay
+	}
+	if err := ctrl.Service.CheckDate(c.Request.Context(), &itemRequest); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid date range, " + err.Error()})
+		return
+	}
+
 	if err := ctrl.Service.Update(c.Request.Context(), id, &itemRequest); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update item, " + err.Error()})
 		return
@@ -242,6 +276,16 @@ func (ctrl *SubpackageController) DeleteSubpackage(c *gin.Context) {
 	id := c.Param("id")
 	if _, err := ctrl.Service.GetById(c.Request.Context(), id); err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Failed to fetch item, " + err.Error()})
+		return
+	}
+	hexId, _ := primitive.ObjectIDFromHex(id)
+	deletable, err := ctrl.Service.IsSubpackageDeletable(c.Request.Context(), hexId)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to check if item is deletable, " + err.Error()})
+		return
+	}
+	if !deletable {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Subpackage is not deletable, some appointments in this subpackage are pending"})
 		return
 	}
 
