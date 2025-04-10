@@ -157,7 +157,7 @@ func (s *SubpackageService) VerifyStrictRequest(ctx context.Context, subpackage 
 	return nil
 }
 
-func (s *SubpackageService) FindIntersectBusyTime(ctx context.Context, subpackage *models.Subpackage) ([]models.BusyTime, error) {
+func (s *SubpackageService) GetIntersectBusyTime(ctx context.Context, subpackage *models.Subpackage) ([]models.BusyTime, error) {
 	parentPackage, err := s.PackageRepository.GetById(ctx, subpackage.PackageID.Hex())
 	if err != nil {
 		return nil, err
@@ -168,22 +168,21 @@ func (s *SubpackageService) FindIntersectBusyTime(ctx context.Context, subpackag
 		return nil, err
 	}
 
-	// TODO: Add intersect busy time
-	// intersectBusyTime := []models.BusyTime{}
-	// for _, busyTime := range busyTimes {
-	// 	isIntersect, err := s.IsIntersect(subpackage, &busyTime)
-	// 	if err != nil {
-	// 		return nil, err
-	// 	}
-	// 	if isIntersect {
-	// 		intersectBusyTime = append(intersectBusyTime, busyTime)
-	// 	}
-	// }
+	intersectBusyTime := []models.BusyTime{}
+	for _, busyTime := range busyTimes {
+		isIntersect, err := s.IsIntersect(ctx, subpackage, &busyTime)
+		if err != nil {
+			return nil, err
+		}
+		if isIntersect {
+			intersectBusyTime = append(intersectBusyTime, busyTime)
+		}
+	}
 
-	return busyTimes, nil
+	return intersectBusyTime, nil
 }
 
-func (s *BusyTimeService) IsIntersect(ctx context.Context, subpackage *models.Subpackage, busyTime *models.BusyTime) (bool, error) {
+func (s *SubpackageService) IsIntersect(ctx context.Context, subpackage *models.Subpackage, busyTime *models.BusyTime) (bool, error) {
 	if subpackage == nil || busyTime == nil {
 		return false, errors.New("invalid input: subpackage or busyTime is nil")
 	}
@@ -254,7 +253,7 @@ func (s *BusyTimeService) IsIntersect(ctx context.Context, subpackage *models.Su
 }
 
 func (s *SubpackageService) MappedToSubpackageResponse(ctx context.Context, subpackage *models.Subpackage) (*dto.SubpackageResponse, error) {
-	busyTime, err := s.FindIntersectBusyTime(ctx, subpackage)
+	busyTime, err := s.GetIntersectBusyTime(ctx, subpackage)
 	if err != nil {
 		return nil, err
 	}
