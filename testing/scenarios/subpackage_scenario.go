@@ -104,8 +104,8 @@ func (s *SubpackageScenario) thePhotographerCreatesASubpackage() error {
 		"repeatedDay":        []string{"SUN", "WED"},
 		"availableStartTime": "15:11",
 		"availableEndTime":   "16:00",
-		"availableStartDay":  "2022-12-22",
-		"availableEndDay":    "2023-01-22",
+		"availableStartDay":  "2030-12-22",
+		"availableEndDay":    "2031-01-22",
 	})
 	req, err := http.NewRequest("POST", s.Server.URL+"/subpackage/"+s.Package.ID.Hex(), bytes.NewBuffer(reqBody))
 	if err != nil {
@@ -120,7 +120,7 @@ func (s *SubpackageScenario) thePhotographerCreatesASubpackage() error {
 		return err
 	}
 	if res.StatusCode != http.StatusCreated {
-		return fmt.Errorf("failed to create subpackage, status code: %d", res.StatusCode)
+		return fmt.Errorf("failed to create subpackage, status code: %d, %s", res.StatusCode, res.Body)
 	}
 
 	var subpackage dto.SubpackageResponse
@@ -133,7 +133,9 @@ func (s *SubpackageScenario) thePhotographerCreatesASubpackage() error {
 
 func (s *SubpackageScenario) thePhotographerUpdatesASubpackage() error {
 	reqBody, _ := json.Marshal(map[string]interface{}{
-		"title": "dev123",
+		"title":             "dev123",
+		"availableStartDay": "2035-12-22",
+		"availableEndDay":   "2036-01-22",
 	})
 	req, err := http.NewRequest("PATCH", s.Server.URL+"/subpackage/"+s.Subpackage.ID.Hex(), bytes.NewBuffer(reqBody))
 	if err != nil {
@@ -267,8 +269,8 @@ func (s *SubpackageScenario) theSubpackageIsCreated() error {
 		RepeatedDay:        []models.DayName{models.Sunday, models.Wednesday},
 		AvailableStartTime: "15:11",
 		AvailableEndTime:   "16:00",
-		AvailableStartDay:  "2022-12-22",
-		AvailableEndDay:    "2023-01-22",
+		AvailableStartDay:  "2030-12-22",
+		AvailableEndDay:    "2031-01-22",
 	}
 	if err := utils.CompareStructsExcept(expect, *s.Subpackage, []string{"ID", "BusyTimes", "BusyTimeMap"}); err != nil {
 		return err
@@ -287,8 +289,8 @@ func (s *SubpackageScenario) theSubpackageIsUpdated() error {
 		RepeatedDay:        []models.DayName{models.Sunday, models.Wednesday},
 		AvailableStartTime: "15:11",
 		AvailableEndTime:   "16:00",
-		AvailableStartDay:  "2022-12-22",
-		AvailableEndDay:    "2023-01-22",
+		AvailableStartDay:  "2035-12-22",
+		AvailableEndDay:    "2036-01-22",
 	}
 	if err := utils.CompareStructsExcept(expect, *s.Subpackage, []string{"ID", "BusyTimes", "BusyTimeMap"}); err != nil {
 		return err

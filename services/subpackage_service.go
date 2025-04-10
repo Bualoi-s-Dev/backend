@@ -291,6 +291,24 @@ func (s *SubpackageService) IsSubpackageDeletable(ctx context.Context, subpackag
 }
 
 func (s *SubpackageService) CheckDate(ctx context.Context, subpackage *dto.SubpackageRequest) error {
+	// Check start time before end time
+	parsedStartTime, err := time.Parse("15:04", *subpackage.AvailableStartTime)
+	if err != nil {
+		return err
+	}
+	parsedEndTime, err := time.Parse("15:04", *subpackage.AvailableEndTime)
+	if err != nil {
+		return err
+	}
+	if parsedEndTime.Before(parsedStartTime) {
+		return errors.New("end time must be after start time")
+	}
+
+	// If IsInf, skip date checks
+	if subpackage.IsInf != nil && *subpackage.IsInf {
+		return nil
+	}
+	// Check start date before end date and date in the future
 	parsedStartDate, err := time.Parse("2006-01-02", *subpackage.AvailableStartDay)
 	if err != nil {
 		return err
@@ -302,18 +320,6 @@ func (s *SubpackageService) CheckDate(ctx context.Context, subpackage *dto.Subpa
 	now := time.Now()
 	if parsedStartDate.Before(now) || (parsedEndDate.Before(parsedStartDate)) {
 		return errors.New("start date must be after current date and end date must be after start date")
-	}
-
-	parsedStartTime, err := time.Parse("15:04", *subpackage.AvailableStartTime)
-	if err != nil {
-		return err
-	}
-	parsedEndTime, err := time.Parse("15:04", *subpackage.AvailableEndTime)
-	if err != nil {
-		return err
-	}
-	if parsedEndTime.Before(parsedStartTime) {
-		return errors.New("end time must be after start time")
 	}
 
 	return nil

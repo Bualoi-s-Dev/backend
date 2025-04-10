@@ -220,6 +220,26 @@ func (ctrl *SubpackageController) UpdateSubpackage(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request, " + err.Error()})
 		return
 	}
+
+	oldSubpackage, err := ctrl.Service.GetById(c.Request.Context(), id)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Failed to fetch item, " + err.Error()})
+		return
+	}
+
+	// Fill these value for check date
+	if itemRequest.AvailableStartTime == nil {
+		itemRequest.AvailableStartTime = &oldSubpackage.AvailableStartTime
+	}
+	if itemRequest.AvailableEndTime == nil {
+		itemRequest.AvailableEndTime = &oldSubpackage.AvailableEndTime
+	}
+	if itemRequest.AvailableStartDay == nil {
+		itemRequest.AvailableStartDay = &oldSubpackage.AvailableStartDay
+	}
+	if itemRequest.AvailableEndDay == nil {
+		itemRequest.AvailableEndDay = &oldSubpackage.AvailableEndDay
+	}
 	if err := ctrl.Service.CheckDate(c.Request.Context(), &itemRequest); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid date range, " + err.Error()})
 		return
