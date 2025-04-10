@@ -113,12 +113,12 @@ func SetupServer(client *mongo.Database) (*gin.Engine, *ServerRepositories, *Ser
 
 	r.Use(middleware.FirebaseAuthMiddleware(authClient, client.Collection("User"), userService))
 
-	routes.PackageRoutes(r, packageController)
-	routes.SubpackageRoutes(r, subPackageController)
-	routes.UserRoutes(r, userController, RatingController)
-	routes.AppointmentRoutes(r, appointmentController)
-	routes.BusyTimeRoutes(r, BusyTimeController)
-	routes.PaymentRoutes(r, paymentController)
+	routes.PackageRoutes(r, packageController, userService)
+	routes.SubpackageRoutes(r, subPackageController, userService)
+	routes.UserRoutes(r, userController, RatingController, userService)
+	routes.AppointmentRoutes(r, appointmentController, userService)
+	routes.BusyTimeRoutes(r, BusyTimeController, userService)
+	routes.PaymentRoutes(r, paymentController, userService)
 
 	return r, serverRepositories, serverServices
 }

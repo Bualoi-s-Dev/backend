@@ -103,18 +103,33 @@ func GetUserFromContext(c *gin.Context) *models.User {
 	return user.(*models.User)
 }
 
-func GetUserRoleFromContext(c *gin.Context) models.UserRole {
-	user := GetUserFromContext(c)
-	if user == nil {
-		log.Println("[ERROR] Role not found in context")
+func GetUserRoleFromContext(c *gin.Context, userService *services.UserService) models.UserRole {
+	userRaw, exists := c.Get("user")
+	if !exists {
+		log.Println("[ERROR] User not found in context")
 		return models.Guest
 	}
-	return user.Role
+
+	user, ok := userRaw.(*models.User)
+	if !ok {
+		log.Println("[ERROR] Invalid user type in context")
+		return models.Guest
+	}
+
+	ctx := context.Background()
+	// Re-fetch user from DB to ensure latest role
+	latestUser, err := userService.FindUser(ctx, user.Email)
+	if err != nil {
+		log.Printf("[ERROR] Failed to fetch user from DB: %v", err)
+		return models.Guest
+	}
+
+	return latestUser.Role
 }
 
-func AllowRoles(allowRoles ...models.UserRole) gin.HandlerFunc {
+func AllowRoles(userService *services.UserService, allowRoles ...models.UserRole) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		role := GetUserRoleFromContext(c)
+		role := GetUserRoleFromContext(c, userService)
 		for _, allowRole := range allowRoles {
 			if role == allowRole {
 				c.Next()
