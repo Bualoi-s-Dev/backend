@@ -257,3 +257,27 @@ func (uc *UserController) DeleteUserBusyTime(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "Busy time deleted"})
 }
+
+// CheckProviderByEmail godoc
+// @Tags User
+// @Summary Check which provider is linked to an email
+// @Description Returns the auth provider(s) (e.g. Google, Facebook) associated with an email
+// @Param email query string true "Email to check"
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} string "Bad Request"
+// @Router /user/provider [get]
+func (uc *UserController) CheckProviderByEmail(c *gin.Context) {
+	email := c.Query("email")
+	if email == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Email is required"})
+		return
+	}
+
+	providers, err := middleware.CheckProviderByEmail(email)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"email": email, "providers": providers})
+}

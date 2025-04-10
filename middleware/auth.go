@@ -13,12 +13,20 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 
 	"firebase.google.com/go/auth"
+	firebase "firebase.google.com/go/v4"
+	"google.golang.org/api/option"
 )
 
 func FirebaseAuthMiddleware(authClient *auth.Client, userCollection *mongo.Collection, userService *services.UserService) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// Skip authentication for Stripe webhooks
 		if c.Request.URL.Path == "/payment/webhook" {
+			c.Next() // Allow webhook requests
+			return
+		}
+
+		// Skip authentication for Provider checking
+		if c.Request.URL.Path == "/user/provider" {
 			c.Next() // Allow webhook requests
 			return
 		}
@@ -139,4 +147,36 @@ func AllowRoles(userService *services.UserService, allowRoles ...models.UserRole
 		c.JSON(http.StatusUnauthorized, gin.H{"error": fmt.Sprintf("%s cannot access this endpoint", role)})
 		c.Abort()
 	}
+}
+
+func CheckProviderByEmail(email string) ([]string, error) {
+	ctx := context.Background()
+
+	opt := option.WithCredentialsFile("./private_key.json")
+
+	app, err := firebase.NewApp(ctx, nil, opt)
+	if err != nil {
+		return nil, fmt.Errorf("failed to initialize Firebase app: %v", err)
+	}
+
+	client, err := app.Auth(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get Auth client: %v", err)
+	}
+
+	user, err := client.GetUserByEmail(ctx, email)
+	if err != nil {
+		//User not found, return empty providers instead of error
+		if auth.IsUserNotFound(err) || strings.Contains(err.Error(), "no user") {
+			return []string{}, nil
+		}
+		return nil, fmt.Errorf("failed to get user: %v", err)
+	}
+
+	var providers []string
+	for _, info := range user.ProviderUserInfo {
+		providers = append(providers, info.ProviderID)
+	}
+
+	return providers, nil
 }

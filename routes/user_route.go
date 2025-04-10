@@ -35,6 +35,8 @@ func UserRoutes(router *gin.Engine, userController *controllers.UserController, 
 		publicRoutes.GET("/profile", userController.GetUserProfile)
 		publicRoutes.GET("/profile/:id", userController.GetUserProfileByID)
 		publicRoutes.PATCH("/profile", userController.UpdateUserProfile)
+
+		publicRoutes.GET("/provider", userController.CheckProviderByEmail)
 	}
 
 }
