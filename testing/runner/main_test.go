@@ -45,7 +45,7 @@ func startTestServer() *httptest.Server {
 	client := configs.ConnectMongoDB().Database(databaseName)
 
 	testMongoDB = client
-	r, _, _ := bootstrap.SetupServer(client)
+	r, _, _ := bootstrap.SetupServer(client, true)
 
 	testServer := httptest.NewServer(r)
 	return testServer

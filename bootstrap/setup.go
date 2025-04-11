@@ -37,8 +37,14 @@ type ServerServices struct {
 	firebaseService    *services.FirebaseService
 }
 
-func SetupServer(client *mongo.Database) (*gin.Engine, *ServerRepositories, *ServerServices) {
-	r := gin.Default()
+func SetupServer(client *mongo.Database, isTesting bool) (*gin.Engine, *ServerRepositories, *ServerServices) {
+	var r *gin.Engine
+	if isTesting {
+		r = gin.New()
+		r.Use(gin.Recovery())
+	} else {
+		r = gin.Default()
+	}
 
 	r.Use(configs.EnableCORS())
 

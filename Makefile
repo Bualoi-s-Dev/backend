@@ -30,6 +30,10 @@ testing:
 	@echo "Running tests..."
 	go test -v ./testing/runner
 
+blackbox-testing:
+	@echo "Running blackbox tests..."
+	go test -v ./testing/runner/package_test.go -run=TestBlackBox
+
 tsgen:
 	@echo "Generating TypeScript types..."
 	go run ./cmd/tsgen/main.go
