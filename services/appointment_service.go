@@ -326,6 +326,24 @@ func (s *AppointmentService) CreateOneAppointment(ctx context.Context, user *mod
 		return nil, err
 	}
 
+	startday := subpackage.AvailableStartDay
+	startTime := subpackage.AvailableStartTime
+	startDateTime, err := time.Parse("2006-01-02 15:04", fmt.Sprintf("%s %s", startday, startTime))
+	if err != nil {
+		return nil, fmt.Errorf("invalid start date or time: %v", err)
+	}
+
+	endday := subpackage.AvailableEndDay
+	endTime := subpackage.AvailableEndTime
+	endDateTime, err := time.Parse("2006-01-02 15:04", fmt.Sprintf("%s %s", endday, endTime))
+	if err != nil {
+		return nil, fmt.Errorf("invalid end date or time: %v", err)
+	}
+
+	if busyTime.StartTime.Before(startDateTime) || busyTime.EndTime.After(endDateTime) {
+		return nil, fmt.Errorf("appointment time is out of the allowed range")
+	}
+
 	pkg, err := s.PackageRepo.GetById(ctx, subpackage.PackageID.Hex())
 	if err != nil {
 		return nil, err
