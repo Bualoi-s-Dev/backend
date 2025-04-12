@@ -187,8 +187,18 @@ func (s *AppointmentScenario) theCustomerIsLoggedIn() error {
 }
 
 func (s *AppointmentScenario) theCustomerCreatesAnAppointment() error {
+	/*
+		subpackage's repeatedDay = {"SUN", "WED"},
+		   December 2030
+		Su Mo Tu We Th Fr Sa
+		1  2  3  4  5  6  7
+		8  9 10 11 12 13 14
+		15 16 17 18 19 20 21
+		22 23 24 25 26 27 28
+		29 30 31
+	*/
 	reqBody, _ := json.Marshal(map[string]interface{}{
-		"startTime": "2030-12-23T15:25:00.000+00:00", // must be in 15:00 - 16:00 so start time should be in range [15:00, 15:30]
+		"startTime": "2030-12-25T15:25:00.000+00:00", // must be in 15:00 - 16:00 so start time should be in range [15:00, 15:30]
 		"location":  "Bangkok, Thailand",
 	})
 	req, err := http.NewRequest("POST", s.Server.URL+"/appointment"+"/"+s.Subpackage.ID.Hex(), bytes.NewBuffer(reqBody))
