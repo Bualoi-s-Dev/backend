@@ -76,10 +76,10 @@ func (s *AppointmentScenario) thePhotographerHasPackageAndSubpackage() error {
 		"title":              "dev",
 		"description":        "1234556",
 		"price":              123,
-		"duration":           23,
+		"duration":           30,
 		"isInf":              false,
 		"repeatedDay":        []string{"SUN", "WED"},
-		"availableStartTime": "15:11",
+		"availableStartTime": "15:00",
 		"availableEndTime":   "16:00",
 		"availableStartDay":  "2030-12-22",
 		"availableEndDay":    "2031-01-22",
@@ -188,7 +188,7 @@ func (s *AppointmentScenario) theCustomerIsLoggedIn() error {
 
 func (s *AppointmentScenario) theCustomerCreatesAnAppointment() error {
 	reqBody, _ := json.Marshal(map[string]interface{}{
-		"startTime": "2030-12-23T10:30:00.000+00:00",
+		"startTime": "2030-12-23T10:30:00.000+00:00", // must be in 15:00 - 16:00 so start time should be in range [15:00, 15:30]
 		"location":  "Bangkok, Thailand",
 	})
 	req, err := http.NewRequest("POST", s.Server.URL+"/appointment"+"/"+s.Subpackage.ID.Hex(), bytes.NewBuffer(reqBody))

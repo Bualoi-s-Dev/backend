@@ -326,21 +326,37 @@ func (s *AppointmentService) CreateOneAppointment(ctx context.Context, user *mod
 		return nil, err
 	}
 
-	startday := subpackage.AvailableStartDay
-	startTime := subpackage.AvailableStartTime
-	startDateTime, err := time.Parse("2006-01-02 15:04", fmt.Sprintf("%s %s", startday, startTime))
+	// check day in range
+	startDay, err := time.Parse("2006-01-02", subpackage.AvailableStartDay)
 	if err != nil {
-		return nil, fmt.Errorf("invalid start date or time: %v", err)
+		return nil, fmt.Errorf("invalid start day format: %v", err)
+	}
+	endDay, err := time.Parse("2006-01-02", subpackage.AvailableEndDay)
+	if err != nil {
+		return nil, fmt.Errorf("invalid end day format: %v", err)
 	}
 
-	endday := subpackage.AvailableEndDay
-	endTime := subpackage.AvailableEndTime
-	endDateTime, err := time.Parse("2006-01-02 15:04", fmt.Sprintf("%s %s", endday, endTime))
-	if err != nil {
-		return nil, fmt.Errorf("invalid end date or time: %v", err)
+	busyTimeStartDay, err := time.Parse("2006-01-02", fmt.Sprintf("%d-%d-%d", busyTime.StartTime.Year(), busyTime.StartTime.Month(), busyTime.StartTime.Day()))
+	busyTimeEndDay, err := time.Parse("2006-01-02", fmt.Sprintf("%d-%d-%d", busyTime.EndTime.Year(), busyTime.EndTime.Month(), busyTime.EndTime.Day()))
+
+	if busyTimeStartDay.Before(startDay) || busyTimeEndDay.After(endDay) {
+		return nil, fmt.Errorf("busy time is out of the allowed range")
 	}
 
-	if busyTime.StartTime.Before(startDateTime) || busyTime.EndTime.After(endDateTime) {
+	// check, time in range
+	startTime, err := time.Parse("15:04", subpackage.AvailableStartTime)
+	if err != nil {
+		return nil, fmt.Errorf("invalid start time format: %v", err)
+	}
+	endTime, err := time.Parse("15:04", subpackage.AvailableEndTime)
+	if err != nil {
+		return nil, fmt.Errorf("invalid end time format: %v", err)
+	}
+
+	busyTimeStartTime, err := time.Parse("15:04", fmt.Sprintf("%d:%d", busyTime.StartTime.Hour(), busyTime.StartTime.Minute()))
+	busyTimeEndTime, err := time.Parse("15:04", fmt.Sprintf("%d:%d", busyTime.EndTime.Hour(), busyTime.EndTime.Minute()))
+
+	if busyTimeStartTime.Before(startTime) || busyTimeEndTime.After(endTime) {
 		return nil, fmt.Errorf("appointment time is out of the allowed range")
 	}
 
