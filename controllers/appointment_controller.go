@@ -298,7 +298,8 @@ func (a *AppointmentController) CreateAppointment(c *gin.Context) {
 		return
 	}
 	if !isIntersect {
-		apperrors.HandleError(c, err, "Cannot reserve an appointment because the time not intersection with subpackage available time")
+		apperrors.HandleError(c, apperrors.ErrTimeOverlapped, "Cannot reserve an appointment because the time not intersection with subpackage available time")
+		return
 	}
 
 	appointment, err := a.AppointmentService.CreateOneAppointment(c.Request.Context(), user, subpackageId, busyTime, &req)
