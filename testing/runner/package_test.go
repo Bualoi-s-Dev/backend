@@ -18,7 +18,6 @@ func TestPackageFeatures(t *testing.T) {
 	status := testSuite.Run()
 	if status != 0 {
 		t.Errorf("Non-zero exit code: %d", status)
-		t.Fail()
 	}
 }
 
