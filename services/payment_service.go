@@ -93,7 +93,7 @@ func (service *PaymentService) CreatePayment(ctx context.Context, appointmentId 
 	// If payment of this appointment already exist, not create new payment
 	oldPayment, _ := service.DatabaseRepository.GetByAppointmentID(ctx, appointmentId)
 	if oldPayment != nil {
-		return nil, errors.New("payment already exist")
+		return nil, errors.New("payment already exists")
 	}
 
 	// Get customer and photographer from appointment

@@ -100,8 +100,8 @@ func (ctrl *PaymentController) GetPaymentById(c *gin.Context) {
 // @Summary Create a payment for the appointment, this usually called after the appointment is completed
 // @Description Create a payment for the appointment
 // @Param id path string true "Appointment ID"
-// @Param successURL query string false "cancel URL"
-// @Param cancelURL query string false "success URL"
+// @Param successURL query string false "success URL"
+// @Param cancelURL query string false "cancel URL"
 // @Success 200 {object} dto.PaymentResponse
 // @Failure 400 {object} string "Bad Request"
 // @Router /payment/charge/{appointmentId} [post]
