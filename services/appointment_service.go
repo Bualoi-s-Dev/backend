@@ -99,6 +99,9 @@ func (s *AppointmentService) GetAppointmentDetailById(ctx context.Context, user 
 	}
 	return detail, nil
 }
+func PrefixCaseInsensitiveMatch(a, b string) bool {
+	return strings.HasPrefix(strings.ToLower(a), strings.ToLower(b))
+}
 func (s *AppointmentService) GetFilteredAppointments(ctx context.Context, user *models.User, filters map[string]string, page, limit int) ([]dto.AppointmentResponse, int, error) {
 	items, err := s.AppointmentRepo.GetAll(ctx, user.ID, user.Role)
 	if err != nil {
@@ -150,10 +153,22 @@ func (s *AppointmentService) GetFilteredAppointments(ctx context.Context, user *
 				fmt.Println("(GetFilteredAppointments) Error while getting customer")
 				return nil, 0, err
 			}
+			pgt, err := s.UserRepo.FindUserByID(ctx, item.PhotographerID)
+			if err != nil {
+				fmt.Println("(GetFilteredAppointments) Error while getting photographer")
+				return nil, 0, err
+			}
 
-			if !strings.HasPrefix(strings.ToLower(pkg.Title), strings.ToLower(filters["name"])) && !strings.HasPrefix(strings.ToLower(ctm.Name), strings.ToLower(filters["name"])) {
+			IsFilter := false
+			IsFilter = IsFilter || PrefixCaseInsensitiveMatch(pkg.Title, filters["name"])    // package name match
+			IsFilter = IsFilter || PrefixCaseInsensitiveMatch(subPkg.Title, filters["name"]) // subpackage name match
+			IsFilter = IsFilter || PrefixCaseInsensitiveMatch(ctm.Name, filters["name"])     // Customer name match
+			IsFilter = IsFilter || PrefixCaseInsensitiveMatch(pgt.Name, filters["name"])     // Photographer name match
+
+			if !IsFilter {
 				continue
 			}
+
 		}
 
 		appointmentResponse := dto.AppointmentResponse{
