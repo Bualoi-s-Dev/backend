@@ -100,11 +100,15 @@ func (ctrl *PaymentController) GetPaymentById(c *gin.Context) {
 // @Summary Create a payment for the appointment, this usually called after the appointment is completed
 // @Description Create a payment for the appointment
 // @Param id path string true "Appointment ID"
+// @Param successURL query string false "cancel URL"
+// @Param cancelURL query string false "success URL"
 // @Success 200 {object} dto.PaymentResponse
 // @Failure 400 {object} string "Bad Request"
 // @Router /payment/charge/{appointmentId} [post]
 func (ctrl *PaymentController) CreatePayment(c *gin.Context) {
 	id := c.Param("appointmentId")
+	cancelURLParam, _ := c.GetQuery("cancelURL")
+	successURLParam, _ := c.GetQuery("successURL")
 
 	appointmentId, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
@@ -112,7 +116,7 @@ func (ctrl *PaymentController) CreatePayment(c *gin.Context) {
 		return
 	}
 
-	payment, err := ctrl.Service.CreatePayment(c.Request.Context(), appointmentId)
+	payment, err := ctrl.Service.CreatePayment(c.Request.Context(), appointmentId, successURLParam, cancelURLParam)
 	if err != nil {
 		c.JSON(500, gin.H{"error": err.Error()})
 		return

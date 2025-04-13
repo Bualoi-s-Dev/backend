@@ -89,7 +89,7 @@ func (service *PaymentService) RegisterConnectedAccount(ctx context.Context, use
 	return account, nil
 }
 
-func (service *PaymentService) CreatePayment(ctx context.Context, appointmentId primitive.ObjectID) (*models.Payment, error) {
+func (service *PaymentService) CreatePayment(ctx context.Context, appointmentId primitive.ObjectID, successURL string, cancelURL string) (*models.Payment, error) {
 	// If payment of this appointment already exist, not create new payment
 	oldPayment, _ := service.DatabaseRepository.GetByAppointmentID(ctx, appointmentId)
 	if oldPayment != nil {
@@ -142,7 +142,7 @@ func (service *PaymentService) CreatePayment(ctx context.Context, appointmentId 
 
 	// Create checkout session for customer into photographer account
 	subpackage := appointment.Subpackage
-	checkoutSession, err := service.CreateCheckoutSession(stripeCustomerId, stripeAccountId, subpackage.Title, int64(appointment.Price))
+	checkoutSession, err := service.CreateCheckoutSession(stripeCustomerId, stripeAccountId, subpackage.Title, int64(appointment.Price), successURL, cancelURL)
 	if err != nil {
 		return nil, err
 	}
@@ -170,8 +170,8 @@ func (service *PaymentService) CreateLoginLink(ctx context.Context, accountId st
 	return service.StripeRepository.CreateLoginLink(accountId)
 }
 
-func (service *PaymentService) CreateCheckoutSession(customerId string, sellerAccountId string, productName string, amount int64) (*stripe.CheckoutSession, error) {
-	stripeCheckout, err := service.StripeRepository.CreateCheckoutSession(customerId, sellerAccountId, productName, amount*100, 1, "thb")
+func (service *PaymentService) CreateCheckoutSession(customerId string, sellerAccountId string, productName string, amount int64, successURL string, cancelURL string) (*stripe.CheckoutSession, error) {
+	stripeCheckout, err := service.StripeRepository.CreateCheckoutSession(customerId, sellerAccountId, productName, amount*100, 1, "thb", successURL, cancelURL)
 	if err != nil {
 		return nil, err
 	}

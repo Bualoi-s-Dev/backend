@@ -167,14 +167,17 @@ func (s *StripeRepository) AttachAccountSetting(accountID string) error {
 	return err
 }
 
-func (s *StripeRepository) CreateCheckoutSession(customerId string, sellerAccountId string, productName string, amount int64, quantity int64, currency string) (*stripe.CheckoutSession, error) {
+func (s *StripeRepository) CreateCheckoutSession(customerId string, sellerAccountId string, productName string, amount int64, quantity int64, currency string, successURL string, cancelURL string) (*stripe.CheckoutSession, error) {
 	frontendURL := utils.GetFrontendURL()
+	successURLRedirect := utils.SafeStringWithDefault(successURL, frontendURL+"/payment/success")
+	cancelURLRedirect := utils.SafeStringWithDefault(cancelURL, frontendURL+"/payment/topay")
+
 	params := &stripe.CheckoutSessionParams{
 		Customer:           stripe.String(customerId),
 		Mode:               stripe.String(string(stripe.CheckoutSessionModePayment)),
 		PaymentMethodTypes: stripe.StringSlice([]string{"card", "promptpay"}),
-		SuccessURL:         stripe.String(frontendURL + "/payment/order/success"),
-		CancelURL:          stripe.String(frontendURL + "/payment/topay"),
+		SuccessURL:         stripe.String(successURLRedirect),
+		CancelURL:          stripe.String(cancelURLRedirect),
 		LineItems: []*stripe.CheckoutSessionLineItemParams{
 			{
 				PriceData: &stripe.CheckoutSessionLineItemPriceDataParams{
