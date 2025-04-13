@@ -92,7 +92,8 @@ func (s *SubpackageService) passesFilters(pkg *models.Package, item models.Subpa
 		}
 	}
 
-	return (filters["type"] == "" || string(pkg.Type) == filters["type"]) &&
+	return (filters["title"] == "" || strings.Contains(strings.ToLower(item.Title), strings.ToLower(filters["title"]))) &&
+		(filters["type"] == "" || string(pkg.Type) == filters["type"]) &&
 		(filters["availableStartTime"] == "" || item.AvailableStartTime >= filters["availableStartTime"]) &&
 		(filters["availableEndTime"] == "" || item.AvailableEndTime <= filters["availableEndTime"]) &&
 		(filters["availableStartDay"] == "" || item.AvailableStartDay >= filters["availableStartDay"]) &&

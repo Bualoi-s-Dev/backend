@@ -25,6 +25,7 @@ func NewSubpackageController(service *services.SubpackageService, packageService
 // GetAllSubpackages godoc
 // @Summary Get all subpackages
 // @Description Get all subpackages
+// @Param title query string false "Title name of subpackage"
 // @Param packageId query string false "Package ID of subpackage"
 // @Param type query string false "Type of subpackage"
 // @Param availableStartTime query string false "Available start time of subpackage"
@@ -41,6 +42,7 @@ func NewSubpackageController(service *services.SubpackageService, packageService
 func (ctrl *SubpackageController) GetAllSubpackages(c *gin.Context) {
 	// Get query parameters for filtering
 	filters := map[string]string{
+		"title":              c.Query("title"),
 		"packageId":          c.Query("packageId"),
 		"type":               c.Query("type"),
 		"availableStartTime": c.Query("availableStartTime"),
@@ -61,21 +63,6 @@ func (ctrl *SubpackageController) GetAllSubpackages(c *gin.Context) {
 	if filters["availableEndDay"] != "" {
 		if _, err := time.Parse(dateFormat, filters["availableEndDay"]); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid date format for availableEndDay. Use YYYY-MM-DD."})
-			return
-		}
-	}
-
-	// Verify time format (HH:MM)
-	timeFormat := "15:03"
-	if filters["availableStartTime"] != "" {
-		if _, err := time.Parse(timeFormat, filters["availableStartTime"]); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid time format for availableStartTime. Use HH:MM."})
-			return
-		}
-	}
-	if filters["availableEndTime"] != "" {
-		if _, err := time.Parse(timeFormat, filters["availableEndTime"]); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid time format for availableEndTime. Use HH:MM."})
 			return
 		}
 	}

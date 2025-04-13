@@ -20,12 +20,14 @@ import (
 
 type AppointmentController struct {
 	AppointmentService *services.AppointmentService
+	SubpackageService  *services.SubpackageService
 	BusyTimeService    *services.BusyTimeService
 }
 
-func NewAppointmentController(appointmentService *services.AppointmentService, busyTimeService *services.BusyTimeService) *AppointmentController {
+func NewAppointmentController(appointmentService *services.AppointmentService, subpackageService *services.SubpackageService, busyTimeService *services.BusyTimeService) *AppointmentController {
 	return &AppointmentController{
 		AppointmentService: appointmentService,
+		SubpackageService:  subpackageService,
 		BusyTimeService:    busyTimeService,
 	}
 }
@@ -282,6 +284,21 @@ func (a *AppointmentController) CreateAppointment(c *gin.Context) {
 	if err != nil {
 		fmt.Println("Cannot Create Busy Time from Subpackage!!")
 		apperrors.HandleError(c, err, "Cannot create BusyTime")
+		return
+	}
+
+	subpkg, err := a.SubpackageService.GetById(c.Request.Context(), subpackageId.Hex())
+	if err != nil {
+		apperrors.HandleError(c, err, "Cannot get subpackage to check time intersection")
+		return
+	}
+	isIntersect, err := a.SubpackageService.IsIntersect(c.Request.Context(), subpkg, busyTime)
+	if err != nil {
+		apperrors.HandleError(c, err, "Error occurs while checking time intersection with subpackage")
+		return
+	}
+	if !isIntersect {
+		apperrors.HandleError(c, apperrors.ErrTimeOverlapped, "Cannot reserve an appointment because the time not intersection with subpackage available time")
 		return
 	}
 

@@ -86,7 +86,7 @@ func SetupServer(client *mongo.Database, isTesting bool) (*gin.Engine, *ServerRe
 
 	packageController := controllers.NewPackageController(packageService, s3Service, userService, subpackageService)
 	subPackageController := controllers.NewSubpackageController(subpackageService, packageService)
-	appointmentController := controllers.NewAppointmentController(appointmentService, busyTimeService)
+	appointmentController := controllers.NewAppointmentController(appointmentService, subpackageService, busyTimeService)
 	userController := controllers.NewUserController(userService, s3Service, busyTimeService, authClient)
 	BusyTimeController := controllers.NewBusyTimeController(busyTimeService)
 	internalController := controllers.NewInternalController(firebaseService, s3Service)
