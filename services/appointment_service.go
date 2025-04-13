@@ -151,7 +151,7 @@ func (s *AppointmentService) GetFilteredAppointments(ctx context.Context, user *
 				return nil, 0, err
 			}
 
-			if !strings.HasPrefix(pkg.Title, filters["name"]) && !strings.HasPrefix(ctm.Name, filters["name"]) {
+			if !strings.HasPrefix(strings.ToLower(pkg.Title), strings.ToLower(filters["name"])) && !strings.HasPrefix(strings.ToLower(ctm.Name), strings.ToLower(filters["name"])) {
 				continue
 			}
 		}
