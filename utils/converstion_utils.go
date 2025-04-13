@@ -117,3 +117,10 @@ func TimeToMinutes(t string) int {
 	time, _ := time.Parse("15:04", t)
 	return time.Hour()*60 + time.Minute()
 }
+
+func SafeStringWithDefault(value string, defaultValue string) string {
+	if value == "" {
+		return defaultValue
+	}
+	return value
+}

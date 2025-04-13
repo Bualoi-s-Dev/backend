@@ -370,7 +370,7 @@ func (s *AppointmentService) AutoUpdateAppointmentStatus(ctx context.Context) er
 	go func() {
 		updatedIds, _ := s.AppointmentRepo.UpdateCompletedAppointment(ctx, currentTime)
 		for _, id := range updatedIds {
-			s.PaymentService.CreatePayment(ctx, id)
+			s.PaymentService.CreatePayment(ctx, id, "", "")
 		}
 	}()
 
