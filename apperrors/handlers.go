@@ -13,7 +13,10 @@ func HandleError(c *gin.Context, err error, message string) {
 	case ErrBadRequest,
 		ErrAppointmentStatusTime,
 		ErrAppointmentStatusInvalid,
-		ErrTimeOverlapped:
+		ErrTimeOverlapped,
+		ErrAlreadyReviewed,
+		ErrCustomerRatingMismatched,
+		ErrPhotographerRatingMismatched:
 		statusCode = http.StatusBadRequest
 	case ErrUnauthorized:
 		statusCode = http.StatusUnauthorized
