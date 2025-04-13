@@ -51,7 +51,7 @@ func (repo *PaymentRepository) GetById(ctx context.Context, id primitive.ObjectI
 	return &item, nil
 }
 
-func (repo *PaymentRepository) GetByAppointmentID(ctx context.Context, appointmentID string) (*models.Payment, error) {
+func (repo *PaymentRepository) GetByAppointmentID(ctx context.Context, appointmentID primitive.ObjectID) (*models.Payment, error) {
 	var item models.Payment
 	err := repo.Collection.FindOne(ctx, bson.M{"appointment_id": appointmentID}).Decode(&item)
 	if err != nil {

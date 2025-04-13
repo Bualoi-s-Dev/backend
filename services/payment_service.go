@@ -38,6 +38,10 @@ func (service *PaymentService) GetPaymentById(ctx context.Context, id primitive.
 	return service.DatabaseRepository.GetById(ctx, id)
 }
 
+func (service *PaymentService) GetPaymentByAppointmentId(ctx context.Context, appointmentId primitive.ObjectID) (*models.Payment, error) {
+	return service.DatabaseRepository.GetByAppointmentID(ctx, appointmentId)
+}
+
 func (service *PaymentService) RegisterCustomer(ctx context.Context, user models.User) (*stripe.Customer, error) {
 	// Create stripe customer
 	customer, err := service.StripeRepository.CreateCustomer(user.Email)
@@ -86,6 +90,12 @@ func (service *PaymentService) RegisterConnectedAccount(ctx context.Context, use
 }
 
 func (service *PaymentService) CreatePayment(ctx context.Context, appointmentId primitive.ObjectID) (*models.Payment, error) {
+	// If payment of this appointment already exist, not create new payment
+	oldPayment, _ := service.DatabaseRepository.GetByAppointmentID(ctx, appointmentId)
+	if oldPayment != nil {
+		return nil, errors.New("payment already exist")
+	}
+
 	// Get customer and photographer from appointment
 	appointment, err := service.AppointmentDatabaseRepository.GetById(ctx, appointmentId)
 	if err != nil {
