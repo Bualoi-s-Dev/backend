@@ -13,6 +13,8 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 
 	"firebase.google.com/go/auth"
+	//firebase "firebase.google.com/go/v4"
+	//"google.golang.org/api/option"
 )
 
 func FirebaseAuthMiddleware(authClient *auth.Client, userCollection *mongo.Collection, userService *services.UserService) gin.HandlerFunc {
@@ -20,6 +22,12 @@ func FirebaseAuthMiddleware(authClient *auth.Client, userCollection *mongo.Colle
 		// Skip authentication for Stripe webhooks
 		if c.Request.URL.Path == "/payment/webhook" {
 			c.Next() // Allow webhook requests
+			return
+		}
+
+		// Skip authentication for Provider checking
+		if c.Request.URL.Path == "/user/provider" {
+			c.Next()
 			return
 		}
 
@@ -68,27 +76,7 @@ func FirebaseAuthMiddleware(authClient *auth.Client, userCollection *mongo.Colle
 			}
 
 			user = newUser
-
-			// Set Firebase Custom Claim for role
-			err = authClient.SetCustomUserClaims(ctx, token.UID, map[string]interface{}{
-				"role": string(models.Guest),
-			})
-			if err != nil {
-				log.Printf("[ERROR] Failed to set custom claims: %v", err)
-				c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Failed to set role"})
-				return
-			}
 		}
-
-		// Extract role from Firebase Custom Claims
-		role, exists := token.Claims["role"].(string)
-		if !exists {
-			// Set default role if not exists
-			role = string(models.Guest)
-		}
-
-		// Store user in context
-		user.Role = models.UserRole(role)
 		c.Set("user", user)
 		c.Next()
 	}
@@ -112,7 +100,7 @@ func GetUserRoleFromContext(c *gin.Context) models.UserRole {
 	return user.Role
 }
 
-func AllowRoles(allowRoles ...models.UserRole) gin.HandlerFunc {
+func AllowRoles(userService *services.UserService, allowRoles ...models.UserRole) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		role := GetUserRoleFromContext(c)
 		for _, allowRole := range allowRoles {
@@ -124,4 +112,23 @@ func AllowRoles(allowRoles ...models.UserRole) gin.HandlerFunc {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": fmt.Sprintf("%s cannot access this endpoint", role)})
 		c.Abort()
 	}
+}
+
+func CheckProviderByEmail(authClient *auth.Client, email string) ([]string, error) {
+	ctx := context.Background()
+
+	user, err := authClient.GetUserByEmail(ctx, email)
+	if err != nil {
+		if auth.IsUserNotFound(err) || strings.Contains(err.Error(), "no user") {
+			return []string{}, nil
+		}
+		return nil, fmt.Errorf("failed to get user: %v", err)
+	}
+
+	var providers []string
+	for _, info := range user.ProviderUserInfo {
+		providers = append(providers, info.ProviderID)
+	}
+
+	return providers, nil
 }

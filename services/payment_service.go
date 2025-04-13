@@ -17,20 +17,15 @@ type PaymentService struct {
 	DatabaseRepository            *databaseRepo.PaymentRepository
 	UserDatabaseRepository        *databaseRepo.UserRepository
 	AppointmentDatabaseRepository *databaseRepo.AppointmentRepository
-	AppointmentService            *AppointmentService
-	SubpackageDatabaseRepository  *databaseRepo.SubpackageRepository
-	PackageDatabaseRepository     *databaseRepo.PackageRepository
 	StripeRepository              *stripeRepo.StripeRepository
 }
 
 func NewPaymentService(databaseRepository *databaseRepo.PaymentRepository, userRepo *databaseRepo.UserRepository, appointmentRepo *databaseRepo.AppointmentRepository,
-	subpackageRepo *databaseRepo.SubpackageRepository, packageRepo *databaseRepo.PackageRepository, stripeRepository *stripeRepo.StripeRepository) *PaymentService {
+	stripeRepository *stripeRepo.StripeRepository) *PaymentService {
 	return &PaymentService{
 		DatabaseRepository:            databaseRepository,
 		UserDatabaseRepository:        userRepo,
 		AppointmentDatabaseRepository: appointmentRepo,
-		SubpackageDatabaseRepository:  subpackageRepo,
-		PackageDatabaseRepository:     packageRepo,
 		StripeRepository:              stripeRepository,
 	}
 }
@@ -136,10 +131,7 @@ func (service *PaymentService) CreatePayment(ctx context.Context, appointmentId 
 	}
 
 	// Create checkout session for customer into photographer account
-	subpackage, err := service.SubpackageDatabaseRepository.GetById(ctx, appointment.SubpackageID.Hex())
-	if err != nil {
-		return nil, err
-	}
+	subpackage := appointment.Subpackage
 	checkoutSession, err := service.CreateCheckoutSession(stripeCustomerId, stripeAccountId, subpackage.Title, int64(appointment.Price))
 	if err != nil {
 		return nil, err

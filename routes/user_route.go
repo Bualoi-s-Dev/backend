@@ -4,25 +4,26 @@ import (
 	"github.com/Bualoi-s-Dev/backend/controllers"
 	"github.com/Bualoi-s-Dev/backend/middleware"
 	"github.com/Bualoi-s-Dev/backend/models"
+	"github.com/Bualoi-s-Dev/backend/services"
 	"github.com/gin-gonic/gin"
 )
 
-func UserRoutes(router *gin.Engine, userController *controllers.UserController, RatingController *controllers.RatingController) {
+func UserRoutes(router *gin.Engine, userController *controllers.UserController, RatingController *controllers.RatingController, userService *services.UserService) {
 	userGroup := router.Group("/user")
-	commonRoutes := userGroup.Group("", middleware.AllowRoles(models.Photographer, models.Customer))
+	commonRoutes := userGroup.Group("", middleware.AllowRoles(userService, models.Photographer, models.Customer))
 	{
 		commonRoutes.GET("/photographers", userController.GetPhotographers)
 		commonRoutes.GET("/:photographerId/rating", RatingController.GetAllRatingsFromPhotographer)
 		commonRoutes.GET("/:photographerId/rating/:ratingId", RatingController.GetRatingById)
 
 	}
-	customerRoutes := userGroup.Group("", middleware.AllowRoles(models.Customer))
+	customerRoutes := userGroup.Group("", middleware.AllowRoles(userService, models.Customer))
 	{
 		customerRoutes.POST("/:photographerId/rating", RatingController.CreateRating)
 		customerRoutes.PUT("/:photographerId/rating/:ratingId", RatingController.UpdateRating)
 		customerRoutes.DELETE("/:photographerId/rating/:ratingId", RatingController.DeleteRating)
 	}
-	photographerRoutes := userGroup.Group("", middleware.AllowRoles(models.Photographer))
+	photographerRoutes := userGroup.Group("", middleware.AllowRoles(userService, models.Photographer))
 	{
 		photographerRoutes.POST("/busytime", userController.CreateUserBusyTime)
 		photographerRoutes.DELETE("/busytime/:busyTimeId", userController.DeleteUserBusyTime)
@@ -34,6 +35,8 @@ func UserRoutes(router *gin.Engine, userController *controllers.UserController, 
 		publicRoutes.GET("/profile", userController.GetUserProfile)
 		publicRoutes.GET("/profile/:id", userController.GetUserProfileByID)
 		publicRoutes.PATCH("/profile", userController.UpdateUserProfile)
+
+		publicRoutes.GET("/provider", userController.CheckProviderByEmail)
 	}
 
 }

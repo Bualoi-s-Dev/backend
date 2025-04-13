@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"firebase.google.com/go/auth"
 	"github.com/Bualoi-s-Dev/backend/dto"
 	"github.com/Bualoi-s-Dev/backend/middleware"
 	"github.com/Bualoi-s-Dev/backend/models"
@@ -16,10 +17,11 @@ type UserController struct {
 	Service         *services.UserService
 	S3Service       *services.S3Service
 	BusyTimeService *services.BusyTimeService
+	AuthClient      *auth.Client
 }
 
-func NewUserController(service *services.UserService, s3Service *services.S3Service, busyTimeService *services.BusyTimeService) *UserController {
-	return &UserController{Service: service, S3Service: s3Service, BusyTimeService: busyTimeService}
+func NewUserController(service *services.UserService, s3Service *services.S3Service, busyTimeService *services.BusyTimeService, authClient *auth.Client) *UserController {
+	return &UserController{Service: service, S3Service: s3Service, BusyTimeService: busyTimeService, AuthClient: authClient}
 }
 
 // GetUserJWT godoc
@@ -96,6 +98,10 @@ func (uc UserController) GetPhotographers(c *gin.Context) {
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get photographers, " + err.Error()})
 		return
+	}
+
+	if len(photographers) == 0 {
+		photographers = []dto.UserResponse{}
 	}
 
 	//Return the profile picture URL
@@ -252,4 +258,31 @@ func (uc *UserController) DeleteUserBusyTime(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Busy time deleted"})
+}
+
+// CheckProviderByEmail godoc
+// @Tags User
+// @Summary Check which provider is linked to an email
+// @Description Returns the auth provider(s) (e.g. Google, Facebook) associated with an email
+// @Param email query string true "Email to check"
+// @Success 200 {object} dto.CheckProviderResponse
+// @Failure 400 {object} string "Bad Request"
+// @Router /user/provider [get]
+func (uc *UserController) CheckProviderByEmail(c *gin.Context) {
+	email := c.Query("email")
+	if email == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Email is required"})
+		return
+	}
+
+	providers, err := middleware.CheckProviderByEmail(uc.AuthClient, email)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, dto.CheckProviderResponse{
+		Email:     email,
+		Providers: providers,
+	})
 }

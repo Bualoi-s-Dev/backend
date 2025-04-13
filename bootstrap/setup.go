@@ -70,18 +70,18 @@ func SetupServer(client *mongo.Database) (*gin.Engine, *ServerRepositories, *Ser
 
 	s3Service := services.NewS3Service(s3Repo)
 	firebaseService := services.NewFirebaseService(firebaseRepo)
-	subpackageService := services.NewSubpackageService(subpackageRepo, packageRepo, busyTimeRepo)
+	subpackageService := services.NewSubpackageService(subpackageRepo, packageRepo, busyTimeRepo, appointmentRepo)
 	packageService := services.NewPackageService(packageRepo, s3Service, subpackageService, userRepo)
 	ratingService := services.NewRatingService(ratingRepo)
 	userService := services.NewUserService(userRepo, s3Service, packageService, subpackageService, authClient, ratingService)
 	busyTimeService := services.NewBusyTimeService(busyTimeRepo, subpackageRepo, packageRepo)
-	paymentService := services.NewPaymentService(paymentRepo, userRepo, appointmentRepo, subpackageRepo, packageRepo, stripeRepo)
+	paymentService := services.NewPaymentService(paymentRepo, userRepo, appointmentRepo, stripeRepo)
 	appointmentService := services.NewAppointmentService(appointmentRepo, packageRepo, subpackageRepo, busyTimeRepo, userRepo, paymentService)
 
-	packageController := controllers.NewPackageController(packageService, s3Service, userService)
+	packageController := controllers.NewPackageController(packageService, s3Service, userService, subpackageService)
 	subPackageController := controllers.NewSubpackageController(subpackageService, packageService)
 	appointmentController := controllers.NewAppointmentController(appointmentService, busyTimeService)
-	userController := controllers.NewUserController(userService, s3Service, busyTimeService)
+	userController := controllers.NewUserController(userService, s3Service, busyTimeService, authClient)
 	BusyTimeController := controllers.NewBusyTimeController(busyTimeService)
 	internalController := controllers.NewInternalController(firebaseService, s3Service)
 	paymentController := controllers.NewPaymentController(paymentService, appointmentService, packageService)
@@ -102,7 +102,7 @@ func SetupServer(client *mongo.Database) (*gin.Engine, *ServerRepositories, *Ser
 		firebaseService:    firebaseService,
 	}
 
-	rateLimiter := middleware.NewRateLimiter(20, 5)
+	rateLimiter := middleware.NewRateLimiter(50, 5)
 	r.Use(rateLimiter.RateLimitMiddleware())
 
 	// Swagger
@@ -113,12 +113,12 @@ func SetupServer(client *mongo.Database) (*gin.Engine, *ServerRepositories, *Ser
 
 	r.Use(middleware.FirebaseAuthMiddleware(authClient, client.Collection("User"), userService))
 
-	routes.PackageRoutes(r, packageController)
-	routes.SubpackageRoutes(r, subPackageController)
-	routes.UserRoutes(r, userController, RatingController)
-	routes.AppointmentRoutes(r, appointmentController)
-	routes.BusyTimeRoutes(r, BusyTimeController)
-	routes.PaymentRoutes(r, paymentController)
+	routes.PackageRoutes(r, packageController, userService)
+	routes.SubpackageRoutes(r, subPackageController, userService)
+	routes.UserRoutes(r, userController, RatingController, userService)
+	routes.AppointmentRoutes(r, appointmentController, userService)
+	routes.BusyTimeRoutes(r, BusyTimeController, userService)
+	routes.PaymentRoutes(r, paymentController, userService)
 
 	return r, serverRepositories, serverServices
 }

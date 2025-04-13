@@ -43,16 +43,9 @@ func (s *AppointmentService) GetAllAppointment(ctx context.Context, user *models
 	return s.AppointmentRepo.GetAll(ctx, user.ID, user.Role)
 }
 func (s *AppointmentService) GetAppointmentDetailById(ctx context.Context, user *models.User, appointment *models.Appointment) (*dto.AppointmentDetail, error) {
-	pkg, err := s.PackageRepo.GetById(ctx, appointment.PackageID.Hex())
-	if err != nil {
-		fmt.Println("(GetAllAppointmentDetail) Error while getting package")
-		return nil, err
-	}
-	subpackage, err := s.SubpackageRepo.GetById(ctx, appointment.SubpackageID.Hex())
-	if err != nil {
-		fmt.Println("(GetAllAppointmentDetail) Error while getting subpackage")
-		return nil, err
-	}
+	pkg := appointment.Package
+	subpackage := appointment.Subpackage
+
 	busyTime, err := s.BusyTimeRepo.GetById(ctx, appointment.BusyTimeID.Hex())
 	if err != nil {
 		fmt.Println("(GetAllAppointmentDetail) Error while getting busyTime")
@@ -90,8 +83,8 @@ func (s *AppointmentService) GetAppointmentDetailById(ctx context.Context, user 
 
 	detail := &dto.AppointmentDetail{
 		ID:               appointment.ID,
-		PackageID:        pkg.ID,
-		SubpackageID:     subpackage.ID,
+		Package:          pkg,
+		Subpackage:       subpackage,
 		PhotographerID:   appointment.PhotographerID,
 		CustomerID:       appointment.CustomerID,
 		PackageName:      pkg.Title,
@@ -144,21 +137,13 @@ func (s *AppointmentService) GetFilteredAppointments(ctx context.Context, user *
 			continue
 		}
 
-		subPkg, err := s.SubpackageRepo.GetById(ctx, item.SubpackageID.Hex())
-		if err != nil {
-			fmt.Println("(GetFilteredAppointments) Error while getting subpackage")
-			return nil, 0, err
-		}
+		subPkg := &item.Subpackage
 		if !s.passesFilters(subPkg, filters) {
 			continue
 		}
 
 		if filters["name"] != "" {
-			pkg, err := s.PackageRepo.GetById(ctx, item.PackageID.Hex())
-			if err != nil {
-				fmt.Println("(GetFilteredAppointments) Error while getting package")
-				return nil, 0, err
-			}
+			pkg := &item.Package
 
 			ctm, err := s.UserRepo.FindUserByID(ctx, item.CustomerID)
 			if err != nil {
@@ -175,8 +160,8 @@ func (s *AppointmentService) GetFilteredAppointments(ctx context.Context, user *
 			ID:             item.ID,
 			CustomerID:     item.CustomerID,
 			PhotographerID: item.PhotographerID,
-			PackageID:      item.PackageID,
-			SubpackageID:   item.SubpackageID,
+			Package:        item.Package,
+			Subpackage:     item.Subpackage,
 			BusyTimeID:     item.BusyTimeID,
 			Status:         item.Status,
 			Location:       item.Location,
@@ -280,6 +265,33 @@ func matchesFilters(detail *dto.AppointmentDetail, filters map[string]string) bo
 	}
 	if detail.Price < minPrice || detail.Price > maxPrice {
 		return false
+	}
+
+	for _, key := range []string{"availableStartTime", "availableEndTime"} {
+		if filters[key] != "" {
+			parsedTime, err := time.Parse("15:04", filters[key]) // hh:mm format
+			if err != nil {
+				return false
+			}
+
+			var apptTime time.Time
+			if key == "availableStartTime" {
+				apptTime = detail.StartTime
+			} else {
+				apptTime = detail.EndTime
+			}
+
+			apptMinutes := apptTime.Hour()*60 + apptTime.Minute()
+			filterMinutes := parsedTime.Hour()*60 + parsedTime.Minute()
+			fmt.Println(apptMinutes, filterMinutes)
+			if key == "availableStartTime" && apptMinutes < filterMinutes {
+				return false
+			}
+			if key == "availableEndTime" && apptMinutes > filterMinutes {
+
+				return false
+			}
+		}
 	}
 
 	for _, key := range []string{"startTime", "endTime"} {

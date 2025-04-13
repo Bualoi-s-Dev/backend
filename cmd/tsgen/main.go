@@ -16,12 +16,14 @@ func main() {
 
 	// Add models
 	converter.
+		Add(models.Package{}).
 		Add(dto.PackageRequest{}).
 		Add(dto.PackageResponse{}).
 		AddEnum(models.ValidPackageTypes)
 	converter.
 		Add(dto.UserRequest{}).
 		Add(dto.UserResponse{}).
+		Add(dto.CheckProviderResponse{}).
 		AddEnum(models.ValidUserRoles).
 		AddEnum(models.ValidBankNames)
 	converter.

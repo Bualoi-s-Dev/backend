@@ -81,8 +81,8 @@ func (s *AppointmentScenario) thePhotographerHasPackageAndSubpackage() error {
 		"repeatedDay":        []string{"SUN", "WED"},
 		"availableStartTime": "15:11",
 		"availableEndTime":   "16:00",
-		"availableStartDay":  "2022-12-22",
-		"availableEndDay":    "2023-01-22",
+		"availableStartDay":  "2030-12-22",
+		"availableEndDay":    "2031-01-22",
 	})
 	req, err = http.NewRequest("POST", s.Server.URL+"/subpackage/"+s.Package.ID.Hex(), bytes.NewBuffer(reqBody))
 	if err != nil {
@@ -247,8 +247,8 @@ func (s *AppointmentScenario) theAppointmentIsCreated() error {
 	expectAppointment := models.Appointment{
 		CustomerID:     s.CustomerID,
 		PhotographerID: s.PhotographerID,
-		PackageID:      s.Package.ID,
-		SubpackageID:   s.Subpackage.ID,
+		Package:        *s.Package.ToModel(),
+		Subpackage:     *s.Subpackage.ToModel(),
 		Price:          s.Subpackage.Price,
 		Status:         "Pending",
 		Location:       "Bangkok, Thailand",

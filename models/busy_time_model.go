@@ -9,6 +9,7 @@ import (
 type BusyTime struct {
 	ID             primitive.ObjectID `bson:"_id,omitempty" json:"id" ts_type:"string" example:"12345678abcd"`
 	PhotographerID primitive.ObjectID `bson:"photographer_id,omitempty" json:"photographerId" ts_type:"string" example:"12345678abcd"`
+	Name           string             `bson:"name,omitempty" json:"name" ts_type:"string" example:"Vacation"`
 	Type           BusyTimeType       `bson:"type,omitempty" json:"type" binding:"omitempty,busy_time_type" example:"Photographer"`
 	StartTime      time.Time          `bson:"start_time,omitempty" json:"startTime" ts_type:"string" example:"2025-02-23T10:00:00Z"`
 	EndTime        time.Time          `bson:"end_time,omitempty" json:"endTime" ts_type:"string" example:"2025-02-23T12:00:00Z"`
