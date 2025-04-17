@@ -32,7 +32,7 @@ testing:
 
 blackbox-testing:
 	@echo "Running blackbox tests..."
-	go test -v ./testing/runner/package_test.go -run=TestBlackBox
+	go test -v ./testing/runner -run=TestPackageFeatures
 
 tsgen:
 	@echo "Generating TypeScript types..."
