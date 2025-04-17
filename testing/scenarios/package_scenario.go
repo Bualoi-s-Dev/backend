@@ -25,7 +25,7 @@ func (s *PackageScenario) InitializeScenario(ctx *godog.ScenarioContext) {
 	ctx.Given(`^a photographer has a package and sub package$`, s.thePhotographerHasPackageAndSubpackage)
 	ctx.Given(`^a photographer is logged in$`, s.thePhotographerLoggedIn)
 
-	ctx.When(`^the photographer updates the package$`, s.thePhotographerUpdatesThePackage)
+	ctx.When(`^the photographer updates the package details$`, s.thePhotographerUpdatesThePackageDetails)
 	ctx.When(`^the photographer deletes the package$`, s.thePhotographerDeletesThePackage)
 
 	ctx.Then(`^the package information is updated$`, s.thePackageInformationIsUpdated)
@@ -150,7 +150,7 @@ func (s *PackageScenario) thePhotographerHasPackageAndSubpackage() error {
 	return nil
 }
 
-func (s *PackageScenario) thePhotographerUpdatesThePackage() error {
+func (s *PackageScenario) thePhotographerUpdatesThePackageDetails() error {
 	reqBody, _ := json.Marshal(map[string]interface{}{
 		"title": "Updated Photography Package",
 		"type":  "WEDDING_BLISS",
@@ -231,7 +231,7 @@ func (s *PackageScenario) thePhotographerDeletesThePackage() error {
 	}
 
 	// Clear the package reference after deletion
-	s.Package = nil
+	// s.Package = nil
 	return nil
 }
 
