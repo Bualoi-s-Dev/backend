@@ -150,7 +150,7 @@ func (ctrl *PackageController) GetOnePackage(c *gin.Context) {
 	id := c.Param("id")
 	item, err := ctrl.Service.GetById(c.Request.Context(), id)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch item, " + err.Error()})
+		c.JSON(http.StatusNotFound, gin.H{"error": "Failed to fetch item, " + err.Error()})
 		return
 	}
 
@@ -273,7 +273,7 @@ func (ctrl *PackageController) DeleteOnePackage(c *gin.Context) {
 	user := middleware.GetUserFromContext(c)
 	isOwner, err := ctrl.Service.CheckOwner(c.Request.Context(), user, id)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to check owner, " + err.Error()})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Failed to check owner, " + err.Error()})
 		return
 	}
 	if !isOwner {
