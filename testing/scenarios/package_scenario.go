@@ -65,7 +65,7 @@ func (s *PackageScenario) thePhotographerHasPackageAndSubpackage() error {
 	s.Token = token
 
 	reqBody, _ := json.Marshal(map[string]interface{}{
-		"title":  "Photography Package",
+		"title":  "Photography Package 137",
 		"type":   "OTHER",
 		"photos": []string{},
 	})
@@ -92,12 +92,12 @@ func (s *PackageScenario) thePhotographerHasPackageAndSubpackage() error {
 	s.Package = &packageResponse
 
 	reqBody, _ = json.Marshal(map[string]interface{}{
-		"title":              "dev",
-		"description":        "1234556",
-		"price":              123,
+		"title":              "test dev 123",
+		"description":        "I go dev",
+		"price":              150,
 		"duration":           30,
 		"isInf":              false,
-		"repeatedDay":        []string{"SUN", "WED"},
+		"repeatedDay":        []string{"SUN", "SAT"},
 		"availableStartTime": "15:00",
 		"availableEndTime":   "16:00",
 		"availableStartDay":  "2030-12-22",
