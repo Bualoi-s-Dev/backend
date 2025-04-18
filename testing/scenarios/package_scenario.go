@@ -7,8 +7,10 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"strings"
 
 	"github.com/Bualoi-s-Dev/backend/dto"
+	"github.com/Bualoi-s-Dev/backend/models"
 	"github.com/cucumber/godog"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -25,10 +27,11 @@ func (s *PackageScenario) InitializeScenario(ctx *godog.ScenarioContext) {
 	ctx.Given(`^a photographer has a package and sub package$`, s.thePhotographerHasPackageAndSubpackage)
 	ctx.Given(`^a photographer is logged in$`, s.thePhotographerLoggedIn)
 
-	ctx.When(`^the photographer updates the package details$`, s.thePhotographerUpdatesThePackageDetails)
+	ctx.When(`^the photographer updates the package details with the following data:$`, s.thePhotographerUpdatesThePackageDetailsWithData)
+
 	ctx.When(`^the photographer deletes the package$`, s.thePhotographerDeletesThePackage)
 
-	ctx.Then(`^the package information is updated$`, s.thePackageInformationIsUpdated)
+	ctx.Then(`^the package information is updated with following data:$`, s.thePackageInformationIsUpdatedWithFollowingData)
 	ctx.Then(`^the package is removed$`, s.thePackageIsRemoved)
 }
 
@@ -150,11 +153,25 @@ func (s *PackageScenario) thePhotographerHasPackageAndSubpackage() error {
 	return nil
 }
 
-func (s *PackageScenario) thePhotographerUpdatesThePackageDetails() error {
-	reqBody, _ := json.Marshal(map[string]interface{}{
-		"title": "Updated Photography Package",
-		"type":  "WEDDING_BLISS",
-	})
+func (s *PackageScenario) thePhotographerUpdatesThePackageDetailsWithData(table *godog.Table) error {
+	if len(table.Rows) != 2 {
+		return fmt.Errorf("The provided data is not valid")
+	}
+	row := table.Rows[1]
+
+	photosStr := row.Cells[2].Value
+	packageType := models.PackageType(row.Cells[1].Value)
+	photos := strings.Split(photosStr, ", ")
+
+	pkgReq := dto.PackageRequest{
+		Title:  &row.Cells[0].Value,
+		Type:   &packageType,
+		Photos: &photos,
+	}
+
+	reqBody, _ := json.Marshal(pkgReq)
+	fmt.Println("Request Body:", string(reqBody))
+
 	req, err := http.NewRequest("PATCH", s.Server.URL+"/package/"+s.Package.ID.Hex(), bytes.NewBuffer(reqBody))
 	if err != nil {
 		return err
@@ -182,7 +199,16 @@ func (s *PackageScenario) thePhotographerUpdatesThePackageDetails() error {
 	return nil
 }
 
-func (s *PackageScenario) thePackageInformationIsUpdated() error {
+func (s *PackageScenario) thePackageInformationIsUpdatedWithFollowingData(table *godog.Table) error {
+	if len(table.Rows) != 2 {
+		return fmt.Errorf("The provided data is not valid")
+	}
+	row := table.Rows[1]
+
+	photosStr := row.Cells[2].Value
+	packageType := models.PackageType(row.Cells[1].Value)
+	photos := strings.Split(photosStr, ", ")
+
 	req, err := http.NewRequest("GET", s.Server.URL+"/package/"+s.Package.ID.Hex(), nil)
 	if err != nil {
 		return err
@@ -205,7 +231,7 @@ func (s *PackageScenario) thePackageInformationIsUpdated() error {
 		return err
 	}
 
-	if fetchedPackage.Title != "Updated Photography Package" || fetchedPackage.Type != "WEDDING_BLISS" {
+	if fetchedPackage.Title != row.Cells[0].Value || fetchedPackage.Type != packageType || len(fetchedPackage.PhotoUrls) != len(photos) {
 		return fmt.Errorf("package information was not updated correctly")
 	}
 
