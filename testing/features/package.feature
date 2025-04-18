@@ -5,8 +5,8 @@ Feature: Package Management
 
     Background: Server is running
         Given the server is running
-        And a photographer has a package and sub package
         And a photographer is logged in
+        And a photographer has a package and sub package
 
     Scenario: Photographer updates a package
         When the photographer updates the package details with the following data:

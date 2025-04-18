@@ -61,12 +61,6 @@ func (s *PackageScenario) thePhotographerLoggedIn() error {
 }
 
 func (s *PackageScenario) thePhotographerHasPackageAndSubpackage() error {
-	token, err := getLoginToken(s.Server, os.Getenv("TEST_PHOTOGRAPHER_EMAIL"), os.Getenv("TEST_PHOTOGRAPHER_PASSWORD"))
-	if err != nil {
-		return err
-	}
-	s.Token = token
-
 	reqBody, _ := json.Marshal(map[string]interface{}{
 		"title":  "Photography Package 137",
 		"type":   "OTHER",
