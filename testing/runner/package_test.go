@@ -27,4 +27,5 @@ func cleanUpPackageFeature() {
 
 	db := GetTestMongoDB()
 	db.Collection("Package").Drop(ctx)
+	db.Collection("Subpackage").Drop(ctx)
 }

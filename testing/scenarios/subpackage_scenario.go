@@ -311,7 +311,7 @@ func (s *SubpackageScenario) theSubpackageIsDeleted() error {
 		return err
 	}
 	if res.StatusCode != http.StatusOK {
-		return fmt.Errorf("failed to delete subpackage, status code: %d", res.StatusCode)
+		return fmt.Errorf("failed to get all subpackage, status code: %d", res.StatusCode)
 	}
 
 	// Decode the response
