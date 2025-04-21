@@ -72,7 +72,7 @@ func (ctrl *PackageController) GetAllPackages(c *gin.Context) {
 		return
 	}
 
-	var res []dto.PackageResponse
+	res := []dto.PackageResponse{}
 	for _, item := range items {
 		IsFiltered, err := ctrl.Service.FilterPackage(c.Request.Context(), &item, searchString, searchType)
 		if err != nil {
@@ -124,7 +124,7 @@ func (ctrl *PackageController) GetRecommendedPackages(c *gin.Context) {
 		return
 	}
 
-	var res []dto.PackageResponse
+	res := []dto.PackageResponse{}
 	for _, item := range items {
 		mappedItem, err := ctrl.Service.MappedToPackageResponse(c.Request.Context(), &item)
 		if err != nil {

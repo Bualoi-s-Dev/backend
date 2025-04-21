@@ -44,7 +44,7 @@ func (ctrl *PaymentController) GetAllOwnedPayments(c *gin.Context) {
 		return
 	}
 
-	var response []dto.PaymentResponse
+	response := []dto.PaymentResponse{}
 	for _, payment := range payments {
 		dto, err := ctrl.mapToPaymentResponse(c, payment)
 		if err != nil {
@@ -52,9 +52,6 @@ func (ctrl *PaymentController) GetAllOwnedPayments(c *gin.Context) {
 			return
 		}
 		response = append(response, *dto)
-	}
-	if response == nil {
-		response = []dto.PaymentResponse{}
 	}
 	c.JSON(200, response)
 }
