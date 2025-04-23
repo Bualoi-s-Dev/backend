@@ -154,12 +154,32 @@ func (s *PackageScenario) thePhotographerUpdatesThePackageDetailsWithData(table 
 	row := table.Rows[1]
 
 	photosStr := row.Cells[2].Value
-	packageType := models.PackageType(row.Cells[1].Value)
-	photos := strings.Split(photosStr, ", ")
+	packageTypeStr := models.PackageType(row.Cells[1].Value)
+
+	titleStr := row.Cells[0].Value
+	var title *string
+	if titleStr == "__omit__" {
+		title = nil
+	} else {
+		title = &titleStr
+	}
+
+	var pkgType *models.PackageType
+	if packageTypeStr == "__omit__" {
+		pkgType = nil
+	} else {
+		pkgType = &packageTypeStr
+	}
+	var photos []string
+	if photosStr == "__omit__" {
+		photos = nil
+	} else {
+		photos = strings.Split(photosStr, ", ")
+	}
 
 	pkgReq := dto.PackageRequest{
-		Title:  &row.Cells[0].Value,
-		Type:   &packageType,
+		Title:  title,
+		Type:   pkgType,
 		Photos: &photos,
 	}
 
@@ -199,8 +219,12 @@ func (s *PackageScenario) thePackageInformationIsUpdatedWithFollowingData(table 
 	}
 	row := table.Rows[1]
 
+	omitTitle := row.Cells[0].Value == "__omit__"
+	omitType := row.Cells[1].Value == "__omit__"
+	omitPhotos := row.Cells[2].Value == "__omit__"
+
 	photosStr := row.Cells[2].Value
-	packageType := models.PackageType(row.Cells[1].Value)
+	packageType := row.Cells[1].Value
 	photos := strings.Split(photosStr, ", ")
 
 	req, err := http.NewRequest("GET", s.Server.URL+"/package/"+s.Package.ID.Hex(), nil)
@@ -225,9 +249,19 @@ func (s *PackageScenario) thePackageInformationIsUpdatedWithFollowingData(table 
 		return err
 	}
 
-	if fetchedPackage.Title != row.Cells[0].Value || fetchedPackage.Type != packageType || len(fetchedPackage.PhotoUrls) != len(photos) {
-		return fmt.Errorf("package information was not updated correctly")
+	if !omitTitle && fetchedPackage.Title != row.Cells[0].Value {
+		return fmt.Errorf("package title was not updated correctly")
 	}
+	if !omitType && fetchedPackage.Type != models.PackageType(packageType) {
+		return fmt.Errorf("package type was not updated correctly")
+	}
+	if !omitPhotos && len(fetchedPackage.PhotoUrls) != len(photos) {
+		return fmt.Errorf("package photos were not updated correctly")
+	}
+
+	// if fetchedPackage.Title != row.Cells[0].Value || fetchedPackage.Type != packageType || len(fetchedPackage.PhotoUrls) != len(photos) {
+	// 	return fmt.Errorf("package information was not updated correctly")
+	// }
 
 	return nil
 }

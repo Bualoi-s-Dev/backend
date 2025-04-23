@@ -10,19 +10,28 @@ Feature: Package Management
 
     Scenario: Photographer updates a package
         When the photographer updates the package details with the following data:
-            | title          | type           | photos                                                                 |
-            | A              | WEDDING_BLISS  | data:image/jpeg;base64,/9j/4AAQSkZJRg==, data:image/jpeg;base64,/9j/4AAQSkZJRg== |
+            | title | type          | photos                                                                                      |
+            | A     | WEDDING_BLISS | data:image/jpeg;base64,/9j/4AAQSkZJRg==, data:image/jpeg;base64,/9j/4AAQSkZJRg==             |
         Then the package information is updated with following data:
-            | title          | type           | photos                                                                 |
-            |    A           | WEDDING_BLISS  | data:image/jpeg;base64,/9j/4AAQSkZJRg==, data:image/jpeg;base64,/9j/4AAQSkZJRg== |
-
+            | title | type          | photos                                                                                      |
+            | A     | WEDDING_BLISS | data:image/jpeg;base64,/9j/4AAQSkZJRg==, data:image/jpeg;base64,/9j/4AAQSkZJRg==             |
+    
     Scenario: Photographer updates a package
         When the photographer updates the package details with the following data:
-            | title          | type           | photos                                                                 |
-            | B              | ENGAGEMENT_LOVE_STORY  |data:image/jpeg;base64,/9j/4AAQSkZJRg==|
+            | title         | type | photos |
+            | Birthday 2025 | __omit__ | __omit__   |
         Then the package information is updated with following data:
-            | title          | type           | photos                                                                 |
-            |    B           | ENGAGEMENT_LOVE_STORY  |data:image/jpeg;base64,/9j/4AAQSkZJRg==|
+            | title         | type | photos |
+            | Birthday 2025 | __omit__ | __omit__   |
+    
+    Scenario: Photographer updates a package
+        When the photographer updates the package details with the following data:
+            | title         | type | photos |
+            | Maternity Glow - 2025! | __omit__ | __omit__   |
+        Then the package information is updated with following data:
+            | title         | type | photos |
+            | Maternity Glow - 2025! | __omit__ | __omit__   |
+    
     
     Scenario: Photographer deletes a package
         When the photographer deletes the package
