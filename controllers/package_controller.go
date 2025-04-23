@@ -88,14 +88,18 @@ func (ctrl *PackageController) GetAllPackages(c *gin.Context) {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to map item, " + err.Error()})
 			return
 		}
-		IsFiltered, err = ctrl.Service.FilterPrice(c.Request.Context(), mappedItem, minPrice, maxPrice)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to filter price, " + err.Error()})
-			return
+
+		if hasMaxPrice || hasMinPrice {
+			IsFiltered, err = ctrl.Service.FilterPrice(c.Request.Context(), mappedItem, minPrice, maxPrice)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to filter price, " + err.Error()})
+				return
+			}
+			if !IsFiltered {
+				continue
+			}
 		}
-		if !IsFiltered {
-			continue
-		}
+
 		res = append(res, *mappedItem)
 	}
 	c.JSON(http.StatusOK, res)
