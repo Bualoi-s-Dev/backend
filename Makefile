@@ -34,6 +34,12 @@ blackbox-testing:
 	@echo "Running blackbox tests..."
 	go test -v ./testing/runner -run=TestPackageFeatures
 
+unit-testing:
+	@echo "Running unit tests..."
+	go test -v ./testing/runner -run=TestUnitTest
+	
+	go tool cover -html=coverage.out
+
 tsgen:
 	@echo "Generating TypeScript types..."
 	go run ./cmd/tsgen/main.go
