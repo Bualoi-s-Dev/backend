@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"errors"
+	"fmt"
 	"math/rand"
 	"strings"
 
@@ -17,10 +18,15 @@ type PackageService struct {
 	Repo              *repositories.PackageRepository
 	S3Service         *S3Service
 	SubpackageService *SubpackageService
-	UserRepo          *repositories.UserRepository
+	UserRepo          UserRepositoryInterface
 }
 
-func NewPackageService(repo *repositories.PackageRepository, s3Service *S3Service, subpackageService *SubpackageService, userRepo *repositories.UserRepository) *PackageService {
+// UserRepositoryInterface defines the methods needed for testing
+type UserRepositoryInterface interface {
+	FindUserByID(ctx context.Context, id primitive.ObjectID) (*models.User, error)
+}
+
+func NewPackageService(repo *repositories.PackageRepository, s3Service *S3Service, subpackageService *SubpackageService, userRepo UserRepositoryInterface) *PackageService {
 	return &PackageService{Repo: repo, S3Service: s3Service, SubpackageService: subpackageService, UserRepo: userRepo}
 }
 
@@ -215,5 +221,6 @@ func (s *PackageService) FilterPackage(ctx context.Context, item *models.Package
 		}
 		return false, nil
 	}
+	fmt.Print("6")
 	return true, nil
 }
