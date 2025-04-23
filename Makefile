@@ -36,7 +36,7 @@ blackbox-testing:
 
 unit-testing:
 	@echo "Running unit tests..."
-	go test -v -coverprofile=coverage.out ./testing/runner -run=TestUnitTest
+	go test -v -coverprofile=coverage.out -coverpkg=github.com/Bualoi-s-Dev/backend/services ./testing/runner -run=TestUnitTest
 	@echo "Generating coverage report..."
 	go tool cover -html=coverage.out
 
