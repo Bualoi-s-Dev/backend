@@ -59,6 +59,32 @@ The generated TypeScript file will be located at:
 /gen/api_types.ts
 ```
 
+## Testing
+
+### Integration Test
+
+Use [cucumber/godog](https://github.com/cucumber/godog) and gherkin for integration test.
+
+```
+make run-test
+```
+
+### White box Test
+
+Use [testify](https://github.com/stretchr/testify) to generate driver and stub for white box testing and built-in coverage test in golang for generate statement coverage report.
+
+```
+make unit-testing
+```
+
+### Limiter Test
+
+Use [vegeta](https://github.com/tsenart/vegeta) for limiter testing
+
+```
+make vegeta
+```
+
 ## License
 
 This project is licensed under the MIT License. See `LICENSE` for more details.
