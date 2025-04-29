@@ -1,8 +1,18 @@
 # Build stage
 FROM golang:alpine AS builder
 
-COPY . /app
+# Install necessary build tools
+RUN apk add --no-cache git curl
+
+# Set up working directory
 WORKDIR /app
+
+# Copy go.mod and go.sum first for better layer caching
+COPY go.mod go.sum ./
+RUN go mod download
+
+# Copy the rest of the source
+COPY . .
 
 # Install Swaggo and generate Swagger docs
 RUN go install github.com/swaggo/swag/cmd/swag@latest
