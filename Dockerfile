@@ -19,7 +19,6 @@ RUN go install github.com/swaggo/swag/cmd/swag@latest
 RUN swag init -g ./cmd/main/main.go -o ./docs
 
 # Install dependencies & build the binary
-RUN go mod tidy
 RUN CGO_ENABLED=0 go build -ldflags '-s -w -extldflags "-static"' -o /app/appbin /app/cmd/main/main.go
 
 # Download Swagger UI

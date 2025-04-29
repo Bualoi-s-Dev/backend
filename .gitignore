@@ -24,9 +24,6 @@ Godeps/
 # Go workspace file
 go.work
 
-# Go module files
-go.sum
-
 # Environment variables file
 .env
 .env.test
